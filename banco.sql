@@ -1,21 +1,19 @@
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
-
-
-
+SET @OLD_UNIQUE_CHECKS = @@UNIQUE_CHECKS,
+  UNIQUE_CHECKS = 0;
+SET @OLD_FOREIGN_KEY_CHECKS = @@FOREIGN_KEY_CHECKS,
+  FOREIGN_KEY_CHECKS = 0;
+SET @OLD_SQL_MODE = @@SQL_MODE,
+  SQL_MODE = 'TRADITIONAL,ALLOW_INVALID_DATES';
 -- -----------------------------------------------------
 -- Table `ci_sessions`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ci_sessions` (
-        `id` varchar(128) NOT NULL,
-        `ip_address` varchar(45) NOT NULL,
-        `timestamp` int(10) unsigned DEFAULT 0 NOT NULL,
-        `data` blob NOT NULL,
-        KEY `ci_sessions_timestamp` (`timestamp`)
+  `id` varchar(128) NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `timestamp` int(10) unsigned DEFAULT 0 NOT NULL,
+  `data` blob NOT NULL,
+  KEY `ci_sessions_timestamp` (`timestamp`)
 );
-
-
 -- -----------------------------------------------------
 -- Table `clientes`
 -- -----------------------------------------------------
@@ -40,21 +38,16 @@ CREATE TABLE IF NOT EXISTS `clientes` (
   `contato` varchar(45) DEFAULT NULL,
   `complemento` varchar(45) DEFAULT NULL,
   `fornecedor` BOOLEAN NOT NULL DEFAULT 0,
-  PRIMARY KEY (`idClientes`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 1
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-CREATE TABLE IF NOT EXISTS `resets_de_senha` ( 
+  PRIMARY KEY (`idClientes`)
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE TABLE IF NOT EXISTS `resets_de_senha` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(200) NOT NULL , 
-  `token` VARCHAR(255) NOT NULL , 
-  `data_expiracao` DATETIME NOT NULL, 
+  `email` VARCHAR(200) NOT NULL,
+  `token` VARCHAR(255) NOT NULL,
+  `data_expiracao` DATETIME NOT NULL,
   `token_utilizado` TINYINT NOT NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `categorias`
 -- -----------------------------------------------------
@@ -64,11 +57,8 @@ CREATE TABLE IF NOT EXISTS `categorias` (
   `cadastro` DATE NULL,
   `status` TINYINT(1) NULL,
   `tipo` VARCHAR(15) NULL,
-  PRIMARY KEY (`idCategorias`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  PRIMARY KEY (`idCategorias`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `contas`
 -- -----------------------------------------------------
@@ -77,14 +67,12 @@ CREATE TABLE IF NOT EXISTS `contas` (
   `conta` VARCHAR(45) NULL,
   `banco` VARCHAR(45) NULL,
   `numero` VARCHAR(45) NULL,
-  `saldo` DECIMAL(10,2) NULL,
+  `saldo` DECIMAL(10, 2) NULL,
   `cadastro` DATE NULL,
   `status` TINYINT(1) NULL,
   `tipo` VARCHAR(80) NULL,
-  PRIMARY KEY (`idContas`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  PRIMARY KEY (`idContas`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `permissoes`
 -- -----------------------------------------------------
@@ -94,11 +82,8 @@ CREATE TABLE IF NOT EXISTS `permissoes` (
   `permissoes` TEXT NULL,
   `situacao` TINYINT(1) NULL,
   `data` DATE NULL,
-  PRIMARY KEY (`idPermissao`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  PRIMARY KEY (`idPermissao`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `usuarios`
 -- -----------------------------------------------------
@@ -124,17 +109,8 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   `url_image_user` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`idUsuarios`),
   INDEX `fk_usuarios_permissoes1_idx` (`permissoes_id` ASC),
-  CONSTRAINT `fk_usuarios_permissoes1`
-    FOREIGN KEY (`permissoes_id`)
-    REFERENCES `permissoes` (`idPermissao`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-AUTO_INCREMENT = 1
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
-
+  CONSTRAINT `fk_usuarios_permissoes1` FOREIGN KEY (`permissoes_id`) REFERENCES `permissoes` (`idPermissao`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `lancamentos`
 -- -----------------------------------------------------
@@ -163,34 +139,14 @@ CREATE TABLE IF NOT EXISTS `lancamentos` (
   INDEX `fk_lancamentos_categorias1_idx` (`categorias_id` ASC),
   INDEX `fk_lancamentos_contas1_idx` (`contas_id` ASC),
   INDEX `fk_lancamentos_usuarios1` (`usuarios_id` ASC),
-  CONSTRAINT `fk_lancamentos_clientes1`
-    FOREIGN KEY (`clientes_id`)
-    REFERENCES `clientes` (`idClientes`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_lancamentos_categorias1`
-    FOREIGN KEY (`categorias_id`)
-    REFERENCES `categorias` (`idCategorias`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_lancamentos_contas1`
-    FOREIGN KEY (`contas_id`)
-    REFERENCES `contas` (`idContas`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_lancamentos_usuarios1`
-    FOREIGN KEY (`usuarios_id`)
-    REFERENCES `usuarios` (`idUsuarios`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_lancamentos_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_lancamentos_categorias1` FOREIGN KEY (`categorias_id`) REFERENCES `categorias` (`idCategorias`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_lancamentos_contas1` FOREIGN KEY (`contas_id`) REFERENCES `contas` (`idContas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_lancamentos_usuarios1` FOREIGN KEY (`usuarios_id`) REFERENCES `usuarios` (`idUsuarios`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `Garantia`
 -- -----------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS `garantias` (
   `idGarantias` INT NOT NULL AUTO_INCREMENT,
   `dataGarantia` DATE NULL,
@@ -199,14 +155,8 @@ CREATE TABLE IF NOT EXISTS `garantias` (
   `usuarios_id` INT(11) NULL,
   PRIMARY KEY (`idGarantias`),
   INDEX `fk_garantias_usuarios1` (`usuarios_id` ASC),
-  CONSTRAINT `fk_garantias_usuarios1`
-    FOREIGN KEY (`usuarios_id`)
-    REFERENCES `usuarios` (`idUsuarios`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  CONSTRAINT `fk_garantias_usuarios1` FOREIGN KEY (`usuarios_id`) REFERENCES `usuarios` (`idUsuarios`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `os`
 -- -----------------------------------------------------
@@ -221,7 +171,7 @@ CREATE TABLE IF NOT EXISTS `os` (
   `observacoes` TEXT NULL DEFAULT NULL,
   `laudoTecnico` TEXT NULL DEFAULT NULL,
   `valorTotal` DECIMAL(10, 2) NULL DEFAULT 0,
-  `desconto`DECIMAL(10, 2) NULL DEFAULT 0,
+  `desconto` DECIMAL(10, 2) NULL DEFAULT 0,
   `valor_desconto` DECIMAL(10, 2) NULL DEFAULT 0,
   `tipo_desconto` varchar(8) NULL DEFAULT NULL,
   `clientes_id` INT(11) NOT NULL,
@@ -234,26 +184,10 @@ CREATE TABLE IF NOT EXISTS `os` (
   INDEX `fk_os_usuarios1` (`usuarios_id` ASC),
   INDEX `fk_os_lancamentos1` (`lancamento` ASC),
   INDEX `fk_os_garantias1` (`garantias_id` ASC),
-  CONSTRAINT `fk_os_clientes1`
-    FOREIGN KEY (`clientes_id`)
-    REFERENCES `clientes` (`idClientes`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_os_lancamentos1`
-    FOREIGN KEY (`lancamento`)
-    REFERENCES `lancamentos` (`idLancamentos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_os_usuarios1`
-    FOREIGN KEY (`usuarios_id`)
-    REFERENCES `usuarios` (`idUsuarios`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-AUTO_INCREMENT = 1
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_os_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_os_lancamentos1` FOREIGN KEY (`lancamento`) REFERENCES `lancamentos` (`idLancamentos`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_os_usuarios1` FOREIGN KEY (`usuarios_id`) REFERENCES `usuarios` (`idUsuarios`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `produtos`
 -- -----------------------------------------------------
@@ -262,18 +196,14 @@ CREATE TABLE IF NOT EXISTS `produtos` (
   `codDeBarra` VARCHAR(70) NOT NULL,
   `descricao` VARCHAR(80) NOT NULL,
   `unidade` VARCHAR(10) NULL DEFAULT NULL,
-  `precoCompra` DECIMAL(10,2) NULL DEFAULT NULL,
-  `precoVenda` DECIMAL(10,2) NOT NULL,
+  `precoCompra` DECIMAL(10, 2) NULL DEFAULT NULL,
+  `precoVenda` DECIMAL(10, 2) NOT NULL,
   `estoque` INT(11) NOT NULL,
   `estoqueMinimo` INT(11) NULL DEFAULT NULL,
-  `saida`	TINYINT(1) NULL DEFAULT NULL,
-  `entrada`	TINYINT(1) NULL DEFAULT NULL,
-  PRIMARY KEY (`idProdutos`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 1
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  `saida` TINYINT(1) NULL DEFAULT NULL,
+  `entrada` TINYINT(1) NULL DEFAULT NULL,
+  PRIMARY KEY (`idProdutos`)
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `produtos_os`
 -- -----------------------------------------------------
@@ -281,27 +211,16 @@ CREATE TABLE IF NOT EXISTS `produtos_os` (
   `idProdutos_os` INT(11) NOT NULL AUTO_INCREMENT,
   `quantidade` INT(11) NOT NULL,
   `descricao` VARCHAR(80) NULL,
-  `preco` DECIMAL(10,2) NULL DEFAULT 0,
+  `preco` DECIMAL(10, 2) NULL DEFAULT 0,
   `os_id` INT(11) NOT NULL,
   `produtos_id` INT(11) NOT NULL,
-  `subTotal` DECIMAL(10,2) NULL DEFAULT 0,
+  `subTotal` DECIMAL(10, 2) NULL DEFAULT 0,
   PRIMARY KEY (`idProdutos_os`),
   INDEX `fk_produtos_os_os1` (`os_id` ASC),
   INDEX `fk_produtos_os_produtos1` (`produtos_id` ASC),
-  CONSTRAINT `fk_produtos_os_os1`
-    FOREIGN KEY (`os_id`)
-    REFERENCES `os` (`idOs`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_produtos_os_produtos1`
-    FOREIGN KEY (`produtos_id`)
-    REFERENCES `produtos` (`idProdutos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_produtos_os_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_produtos_os_produtos1` FOREIGN KEY (`produtos_id`) REFERENCES `produtos` (`idProdutos`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `servicos`
 -- -----------------------------------------------------
@@ -309,13 +228,9 @@ CREATE TABLE IF NOT EXISTS `servicos` (
   `idServicos` INT(11) NOT NULL AUTO_INCREMENT,
   `nome` VARCHAR(45) NOT NULL,
   `descricao` VARCHAR(45) NULL DEFAULT NULL,
-  `preco` DECIMAL(10,2) NOT NULL,
-  PRIMARY KEY (`idServicos`))
-ENGINE = InnoDB
-AUTO_INCREMENT = 1
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  `preco` DECIMAL(10, 2) NOT NULL,
+  PRIMARY KEY (`idServicos`)
+) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `servicos_os`
 -- -----------------------------------------------------
@@ -323,27 +238,16 @@ CREATE TABLE IF NOT EXISTS `servicos_os` (
   `idServicos_os` INT(11) NOT NULL AUTO_INCREMENT,
   `servico` VARCHAR(80) NULL,
   `quantidade` DOUBLE NULL,
-  `preco` DECIMAL(10,2) NULL DEFAULT 0,
+  `preco` DECIMAL(10, 2) NULL DEFAULT 0,
   `os_id` INT(11) NOT NULL,
   `servicos_id` INT(11) NOT NULL,
-  `subTotal` DECIMAL(10,2) NULL DEFAULT 0,
+  `subTotal` DECIMAL(10, 2) NULL DEFAULT 0,
   PRIMARY KEY (`idServicos_os`),
   INDEX `fk_servicos_os_os1` (`os_id` ASC),
   INDEX `fk_servicos_os_servicos1` (`servicos_id` ASC),
-  CONSTRAINT `fk_servicos_os_os1`
-    FOREIGN KEY (`os_id`)
-    REFERENCES `os` (`idOs`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_servicos_os_servicos1`
-    FOREIGN KEY (`servicos_id`)
-    REFERENCES `servicos` (`idServicos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_servicos_os_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_servicos_os_servicos1` FOREIGN KEY (`servicos_id`) REFERENCES `servicos` (`idServicos`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `vendas`
 -- -----------------------------------------------------
@@ -366,25 +270,10 @@ CREATE TABLE IF NOT EXISTS `vendas` (
   INDEX `fk_vendas_clientes1` (`clientes_id` ASC),
   INDEX `fk_vendas_usuarios1` (`usuarios_id` ASC),
   INDEX `fk_vendas_lancamentos1` (`lancamentos_id` ASC),
-  CONSTRAINT `fk_vendas_clientes1`
-    FOREIGN KEY (`clientes_id`)
-    REFERENCES `clientes` (`idClientes`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_vendas_usuarios1`
-    FOREIGN KEY (`usuarios_id`)
-    REFERENCES `usuarios` (`idUsuarios`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_vendas_lancamentos1`
-    FOREIGN KEY (`lancamentos_id`)
-    REFERENCES `lancamentos` (`idLancamentos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_vendas_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_vendas_usuarios1` FOREIGN KEY (`usuarios_id`) REFERENCES `usuarios` (`idUsuarios`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_vendas_lancamentos1` FOREIGN KEY (`lancamentos_id`) REFERENCES `lancamentos` (`idLancamentos`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 --
 -- Estrutura da tabela `cobrancas`
 --
@@ -416,35 +305,23 @@ CREATE TABLE IF NOT EXISTS `cobrancas` (
   CONSTRAINT `fk_cobrancas_vendas1` FOREIGN KEY (`vendas_id`) REFERENCES `vendas` (`idVendas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   INDEX `fk_cobrancas_clientes1` (`clientes_id` ASC),
   CONSTRAINT `fk_cobrancas_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION
-
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
-
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `itens_de_vendas`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `itens_de_vendas` (
   `idItens` INT NOT NULL AUTO_INCREMENT,
-  `subTotal` DECIMAL(10,2) NULL DEFAULT 0,
+  `subTotal` DECIMAL(10, 2) NULL DEFAULT 0,
   `quantidade` INT(11) NULL,
-  `preco` DECIMAL(10,2) NULL DEFAULT 0,
+  `preco` DECIMAL(10, 2) NULL DEFAULT 0,
   `vendas_id` INT NOT NULL,
   `produtos_id` INT(11) NOT NULL,
   PRIMARY KEY (`idItens`),
   INDEX `fk_itens_de_vendas_vendas1` (`vendas_id` ASC),
   INDEX `fk_itens_de_vendas_produtos1` (`produtos_id` ASC),
-  CONSTRAINT `fk_itens_de_vendas_vendas1`
-    FOREIGN KEY (`vendas_id`)
-    REFERENCES `vendas` (`idVendas`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_itens_de_vendas_produtos1`
-    FOREIGN KEY (`produtos_id`)
-    REFERENCES `produtos` (`idProdutos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  CONSTRAINT `fk_itens_de_vendas_vendas1` FOREIGN KEY (`vendas_id`) REFERENCES `vendas` (`idVendas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_itens_de_vendas_produtos1` FOREIGN KEY (`produtos_id`) REFERENCES `produtos` (`idProdutos`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `anexos`
 -- -----------------------------------------------------
@@ -457,15 +334,8 @@ CREATE TABLE IF NOT EXISTS `anexos` (
   `os_id` INT(11) NOT NULL,
   PRIMARY KEY (`idAnexos`),
   INDEX `fk_anexos_os1` (`os_id` ASC),
-  CONSTRAINT `fk_anexos_os1`
-    FOREIGN KEY (`os_id`)
-    REFERENCES `os` (`idOs`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_anexos_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `documentos`
 -- -----------------------------------------------------
@@ -480,11 +350,8 @@ CREATE TABLE IF NOT EXISTS `documentos` (
   `categoria` VARCHAR(80) NULL,
   `tipo` VARCHAR(15) NULL,
   `tamanho` VARCHAR(45) NULL,
-  PRIMARY KEY (`idDocumentos`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  PRIMARY KEY (`idDocumentos`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `marcas`
 -- -----------------------------------------------------
@@ -493,11 +360,8 @@ CREATE TABLE IF NOT EXISTS `marcas` (
   `marca` VARCHAR(100) NULL,
   `cadastro` DATE NULL,
   `situacao` TINYINT(1) NULL,
-  PRIMARY KEY (`idMarcas`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  PRIMARY KEY (`idMarcas`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `equipamentos`
 -- -----------------------------------------------------
@@ -517,20 +381,9 @@ CREATE TABLE IF NOT EXISTS `equipamentos` (
   PRIMARY KEY (`idEquipamentos`),
   INDEX `fk_equipanentos_marcas1_idx` (`marcas_id` ASC),
   INDEX `fk_equipanentos_clientes1_idx` (`clientes_id` ASC),
-  CONSTRAINT `fk_equipanentos_marcas1`
-    FOREIGN KEY (`marcas_id`)
-    REFERENCES `marcas` (`idMarcas`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_equipanentos_clientes1`
-    FOREIGN KEY (`clientes_id`)
-    REFERENCES `clientes` (`idClientes`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_equipanentos_marcas1` FOREIGN KEY (`marcas_id`) REFERENCES `marcas` (`idMarcas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_equipanentos_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `equipamentos_os`
 -- -----------------------------------------------------
@@ -544,20 +397,9 @@ CREATE TABLE IF NOT EXISTS `equipamentos_os` (
   PRIMARY KEY (`idEquipamentos_os`),
   INDEX `fk_equipamentos_os_equipanentos1_idx` (`equipamentos_id` ASC),
   INDEX `fk_equipamentos_os_os1_idx` (`os_id` ASC),
-  CONSTRAINT `fk_equipamentos_os_equipanentos1`
-    FOREIGN KEY (`equipamentos_id`)
-    REFERENCES `equipamentos` (`idEquipamentos`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_equipamentos_os_os1`
-    FOREIGN KEY (`os_id`)
-    REFERENCES `os` (`idOs`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-
+  CONSTRAINT `fk_equipamentos_os_equipanentos1` FOREIGN KEY (`equipamentos_id`) REFERENCES `equipamentos` (`idEquipamentos`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_equipamentos_os_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `logs`
 -- -----------------------------------------------------
@@ -568,31 +410,27 @@ CREATE TABLE IF NOT EXISTS `logs` (
   `data` DATE NULL,
   `hora` TIME NULL,
   `ip` VARCHAR(45) NULL,
-  PRIMARY KEY (`idLogs`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  PRIMARY KEY (`idLogs`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `emitente`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `emitente` (
-  `id` INT NOT NULL AUTO_INCREMENT ,
-  `nome` VARCHAR(255) NULL ,
-  `cnpj` VARCHAR(45) NULL ,
-  `ie` VARCHAR(50) NULL ,
-  `rua` VARCHAR(70) NULL ,
-  `numero` VARCHAR(15) NULL ,
-  `bairro` VARCHAR(45) NULL ,
-  `cidade` VARCHAR(45) NULL ,
-  `uf` VARCHAR(20) NULL ,
-  `telefone` VARCHAR(20) NULL ,
-  `email` VARCHAR(255) NULL ,
-  `url_logo` VARCHAR(225) NULL ,
-  `cep` VARCHAR(20) NULL ,
-  PRIMARY KEY (`id`) )
-ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+CREATE TABLE IF NOT EXISTS `emitente` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(255) NULL,
+  `cnpj` VARCHAR(45) NULL,
+  `ie` VARCHAR(50) NULL,
+  `rua` VARCHAR(70) NULL,
+  `numero` VARCHAR(15) NULL,
+  `bairro` VARCHAR(45) NULL,
+  `cidade` VARCHAR(45) NULL,
+  `uf` VARCHAR(20) NULL,
+  `telefone` VARCHAR(20) NULL,
+  `email` VARCHAR(255) NULL,
+  `url_logo` VARCHAR(225) NULL,
+  `cep` VARCHAR(20) NULL,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `email_queue`
 -- -----------------------------------------------------
@@ -602,97 +440,172 @@ CREATE TABLE IF NOT EXISTS `email_queue` (
   `cc` varchar(255) DEFAULT NULL,
   `bcc` varchar(255) DEFAULT NULL,
   `message` text NOT NULL,
-  `status` enum('pending','sending','sent','failed') DEFAULT NULL,
+  `status` enum('pending', 'sending', 'sent', 'failed') DEFAULT NULL,
   `date` datetime DEFAULT NULL,
   `headers` text,
   PRIMARY KEY (`id`)
-)ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `anotacaoes_os`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `anotacoes_os` (
-    `idAnotacoes` INT(11) NOT NULL AUTO_INCREMENT,
-    `anotacao` VARCHAR(255) NOT NULL ,
-    `data_hora` DATETIME NOT NULL ,
-    `os_id` INT(11) NOT NULL ,
-    PRIMARY KEY (`idAnotacoes`)
-) ENGINE = InnoDB
-DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
+  `idAnotacoes` INT(11) NOT NULL AUTO_INCREMENT,
+  `anotacao` VARCHAR(255) NOT NULL,
+  `data_hora` DATETIME NOT NULL,
+  `os_id` INT(11) NOT NULL,
+  PRIMARY KEY (`idAnotacoes`)
+) ENGINE = InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `configuracoes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `configuracoes` ( 
-  `idConfig` INT NOT NULL AUTO_INCREMENT , `config` VARCHAR(20) NOT NULL UNIQUE, `valor` TEXT NULL , PRIMARY KEY (`idConfig`)
-  ) ENGINE = InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
-
+CREATE TABLE IF NOT EXISTS `configuracoes` (
+  `idConfig` INT NOT NULL AUTO_INCREMENT,
+  `config` VARCHAR(20) NOT NULL UNIQUE,
+  `valor` TEXT NULL,
+  PRIMARY KEY (`idConfig`)
+) ENGINE = InnoDB CHARSET = utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `os` novos itens
 -- -----------------------------------------------------
-
 ALTER TABLE os
-ADD COLUMN marca_modelo VARCHAR(255),
-ADD COLUMN sn VARCHAR(255),
-ADD COLUMN pn VARCHAR(255),
-ADD COLUMN service_tag VARCHAR(255),
-ADD COLUMN vga VARCHAR(50),
-ADD COLUMN hdmi VARCHAR(50),
-ADD COLUMN tela VARCHAR(50),
-ADD COLUMN teclado VARCHAR(50),
-ADD COLUMN informacoes_complementares TEXT;  
-
+ADD COLUMN tipo_equipamento VARCHAR(50),
+  ADD COLUMN marca_modelo VARCHAR(255),
+  ADD COLUMN sn VARCHAR(255),
+  ADD COLUMN pn VARCHAR(255),
+  ADD COLUMN service_tag VARCHAR(255),
+  ADD COLUMN fonte_alimentacao VARCHAR(50),
+  ADD COLUMN bateria_pn VARCHAR(255),
+  ADD COLUMN bateria_sn VARCHAR(255),
+  ADD COLUMN vga VARCHAR(50),
+  ADD COLUMN hdmi VARCHAR(50),
+  ADD COLUMN usb VARCHAR(50),
+  ADD COLUMN displayport VARCHAR(50),
+  ADD COLUMN tela VARCHAR(50),
+  ADD COLUMN riscado VARCHAR(50),
+  ADD COLUMN teclado VARCHAR(50),
+  ADD COLUMN touchpad VARCHAR(50),
+  ADD COLUMN webcam VARCHAR(50),
+  ADD COLUMN microfone VARCHAR(50),
+  ADD COLUMN carcaca_ok VARCHAR(50),
+  ADD COLUMN tampa_ok VARCHAR(50),
+  ADD COLUMN gabinete VARCHAR(50),
+  ADD COLUMN dobradicas_ok VARCHAR(50),
+  ADD COLUMN acabamento VARCHAR(50),
+  ADD COLUMN riscado_manchado VARCHAR(50),
+  ADD COLUMN borrachas_apoio VARCHAR(50),
+  ADD COLUMN parafusos_carcaca VARCHAR(50),
+  ADD COLUMN informacoes_complementares TEXT;
+-- -----------------------------------------------------
+-- Table `os_fotos`
+-- -----------------------------------------------------
+CREATE TABLE os_fotos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  os_id INT NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  upload_date DATETIME NOT NULL,
+  FOREIGN KEY (os_id) REFERENCES os(idOs) ON DELETE CASCADE
+);
 -- -----------------------------------------------------
 -- Table `os_CheckList`
 -- -----------------------------------------------------
-
 CREATE TABLE os_checklist (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    os_id INT NOT NULL,
-    marca_modelo VARCHAR(255),
-    sn VARCHAR(255),
-    pn VARCHAR(255),
-    service_tag VARCHAR(255),
-    vga VARCHAR(50),
-    hdmi VARCHAR(50),
-    tela VARCHAR(50),
-    teclado VARCHAR(50),
-    informacoes_complementares TEXT,
-    FOREIGN KEY (os_id) REFERENCES os(idOs) ON DELETE CASCADE
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  os_id INT NOT NULL,
+  marca_modelo VARCHAR(255),
+  sn VARCHAR(255),
+  pn VARCHAR(255),
+  service_tag VARCHAR(255),
+  vga VARCHAR(50),
+  hdmi VARCHAR(50),
+  tela VARCHAR(50),
+  teclado VARCHAR(50),
+  informacoes_complementares TEXT,
+  FOREIGN KEY (os_id) REFERENCES os(idOs) ON DELETE CASCADE
 );
-
 -- -----------------------------------------------------
 -- Table `migrations`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `migrations` (
-  `version` BIGINT(20) NOT NULL
-);
-
-INSERT IGNORE INTO `configuracoes` (`idConfig`, `config`, `valor`) VALUES
-(2, 'app_name', 'Map-OS'),
-(3, 'app_theme', 'white'),
-(4, 'per_page', '10'),
-(5, 'os_notification', 'cliente'),
-(6, 'control_estoque', '1'),
-(7, 'notifica_whats', 'Prezado(a), {CLIENTE_NOME} a OS de nº {NUMERO_OS} teve o status alterado para: {STATUS_OS} segue a descrição {DESCRI_PRODUTOS} com valor total de {VALOR_OS}! Para mais informações entre em contato conosco. Atenciosamente, {EMITENTE} {TELEFONE_EMITENTE}.'),
-(8, 'control_baixa', '0'),
-(9, 'control_editos', '1'),
-(10, 'control_datatable', '1'),
-(11, 'pix_key', ''),
-(12, 'os_status_list', '[\"Aberto\",\"Faturado\",\"Negocia\\u00e7\\u00e3o\",\"Em Andamento\",\"Or\\u00e7amento\",\"Finalizado\",\"Cancelado\",\"Aguardando Pe\\u00e7as\",\"Aprovado\"]'),
-(13, 'control_edit_vendas', '1'),
-(14, 'email_automatico', '1'),
-(15, 'control_2vias', '0');
-
-INSERT IGNORE INTO `permissoes` (`idPermissao`, `nome`, `permissoes`, `situacao`, `data`) VALUES
-(1, 'Administrador', 'a:53:{s:8:"aCliente";s:1:"1";s:8:"eCliente";s:1:"1";s:8:"dCliente";s:1:"1";s:8:"vCliente";s:1:"1";s:8:"aProduto";s:1:"1";s:8:"eProduto";s:1:"1";s:8:"dProduto";s:1:"1";s:8:"vProduto";s:1:"1";s:8:"aServico";s:1:"1";s:8:"eServico";s:1:"1";s:8:"dServico";s:1:"1";s:8:"vServico";s:1:"1";s:3:"aOs";s:1:"1";s:3:"eOs";s:1:"1";s:3:"dOs";s:1:"1";s:3:"vOs";s:1:"1";s:6:"aVenda";s:1:"1";s:6:"eVenda";s:1:"1";s:6:"dVenda";s:1:"1";s:6:"vVenda";s:1:"1";s:9:"aGarantia";s:1:"1";s:9:"eGarantia";s:1:"1";s:9:"dGarantia";s:1:"1";s:9:"vGarantia";s:1:"1";s:8:"aArquivo";s:1:"1";s:8:"eArquivo";s:1:"1";s:8:"dArquivo";s:1:"1";s:8:"vArquivo";s:1:"1";s:10:"aPagamento";N;s:10:"ePagamento";N;s:10:"dPagamento";N;s:10:"vPagamento";N;s:11:"aLancamento";s:1:"1";s:11:"eLancamento";s:1:"1";s:11:"dLancamento";s:1:"1";s:11:"vLancamento";s:1:"1";s:8:"cUsuario";s:1:"1";s:9:"cEmitente";s:1:"1";s:10:"cPermissao";s:1:"1";s:7:"cBackup";s:1:"1";s:10:"cAuditoria";s:1:"1";s:6:"cEmail";s:1:"1";s:8:"cSistema";s:1:"1";s:8:"rCliente";s:1:"1";s:8:"rProduto";s:1:"1";s:8:"rServico";s:1:"1";s:3:"rOs";s:1:"1";s:6:"rVenda";s:1:"1";s:11:"rFinanceiro";s:1:"1";s:9:"aCobranca";s:1:"1";s:9:"eCobranca";s:1:"1";s:9:"dCobranca";s:1:"1";s:9:"vCobranca";s:1:"1";}', 1, 'admin_created_at');
-
-INSERT IGNORE INTO `usuarios` (`idUsuarios`, `nome`, `rg`, `cpf`, `cep`, `rua`, `numero`, `bairro`, `cidade`, `estado`, `email`, `senha`, `telefone`, `celular`, `situacao`, `dataCadastro`, `permissoes_id`,`dataExpiracao`) VALUES
-(1, 'admin_name', 'MG-25.502.560', '600.021.520-87', '70005-115', 'Rua Acima', '12', 'Alvorada', 'Teste', 'MG', 'admin_email', 'admin_password', '000000-0000', '', 1, 'admin_created_at', 1, '3000-01-01');
-
-INSERT IGNORE INTO `migrations`(`version`) VALUES ('20210125173741');
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+CREATE TABLE IF NOT EXISTS `migrations` (`version` BIGINT(20) NOT NULL);
+INSERT IGNORE INTO `configuracoes` (`idConfig`, `config`, `valor`)
+VALUES (2, 'app_name', 'Map-OS'),
+  (3, 'app_theme', 'white'),
+  (4, 'per_page', '10'),
+  (5, 'os_notification', 'cliente'),
+  (6, 'control_estoque', '1'),
+  (
+    7,
+    'notifica_whats',
+    'Prezado(a), {CLIENTE_NOME} a OS de nº {NUMERO_OS} teve o status alterado para: {STATUS_OS} segue a descrição {DESCRI_PRODUTOS} com valor total de {VALOR_OS}! Para mais informações entre em contato conosco. Atenciosamente, {EMITENTE} {TELEFONE_EMITENTE}.'
+  ),
+  (8, 'control_baixa', '0'),
+  (9, 'control_editos', '1'),
+  (10, 'control_datatable', '1'),
+  (11, 'pix_key', ''),
+  (
+    12,
+    'os_status_list',
+    '[\"Aberto\",\"Faturado\",\"Negocia\\u00e7\\u00e3o\",\"Em Andamento\",\"Or\\u00e7amento\",\"Finalizado\",\"Cancelado\",\"Aguardando Pe\\u00e7as\",\"Aprovado\"]'
+  ),
+  (13, 'control_edit_vendas', '1'),
+  (14, 'email_automatico', '1'),
+  (15, 'control_2vias', '0');
+INSERT IGNORE INTO `permissoes` (
+    `idPermissao`,
+    `nome`,
+    `permissoes`,
+    `situacao`,
+    `data`
+  )
+VALUES (
+    1,
+    'Administrador',
+    'a:53:{s:8:"aCliente";s:1:"1";s:8:"eCliente";s:1:"1";s:8:"dCliente";s:1:"1";s:8:"vCliente";s:1:"1";s:8:"aProduto";s:1:"1";s:8:"eProduto";s:1:"1";s:8:"dProduto";s:1:"1";s:8:"vProduto";s:1:"1";s:8:"aServico";s:1:"1";s:8:"eServico";s:1:"1";s:8:"dServico";s:1:"1";s:8:"vServico";s:1:"1";s:3:"aOs";s:1:"1";s:3:"eOs";s:1:"1";s:3:"dOs";s:1:"1";s:3:"vOs";s:1:"1";s:6:"aVenda";s:1:"1";s:6:"eVenda";s:1:"1";s:6:"dVenda";s:1:"1";s:6:"vVenda";s:1:"1";s:9:"aGarantia";s:1:"1";s:9:"eGarantia";s:1:"1";s:9:"dGarantia";s:1:"1";s:9:"vGarantia";s:1:"1";s:8:"aArquivo";s:1:"1";s:8:"eArquivo";s:1:"1";s:8:"dArquivo";s:1:"1";s:8:"vArquivo";s:1:"1";s:10:"aPagamento";N;s:10:"ePagamento";N;s:10:"dPagamento";N;s:10:"vPagamento";N;s:11:"aLancamento";s:1:"1";s:11:"eLancamento";s:1:"1";s:11:"dLancamento";s:1:"1";s:11:"vLancamento";s:1:"1";s:8:"cUsuario";s:1:"1";s:9:"cEmitente";s:1:"1";s:10:"cPermissao";s:1:"1";s:7:"cBackup";s:1:"1";s:10:"cAuditoria";s:1:"1";s:6:"cEmail";s:1:"1";s:8:"cSistema";s:1:"1";s:8:"rCliente";s:1:"1";s:8:"rProduto";s:1:"1";s:8:"rServico";s:1:"1";s:3:"rOs";s:1:"1";s:6:"rVenda";s:1:"1";s:11:"rFinanceiro";s:1:"1";s:9:"aCobranca";s:1:"1";s:9:"eCobranca";s:1:"1";s:9:"dCobranca";s:1:"1";s:9:"vCobranca";s:1:"1";}',
+    1,
+    'admin_created_at'
+  );
+INSERT IGNORE INTO `usuarios` (
+    `idUsuarios`,
+    `nome`,
+    `rg`,
+    `cpf`,
+    `cep`,
+    `rua`,
+    `numero`,
+    `bairro`,
+    `cidade`,
+    `estado`,
+    `email`,
+    `senha`,
+    `telefone`,
+    `celular`,
+    `situacao`,
+    `dataCadastro`,
+    `permissoes_id`,
+    `dataExpiracao`
+  )
+VALUES (
+    1,
+    'admin_name',
+    'MG-25.502.560',
+    '600.021.520-87',
+    '70005-115',
+    'Rua Acima',
+    '12',
+    'Alvorada',
+    'Teste',
+    'MG',
+    'admin_email',
+    'admin_password',
+    '000000-0000',
+    '',
+    1,
+    'admin_created_at',
+    1,
+    '3000-01-01'
+  );
+INSERT IGNORE INTO `migrations`(`version`)
+VALUES ('20210125173741');
+SET SQL_MODE = @OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS = @OLD_UNIQUE_CHECKS;
