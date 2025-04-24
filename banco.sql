@@ -629,6 +629,40 @@ CREATE TABLE IF NOT EXISTS `configuracoes` (
   ) ENGINE = InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- -----------------------------------------------------
+-- Table `os` novos itens
+-- -----------------------------------------------------
+
+ALTER TABLE os
+ADD COLUMN marca_modelo VARCHAR(255),
+ADD COLUMN sn VARCHAR(255),
+ADD COLUMN pn VARCHAR(255),
+ADD COLUMN service_tag VARCHAR(255),
+ADD COLUMN vga VARCHAR(50),
+ADD COLUMN hdmi VARCHAR(50),
+ADD COLUMN tela VARCHAR(50),
+ADD COLUMN teclado VARCHAR(50),
+ADD COLUMN informacoes_complementares TEXT;  
+
+-- -----------------------------------------------------
+-- Table `os_CheckList`
+-- -----------------------------------------------------
+
+CREATE TABLE os_checklist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    os_id INT NOT NULL,
+    marca_modelo VARCHAR(255),
+    sn VARCHAR(255),
+    pn VARCHAR(255),
+    service_tag VARCHAR(255),
+    vga VARCHAR(50),
+    hdmi VARCHAR(50),
+    tela VARCHAR(50),
+    teclado VARCHAR(50),
+    informacoes_complementares TEXT,
+    FOREIGN KEY (os_id) REFERENCES os(idOs) ON DELETE CASCADE
+);
+
+-- -----------------------------------------------------
 -- Table `migrations`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `migrations` (
