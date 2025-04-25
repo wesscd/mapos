@@ -78,7 +78,12 @@ class Os extends MY_Controller
 
     public function adicionar()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'aOs')) {
+        // Logs de configuração do PHP
+        log_message('debug', 'Configurações PHP - upload_max_filesize: ' . ini_get('upload_max_filesize'));
+        log_message('debug', 'Configurações PHP - post_max_size: ' . ini_get('post_max_size'));
+        log_message('debug', 'Configurações PHP - max_execution_time: ' . ini_get('max_execution_time'));
+
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aOs')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar O.S.');
             redirect(base_url());
         }
@@ -86,8 +91,35 @@ class Os extends MY_Controller
         $this->load->library('form_validation');
         $this->data['custom_error'] = '';
 
+        $this->form_validation->set_rules('clientes_id', 'Cliente', 'required');
+        $this->form_validation->set_rules('usuarios_id', 'Técnico/Responsável', 'required');
+        $this->form_validation->set_rules('dataInicial', 'Data Inicial', 'required');
+        $this->form_validation->set_rules('dataFinal', 'Data Final', 'required');
+        $this->form_validation->set_rules('status', 'Status', 'required');
+        $this->form_validation->set_rules('tipo_equipamento', 'Tipo de Equipamento', 'required');
+        $this->form_validation->set_rules('marca_modelo', 'Marca/Modelo', 'required');
+        $this->form_validation->set_rules('sn', 'S/N', 'required');
+
+        // Debug: Log dos dados recebidos
+        log_message('debug', 'Dados recebidos no POST: ' . print_r($this->input->post(), true));
+        log_message('debug', 'Arquivos recebidos: ' . print_r($_FILES, true));
+        log_message('debug', 'Valor de id_admin na sessão: ' . $this->session->userdata('id_admin'));
+
+        // Verificar erros de upload no PHP
+        if (isset($_FILES['fotos_inconsistencias']) && !empty($_FILES['fotos_inconsistencias']['name'][0])) {
+            foreach ($_FILES['fotos_inconsistencias']['error'] as $index => $error) {
+                if ($error !== UPLOAD_ERR_OK) {
+                    log_message('error', 'Erro de upload detectado no PHP para o arquivo ' . ($index + 1) . ': ' . $error);
+                    $this->data['custom_error'] = '<div class="alert alert-danger">Erro de upload detectado no PHP: Código ' . $error . '</div>';
+                    $this->data['view'] = 'os/adicionarOs';
+                    return $this->layout();
+                }
+            }
+        }
+
         if ($this->form_validation->run('os') == false) {
-            $this->data['custom_error'] = (validation_errors() ? true : false);
+            $this->data['custom_error'] = (validation_errors() ? '<div class="alert alert-danger">' . validation_errors() . '</div>' : '<div class="alert alert-danger">Dados incompletos, verifique os campos obrigatórios.</div>');
+            log_message('debug', 'Erros de validação: ' . validation_errors());
         } else {
             $dataInicial = $this->input->post('dataInicial');
             $dataFinal = $this->input->post('dataFinal');
@@ -110,22 +142,55 @@ class Os extends MY_Controller
             } catch (Exception $e) {
                 $dataInicial = date('Y/m/d');
                 $dataFinal = date('Y/m/d');
+                log_message('error', 'Erro ao processar datas: ' . $e->getMessage());
+                $this->data['custom_error'] = '<div class="alert alert-danger">Erro ao processar as datas: ' . $e->getMessage() . '</div>';
+                $this->data['view'] = 'os/adicionarOs';
+                return $this->layout();
             }
 
             $data = [
                 'dataInicial' => $dataInicial,
-                'clientes_id' => $this->input->post('clientes_id'), //set_value('idCliente'),
-                'usuarios_id' => $this->input->post('usuarios_id'), //set_value('idUsuario'),
+                'clientes_id' => $this->input->post('clientes_id'),
+                'usuarios_id' => $this->input->post('usuarios_id'),
                 'dataFinal' => $dataFinal,
                 'garantia' => set_value('garantia'),
                 'garantias_id' => $termoGarantiaId,
                 'descricaoProduto' => $this->input->post('descricaoProduto'),
                 'defeito' => $this->input->post('defeito'),
-                'status' => set_value('status'),
+                'status' => $this->input->post('status') ?: 'Aberto',
                 'observacoes' => $this->input->post('observacoes'),
                 'laudoTecnico' => $this->input->post('laudoTecnico'),
                 'faturado' => 0,
+                'tipo_equipamento' => $this->input->post('tipo_equipamento'),
+                'marca_modelo' => $this->input->post('marca_modelo'),
+                'sn' => $this->input->post('sn'),
+                'pn' => $this->input->post('pn'),
+                'service_tag' => $this->input->post('service_tag'),
+                'fonte_alimentacao' => $this->input->post('fonte_alimentacao'),
+                'bateria_pn' => $this->input->post('bateria_pn'),
+                'bateria_sn' => $this->input->post('bateria_sn'),
+                'vga' => $this->input->post('vga'),
+                'hdmi' => $this->input->post('hdmi'),
+                'usb' => $this->input->post('usb'),
+                'displayport' => $this->input->post('displayport'),
+                'tela' => $this->input->post('tela'),
+                'riscado' => $this->input->post('riscado'),
+                'teclado' => $this->input->post('teclado'),
+                'touchpad' => $this->input->post('touchpad'),
+                'webcam' => $this->input->post('webcam'),
+                'microfone' => $this->input->post('microfone'),
+                'carcaca_ok' => $this->input->post('carcaca_ok'),
+                'tampa_ok' => $this->input->post('tampa_ok'),
+                'gabinete' => $this->input->post('gabinete'),
+                'dobradicas_ok' => $this->input->post('dobradicas_ok'),
+                'acabamento' => $this->input->post('acabamento'),
+                'riscado_manchado' => $this->input->post('riscado_manchado'),
+                'borrachas_apoio' => $this->input->post('borrachas_apoio'),
+                'parafusos_carcaca' => $this->input->post('parafusos_carcaca'),
+                'informacoes_complementares' => $this->input->post('informacoes_complementares'),
             ];
+
+            log_message('debug', 'Dados a serem inseridos no banco: ' . print_r($data, true));
 
             if (is_numeric($id = $this->os_model->add('os', $data, true))) {
                 $this->load->model('mapos_model');
@@ -134,10 +199,104 @@ class Os extends MY_Controller
                 $idOs = $id;
                 $os = $this->os_model->getById($idOs);
                 $emitente = $this->mapos_model->getEmitente();
-
                 $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
-                // Verificar configuração de notificação
+                // Lida com o upload das fotos usando a lógica do teste_upload.php teste com sucesso
+                if (!empty($_FILES['fotos_inconsistencias']['name'][0])) {
+                    log_message('debug', 'Iniciando upload de fotos...');
+
+                    // Usar uma pasta única, como no teste_upload.php
+                    $upload_path = FCPATH . 'uploads/teste/';
+                    if (!is_dir($upload_path)) {
+                        if (mkdir($upload_path, 0777, TRUE)) {
+                            log_message('debug', 'Pasta criada: ' . $upload_path);
+                        } else {
+                            log_message('error', 'Falha ao criar a pasta: ' . $upload_path);
+                            $this->data['custom_error'] = '<div class="alert alert-danger">Erro ao criar a pasta para upload das fotos.</div>';
+                            $this->data['view'] = 'os/adicionarOs';
+                            return $this->layout();
+                        }
+                    }
+
+                    if (!is_writable($upload_path)) {
+                        log_message('error', 'Pasta não tem permissão de escrita: ' . $upload_path);
+                        $this->data['custom_error'] = '<div class="alert alert-danger">A pasta de upload não tem permissões de escrita.</div>';
+                        $this->data['view'] = 'os/adicionarOs';
+                        return $this->layout();
+                    }
+
+                    $files = $_FILES['fotos_inconsistencias'];
+                    $file_count = count($files['name']);
+                    log_message('debug', 'Quantidade de arquivos para upload: ' . $file_count);
+
+                    for ($i = 0; $i < $file_count; $i++) {
+                        if (!empty($files['name'][$i])) {
+                            $file_name = $files['name'][$i];
+                            $file_tmp = $files['tmp_name'][$i];
+                            $file_error = $files['error'][$i];
+                            $file_size = $files['size'][$i];
+                            $file_type = $files['type'][$i];
+
+                            log_message('debug', "Arquivo $i: Nome=$file_name, Tipo=$file_type, Tamanho=$file_size, Erro=$file_error");
+
+                            // Validar o arquivo
+                            $allowed_types = ['image/jpeg', 'image/png'];
+                            $max_size = 5 * 1024 * 1024; // 5MB
+                            if (!in_array($file_type, $allowed_types)) {
+                                log_message('error', "Tipo de arquivo inválido: $file_name ($file_type)");
+                                $this->data['custom_error'] = '<div class="alert alert-danger">Apenas JPG e PNG são permitidos: ' . $file_name . '</div>';
+                                $this->data['view'] = 'os/adicionarOs';
+                                return $this->layout();
+                            }
+                            if ($file_size > $max_size) {
+                                log_message('error', "Arquivo excede o tamanho máximo: $file_name ($file_size bytes)");
+                                $this->data['custom_error'] = '<div class="alert alert-danger">O arquivo ' . $file_name . ' excede o tamanho máximo de 5MB.</div>';
+                                $this->data['view'] = 'os/adicionarOs';
+                                return $this->layout();
+                            }
+                            if ($file_error !== UPLOAD_ERR_OK) {
+                                log_message('error', "Erro no upload do arquivo $file_name: Código de erro $file_error");
+                                $this->data['custom_error'] = '<div class="alert alert-danger">Erro no upload do arquivo ' . $file_name . ': Código ' . $file_error . '</div>';
+                                $this->data['view'] = 'os/adicionarOs';
+                                return $this->layout();
+                            }
+
+                            // Gerar nome único para o arquivo
+                            $new_file_name = uniqid() . '_' . $file_name;
+                            $destination = $upload_path . $new_file_name;
+
+                            // Mover o arquivo
+                            if (move_uploaded_file($file_tmp, $destination)) {
+                                log_message('debug', "Arquivo $file_name salvo com sucesso em $destination");
+
+                                // Salvar no banco de dados (tabela os_fotos)
+                                $foto_data = [
+                                    'os_id' => $idOs,
+                                    'file_path' => $destination,
+                                    'file_name' => $new_file_name,
+                                    'upload_date' => date('Y-m-d H:i:s')
+                                ];
+
+                                if ($this->db->insert('os_fotos', $foto_data)) {
+                                    log_message('debug', "Arquivo $file_name registrado no banco de dados.");
+                                } else {
+                                    log_message('error', 'Erro ao salvar no banco: ' . $this->db->error()['message']);
+                                    $this->data['custom_error'] = '<div class="alert alert-danger">Erro ao salvar o arquivo no banco de dados.</div>';
+                                    $this->data['view'] = 'os/adicionarOs';
+                                    return $this->layout();
+                                }
+                            } else {
+                                log_message('error', "Erro ao mover o arquivo $file_name para $destination");
+                                $this->data['custom_error'] = '<div class="alert alert-danger">Erro ao mover o arquivo ' . $file_name . '</div>';
+                                $this->data['view'] = 'os/adicionarOs';
+                                return $this->layout();
+                            }
+                        }
+                    }
+                } else {
+                    log_message('debug', 'Nenhum arquivo para upload.');
+                }
+
                 if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
                     $remetentes = [];
                     switch ($this->data['configuration']['os_notification']) {
@@ -166,12 +325,12 @@ class Os extends MY_Controller
                 log_info('Adicionou uma OS. ID: ' . $id);
                 redirect(site_url('os/editar/') . $id);
             } else {
-                $this->data['custom_error'] = '<div class="alert">Ocorreu um erro.</div>';
+                $this->data['custom_error'] = '<div class="alert alert-danger">Ocorreu um erro ao adicionar a OS.</div>';
+                log_message('debug', 'Erro ao adicionar OS no banco de dados.');
             }
         }
 
         $this->data['view'] = 'os/adicionarOs';
-
         return $this->layout();
     }
 
@@ -217,17 +376,46 @@ class Os extends MY_Controller
 
             $data = [
                 'dataInicial' => $dataInicial,
+                'clientes_id' => $this->input->post('clientes_id'),
+                'usuarios_id' => $this->input->post('usuarios_id'),
                 'dataFinal' => $dataFinal,
-                'garantia' => $this->input->post('garantia'),
+                'garantia' => set_value('garantia'),
                 'garantias_id' => $termoGarantiaId,
                 'descricaoProduto' => $this->input->post('descricaoProduto'),
                 'defeito' => $this->input->post('defeito'),
-                'status' => $this->input->post('status'),
+                'status' => $this->input->post('status') ?: 'Aberto',
                 'observacoes' => $this->input->post('observacoes'),
                 'laudoTecnico' => $this->input->post('laudoTecnico'),
-                'usuarios_id' => $this->input->post('usuarios_id'),
-                'clientes_id' => $this->input->post('clientes_id'),
+                'faturado' => 0,
+                'tipo_equipamento' => $this->input->post('tipo_equipamento'),
+                'marca_modelo' => $this->input->post('marca_modelo'),
+                'sn' => $this->input->post('sn'),
+                'pn' => $this->input->post('pn'),
+                'service_tag' => $this->input->post('service_tag'),
+                'fonte_alimentacao' => $this->input->post('fonte_alimentacao'),
+                'bateria_pn' => $this->input->post('bateria_pn'),
+                'bateria_sn' => $this->input->post('bateria_sn'),
+                'vga' => $this->input->post('vga'),
+                'hdmi' => $this->input->post('hdmi'),
+                'usb' => $this->input->post('usb'),
+                'displayport' => $this->input->post('displayport'),
+                'tela' => $this->input->post('tela'),
+                'riscado' => $this->input->post('riscado'),
+                'teclado' => $this->input->post('teclado'),
+                'touchpad' => $this->input->post('touchpad'),
+                'webcam' => $this->input->post('webcam'),
+                'microfone' => $this->input->post('microfone'),
+                'carcaca_ok' => $this->input->post('carcaca_ok'),
+                'tampa_ok' => $this->input->post('tampa_ok'),
+                'gabinete' => $this->input->post('gabinete'),
+                'dobradicas_ok' => $this->input->post('dobradicas_ok'),
+                'acabamento' => $this->input->post('acabamento'),
+                'riscado_manchado' => $this->input->post('riscado_manchado'),
+                'borrachas_apoio' => $this->input->post('borrachas_apoio'),
+                'parafusos_carcaca' => $this->input->post('parafusos_carcaca'),
+                'informacoes_complementares' => $this->input->post('informacoes_complementares'),
             ];
+
             $os = $this->os_model->getById($this->input->post('idOs'));
 
             //Verifica para poder fazer a devolução do produto para o estoque caso OS seja cancelada.
@@ -246,7 +434,7 @@ class Os extends MY_Controller
 
                 $idOs = $this->input->post('idOs');
 
-                $os = $this->os_model->getById($idOs);
+                $os = $this->osmodified_model->getById($idOs);
                 $emitente = $this->mapos_model->getEmitente();
                 $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
