@@ -14,6 +14,7 @@
 </head>
 <body>
     <div class="main-page">
+        <!-- Via Cliente -->
         <div class="sub-page">
             <header>
                 <?php if ($emitente == null) : ?>
@@ -96,6 +97,75 @@
                     </div>
                 </div>
 
+                <div class="subtitle">DADOS DE COLETA DO EQUIPAMENTO</div>
+                <div class="dados">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <?php if ($result->tipo_equipamento) : ?>
+                                <tr>
+                                    <td><b>Tipo de Equipamento:</b> <?= $result->tipo_equipamento ?></td>
+                                    <td><b>Marca/Modelo:</b> <?= $result->marca_modelo ?></td>
+                                    <td><b>S/N:</b> <?= $result->sn ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->pn || $result->service_tag) : ?>
+                                <tr>
+                                    <td><b>P/N:</b> <?= $result->pn ?: '-' ?></td>
+                                    <td><b>Service Tag:</b> <?= $result->service_tag ?: '-' ?></td>
+                                    <td></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->fonte_alimentacao || $result->bateria_pn || $result->bateria_sn) : ?>
+                                <tr>
+                                    <td><b>Fonte de Alimentação:</b> <?= $result->fonte_alimentacao ?: '-' ?></td>
+                                    <td><b>Bateria P/N:</b> <?= $result->bateria_pn ?: '-' ?></td>
+                                    <td><b>Bateria S/N:</b> <?= $result->bateria_sn ?: '-' ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->vga || $result->hdmi || $result->usb || $result->displayport) : ?>
+                                <tr>
+                                    <td><b>VGA:</b> <?= $result->vga ?: '-' ?></td>
+                                    <td><b>HDMI:</b> <?= $result->hdmi ?: '-' ?></td>
+                                    <td><b>USB:</b> <?= $result->usb ?: '-' ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->tela || $result->riscado) : ?>
+                                <tr>
+                                    <td><b>Tela:</b> <?= $result->tela ?: '-' ?></td>
+                                    <td><b>Riscado:</b> <?= $result->riscado ?: '-' ?></td>
+                                    <td></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->teclado || $result->touchpad || $result->webcam || $result->microfone) : ?>
+                                <tr>
+                                    <td><b>Teclado:</b> <?= $result->teclado ?: '-' ?></td>
+                                    <td><b>Touchpad:</b> <?= $result->touchpad ?: '-' ?></td>
+                                    <td><b>Webcam:</b> <?= $result->webcam ?: '-' ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->carcaca_ok || $result->tampa_ok || $result->gabinete || $result->dobradicas_ok) : ?>
+                                <tr>
+                                    <td><b>Carcaça OK:</b> <?= $result->carcaca_ok ?: '-' ?></td>
+                                    <td><b>Tampa OK:</b> <?= $result->tampa_ok ?: '-' ?></td>
+                                    <td><b>Gabinete:</b> <?= $result->gabinete ?: '-' ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->acabamento || $result->riscado_manchado || $result->borrachas_apoio || $result->parafusos_carcaca) : ?>
+                                <tr>
+                                    <td><b>Acabamento:</b> <?= $result->acabamento ?: '-' ?></td>
+                                    <td><b>Riscado/Manchado:</b> <?= $result->riscado_manchado ?: '-' ?></td>
+                                    <td><b>Borrachas de Apoio:</b> <?= $result->borrachas_apoio ?: '-' ?></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php if ($result->informacoes_complementares) : ?>
+                                <tr>
+                                    <td colspan="3"><b>Informações Complementares:</b> <?= htmlspecialchars_decode($result->informacoes_complementares) ?></td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
                 <?php if ($result->descricaoProduto) : ?>
                     <div class="subtitle">DESCRIÇÃO</div>
                     <div class="dados">
@@ -124,11 +194,11 @@
                 <?php endif; ?>
 
                 <?php if ($result->laudoTecnico) : ?>
-					<div class="subtitle">PARECER TÉCNICO</div>
+                    <div class="subtitle">PARECER TÉCNICO</div>
                     <div class="dados">
                         <div style="text-align: justify;">
-    						<?= htmlspecialchars_decode($result->laudoTecnico) ?>
-						</div>
+                            <?= htmlspecialchars_decode($result->laudoTecnico) ?>
+                        </div>
                     </div>
                 <?php endif; ?>
 
@@ -265,6 +335,7 @@
             </footer>
         </div>
 
+        <!-- Via Empresa -->
         <?php if ($configuration['control_2vias']) : ?>
             <div class="sub-page novaPagina">
                 <header>
@@ -295,7 +366,6 @@
                 </header>
                 <section>
                     <div class="title">
-                        <!-- VIA EMPRESA  -->
                         <?php $totalServico = 0; $totalProdutos = 0; ?>
                         <?php if ($configuration['control_2vias']) : ?><span class="via">Via Empresa</span><?php endif; ?>
                         ORDEM DE SERVIÇO #<?= str_pad($result->idOs, 4, 0, STR_PAD_LEFT) ?>
@@ -348,6 +418,75 @@
                             <span><?= $result->complemento.' - '.$result->cidade.' - '.$result->estado ?></span><br />
                             <span>CEP: <?= $result->cep ?></span><br />
                         </div>
+                    </div>
+
+                    <div class="subtitle">DADOS DE COLETA DO EQUIPAMENTO</div>
+                    <div class="dados">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <?php if ($result->tipo_equipamento) : ?>
+                                    <tr>
+                                        <td><b>Tipo de Equipamento:</b> <?= $result->tipo_equipamento ?></td>
+                                        <td><b>Marca/Modelo:</b> <?= $result->marca_modelo ?></td>
+                                        <td><b>S/N:</b> <?= $result->sn ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->pn || $result->service_tag) : ?>
+                                    <tr>
+                                        <td><b>P/N:</b> <?= $result->pn ?: '-' ?></td>
+                                        <td><b>Service Tag:</b> <?= $result->service_tag ?: '-' ?></td>
+                                        <td></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->fonte_alimentacao || $result->bateria_pn || $result->bateria_sn) : ?>
+                                    <tr>
+                                        <td><b>Fonte de Alimentação:</b> <?= $result->fonte_alimentacao ?: '-' ?></td>
+                                        <td><b>Bateria P/N:</b> <?= $result->bateria_pn ?: '-' ?></td>
+                                        <td><b>Bateria S/N:</b> <?= $result->bateria_sn ?: '-' ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->vga || $result->hdmi || $result->usb || $result->displayport) : ?>
+                                    <tr>
+                                        <td><b>VGA:</b> <?= $result->vga ?: '-' ?></td>
+                                        <td><b>HDMI:</b> <?= $result->hdmi ?: '-' ?></td>
+                                        <td><b>USB:</b> <?= $result->usb ?: '-' ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->tela || $result->riscado) : ?>
+                                    <tr>
+                                        <td><b>Tela:</b> <?= $result->tela ?: '-' ?></td>
+                                        <td><b>Riscado:</b> <?= $result->riscado ?: '-' ?></td>
+                                        <td></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->teclado || $result->touchpad || $result->webcam || $result->microfone) : ?>
+                                    <tr>
+                                        <td><b>Teclado:</b> <?= $result->teclado ?: '-' ?></td>
+                                        <td><b>Touchpad:</b> <?= $result->touchpad ?: '-' ?></td>
+                                        <td><b>Webcam:</b> <?= $result->webcam ?: '-' ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->carcaca_ok || $result->tampa_ok || $result->gabinete || $result->dobradicas_ok) : ?>
+                                    <tr>
+                                        <td><b>Carcaça OK:</b> <?= $result->carcaca_ok ?: '-' ?></td>
+                                        <td><b>Tampa OK:</b> <?= $result->tampa_ok ?: '-' ?></td>
+                                        <td><b>Gabinete:</b> <?= $result->gabinete ?: '-' ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->acabamento || $result->riscado_manchado || $result->borrachas_apoio || $result->parafusos_carcaca) : ?>
+                                    <tr>
+                                        <td><b>Acabamento:</b> <?= $result->acabamento ?: '-' ?></td>
+                                        <td><b>Riscado/Manchado:</b> <?= $result->riscado_manchado ?: '-' ?></td>
+                                        <td><b>Borrachas de Apoio:</b> <?= $result->borrachas_apoio ?: '-' ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                                <?php if ($result->informacoes_complementares) : ?>
+                                    <tr>
+                                        <td colspan="3"><b>Informações Complementares:</b> <?= htmlspecialchars_decode($result->informacoes_complementares) ?></td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
 
                     <?php if ($result->descricaoProduto) : ?>
@@ -520,6 +659,7 @@
             </div>
         <?php endif; ?>
 
+        <!-- Seção de Anexos -->
         <?php if ($anexos && $imprimirAnexo) : ?>
             <div class="sub-page" id="anexos">
                 <header style="border: 1px solid #cdcdcd">
@@ -553,24 +693,69 @@
                         ORDEM DE SERVIÇO #<?= str_pad($result->idOs, 4, 0, STR_PAD_LEFT) ?>
                         <span class="emissao">Emissão: <?= date('d/m/Y') ?></span>
                     </div>
-                    <div class="subtitle">ANEXO(S)</div>
+                    <div class="subtitle">ANEXOS</div>
                     <div class="dados">
                         <div style="width: 100%; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">
                             <?php
-                                $contaAnexos = 0;
                                 foreach ($anexos as $a) :
                                     if ($a->thumb) :
-                                        $thumb = $a->url.'/thumbs/'.$a->thumb;
-                                        $link  = $a->url.'/'.$a->anexo;
+                                        $thumb = $a->url . '/thumbs/' . $a->thumb;
+                                        $link = $a->url . '/' . $a->anexo;
                             ?>
-                                        <img src="<?= $link ?>" alt="">
+                                        <img src="<?= $link ?>" alt="" style="max-width: 200px; margin: 10px;">
                             <?php
                                     endif;
                                 endforeach;
                             ?>
                         </div>
                     </div>
+                </section>
+            </div>
+        <?php endif; ?>
+
+        <!-- Nova Página: Fotos de Inconsistências -->
+        <?php if ($fotos_inconsistencias && $imprimirAnexo) : ?>
+            <div class="sub-page" id="fotos-inconsistencias">
+                <header style="border: 1px solid #cdcdcd">
+                    <?php if ($emitente == null) : ?>
+                        <div class="alert alert-danger" role="alert">
+                            Você precisa configurar os dados do emitente. >>> <a href="<?= base_url() ?>index.php/mapos/emitente">Configurar</a>
+                        </div>
+                    <?php else : ?>
+                        <div id="imgLogo" class="align-middle">
+                            <img src="<?= $emitente->url_logo ?>" class="img-fluid" style="width:140px;">
+                        </div>
+                        <div style="padding-left: 10px; padding-right: 10px; margin-top: 3px;">
+                            <span style="font-size: 16px;"><b><?= $emitente->nome ?></b></span></br>
+                            <?php if ($emitente->cnpj != "00.000.000/0000-00") : ?>
+                                <span class="align-middle">CNPJ: <?= $emitente->cnpj ?></span></br>
+                            <?php endif; ?>
+                            <span class="align-middle">
+                                <?= $emitente->rua.', '.$emitente->numero.', '.$emitente->bairro ?><br>
+                                <?= $emitente->cidade.' - '.$emitente->uf.' - '.$emitente->cep ?>
+                            </span>
+                        </div>
+                        <div style="text-align: right; max-width: 230px; margin-top: 10px;">
+                            <span style="font-weight: bold;">Tel: <?= $emitente->telefone ?></span></br>
+                            <span style="font-weight: bold;"><?= $emitente->email ?></span></br>
+                            <span style="word-break: break-word;">Responsável: <b><?= $result->nome ?></b></span>
+                        </div>
+                    <?php endif; ?>
+                </header>
                 <section>
+                    <div class="title">
+                        ORDEM DE SERVIÇO #<?= str_pad($result->idOs, 4, 0, STR_PAD_LEFT) ?>
+                        <span class="emissao">Emissão: <?= date('d/m/Y') ?></span>
+                    </div>
+                    <div class="subtitle">FOTOS DE INCONSISTÊNCIAS</div>
+                    <div class="dados">
+                        <div style="width: 100%; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">
+                            <?php foreach ($fotos_inconsistencias as $foto) : ?>
+                                <img src="<?= base_url() . 'Uploads/inconsistencias/' . $foto->file_path ?>" alt="<?= $foto->file_name ?>" style="max-width: 200px; margin: 10px;">
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
             </div>
         <?php endif; ?>
     </div>

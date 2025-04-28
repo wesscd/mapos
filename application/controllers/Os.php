@@ -688,6 +688,13 @@ public function visualizar()
         
         $this->data['imprimirAnexo'] = isset($_ENV['IMPRIMIR_ANEXOS']) ? (filter_var($_ENV['IMPRIMIR_ANEXOS'] ?? false, FILTER_VALIDATE_BOOLEAN)) : false;
 
+        // Adicionar fotos de inconsistências
+        $this->data['fotos_inconsistencias'] = $this->os_model->getFotosInconsistencias($this->uri->segment(3)) ?: [];
+
+        // Adicionar logs para depuração
+        log_message('debug', 'ImprimirAnexo: ' . ($this->data['imprimirAnexo'] ? 'true' : 'false'));
+        log_message('debug', 'Fotos Inconsistências: ' . print_r($this->data['fotos_inconsistencias'], true));
+
         $this->load->view('os/imprimirOs', $this->data);
     }
 
