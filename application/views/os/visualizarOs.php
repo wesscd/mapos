@@ -67,7 +67,7 @@
                                 <h3><i class='bx bx-file'></i> Ordem de Serviço #<?php echo sprintf('%04d', $result->idOs) ?></h3>
                             </tbody>
                         </table>
-                        <table class="table table-condensend">
+                        <table class="table table-condensed">
                             <tbody>
                                 <tr>
                                     <td style="width: 60%; padding-left: 0">
@@ -121,7 +121,6 @@
                                 </tr>
                             </tbody>
                         </table>
-
                     </div>
 
                     <div style="margin-top: 0; padding-top: 0">
@@ -133,23 +132,19 @@
                                             <b>STATUS OS: </b><br>
                                             <?php echo $result->status ?>
                                         </td>
-
                                         <td>
                                             <b>DATA INICIAL: </b><br>
                                             <?php echo date('d/m/Y', strtotime($result->dataInicial)); ?>
                                         </td>
-
                                         <td>
                                             <b>DATA FINAL: </b><br>
                                             <?php echo $result->dataFinal ? date('d/m/Y', strtotime($result->dataFinal)) : ''; ?>
                                         </td>
-
                                         <td>
                                             <?php if ($result->garantia) { ?>
                                                 <b>GARANTIA: </b><br><?php echo $result->garantia . ' dia(s)'; ?>
                                             <?php } ?>
                                         </td>
-
                                         <?php if (in_array($result->status, ['Finalizado', 'Faturado', 'Orçamento', 'Aberto'])): ?>
                                             <td>
                                                 <b>VENC. DA GARANTIA:</b><br>
@@ -158,7 +153,6 @@
                                         <?php endif; ?>
                                     </tr>
                                 <?php } ?>
-
                                 <?php if ($result->descricaoProduto != null) { ?>
                                     <tr>
                                         <td colspan="5">
@@ -167,7 +161,6 @@
                                         </td>
                                     </tr>
                                 <?php } ?>
-
                                 <?php if ($result->defeito != null) { ?>
                                     <tr>
                                         <td colspan="5">
@@ -176,7 +169,6 @@
                                         </td>
                                     </tr>
                                 <?php } ?>
-
                                 <?php if ($result->observacoes != null) { ?>
                                     <tr>
                                         <td colspan="5">
@@ -185,7 +177,6 @@
                                         </td>
                                     </tr>
                                 <?php } ?>
-
                                 <?php if ($result->laudoTecnico != null) { ?>
                                     <tr>
                                         <td colspan="5">
@@ -194,7 +185,6 @@
                                         </td>
                                     </tr>
                                 <?php } ?>
-
                                 <?php if ($result->garantias_id != null) { ?>
                                     <tr>
                                         <td colspan="5">
@@ -205,6 +195,106 @@
                                 <?php } ?>
                             </tbody>
                         </table>
+
+                        <!-- Nova Seção: Dados de Coleta do Equipamento -->
+                        <table class="table table-condensed">
+                            <tbody>
+                                <tr>
+                                    <td colspan="5">
+                                        <h5><b>DADOS DE COLETA DO EQUIPAMENTO</b></h5>
+                                    </td>
+                                </tr>
+                                <?php if ($result->tipo_equipamento) { ?>
+                                    <tr>
+                                        <td><b>Tipo de Equipamento:</b> <?php echo $result->tipo_equipamento; ?></td>
+                                        <td><b>Marca/Modelo:</b> <?php echo $result->marca_modelo; ?></td>
+                                        <td><b>S/N:</b> <?php echo $result->sn; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->pn || $result->service_tag) { ?>
+                                    <tr>
+                                        <td><b>P/N:</b> <?php echo $result->pn ?: '-'; ?></td>
+                                        <td><b>Service Tag:</b> <?php echo $result->service_tag ?: '-'; ?></td>
+                                        <td></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->fonte_alimentacao || $result->bateria_pn || $result->bateria_sn) { ?>
+                                    <tr>
+                                        <td><b>Fonte de Alimentação:</b> <?php echo $result->fonte_alimentacao ?: '-'; ?></td>
+                                        <td><b>Bateria P/N:</b> <?php echo $result->bateria_pn ?: '-'; ?></td>
+                                        <td><b>Bateria S/N:</b> <?php echo $result->bateria_sn ?: '-'; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->vga || $result->hdmi || $result->usb || $result->displayport) { ?>
+                                    <tr>
+                                        <td><b>VGA:</b> <?php echo $result->vga ?: '-'; ?></td>
+                                        <td><b>HDMI:</b> <?php echo $result->hdmi ?: '-'; ?></td>
+                                        <td><b>USB:</b> <?php echo $result->usb ?: '-'; ?></td>
+                                        <td><b>DisplayPort:</b> <?php echo $result->displayport ?: '-'; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->tela || $result->riscado) { ?>
+                                    <tr>
+                                        <td><b>Tela:</b> <?php echo $result->tela ?: '-'; ?></td>
+                                        <td><b>Riscado:</b> <?php echo $result->riscado ?: '-'; ?></td>
+                                        <td></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->teclado || $result->touchpad || $result->webcam || $result->microfone) { ?>
+                                    <tr>
+                                        <td><b>Teclado:</b> <?php echo $result->teclado ?: '-'; ?></td>
+                                        <td><b>Touchpad:</b> <?php echo $result->touchpad ?: '-'; ?></td>
+                                        <td><b>Webcam:</b> <?php echo $result->webcam ?: '-'; ?></td>
+                                        <td><b>Microfone:</b> <?php echo $result->microfone ?: '-'; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->carcaca_ok || $result->tampa_ok || $result->gabinete || $result->dobradicas_ok) { ?>
+                                    <tr>
+                                        <td><b>Carcaça OK:</b> <?php echo $result->carcaca_ok ?: '-'; ?></td>
+                                        <td><b>Tampa OK:</b> <?php echo $result->tampa_ok ?: '-'; ?></td>
+                                        <td><b>Gabinete:</b> <?php echo $result->gabinete ?: '-'; ?></td>
+                                        <td><b>Dobradiças OK:</b> <?php echo $result->dobradicas_ok ?: '-'; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->acabamento || $result->riscado_manchado || $result->borrachas_apoio || $result->parafusos_carcaca) { ?>
+                                    <tr>
+                                        <td><b>Acabamento:</b> <?php echo $result->acabamento ?: '-'; ?></td>
+                                        <td><b>Riscado/Manchado:</b> <?php echo $result->riscado_manchado ?: '-'; ?></td>
+                                        <td><b>Borrachas de Apoio:</b> <?php echo $result->borrachas_apoio ?: '-'; ?></td>
+                                        <td><b>Parafusos Carcaça:</b> <?php echo $result->parafusos_carcaca ?: '-'; ?></td>
+                                    </tr>
+                                <?php } ?>
+                                <?php if ($result->informacoes_complementares) { ?>
+                                    <tr>
+                                        <td colspan="5"><b>Informações Complementares:</b> <?php echo htmlspecialchars_decode($result->informacoes_complementares); ?></td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+
+                        <!-- Seção: Fotos de Inconsistências -->
+                        <?php if ($fotos_inconsistencias != null) { ?>
+                            <table class="table table-bordered table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>Fotos de Inconsistências</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5">
+                                            <?php foreach ($fotos_inconsistencias as $foto) {
+                                                $image_url = base_url() . 'Uploads/inconsistencias/' . $foto->file_path;
+                                                echo '<div class="span3" style="min-height: 150px; margin-left: 0">';
+                                                echo '<a style="min-height: 150px;" href="#modal-anexo" imagem="' . $foto->id . '" link="' . $image_url . '" role="button" class="btn anexo span12" data-toggle="modal" data-type="foto">';
+                                                echo '<img src="' . $image_url . '" alt="' . $foto->file_name . '" style="max-height: 150px;">';
+                                                echo '</a></div>';
+                                            } ?>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        <?php } ?>
 
                         <?php if ($anotacoes != null) { ?>
                             <table class="table table-bordered">
@@ -236,18 +326,20 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <th colspan="5">
-                                        <?php foreach ($anexos as $a) {
-                                            if ($a->thumb == null) {
-                                                $thumb = base_url() . 'assets/img/icon-file.png';
-                                                $link = base_url() . 'assets/img/icon-file.png';
-                                            } else {
-                                                $thumb = $a->url . '/thumbs/' . $a->thumb;
-                                                $link = $a->url . '/' . $a->anexo;
-                                            }
-                                            echo '<div class="span3" style="min-height: 150px; margin-left: 0"><a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal"><img src="' . $thumb . '" alt=""></a></div>';
-                                        } ?>
-                                    </th>
+                                    <tr>
+                                        <td colspan="5">
+                                            <?php foreach ($anexos as $a) {
+                                                if ($a->thumb == null) {
+                                                    $thumb = base_url() . 'assets/img/icon-file.png';
+                                                    $link = base_url() . 'assets/img/icon-file.png';
+                                                } else {
+                                                    $thumb = $a->url . '/thumbs/' . $a->thumb;
+                                                    $link = $a->url . '/' . $a->anexo;
+                                                }
+                                                echo '<div class="span3" style="min-height: 150px; margin-left: 0"><a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal" data-type="anexo"><img src="' . $thumb . '" alt=""></a></div>';
+                                            } ?>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         <?php } ?>
@@ -268,7 +360,7 @@
                                         echo '<tr>';
                                         echo '<td>' . $p->descricao . '</td>';
                                         echo '<td>' . $p->quantidade . '</td>';
-                                        echo '<td>R$ ' . $p->preco ?: $p->precoVenda . '</td>';
+                                        echo '<td>R$ ' . ($p->preco ?: $p->precoVenda) . '</td>';
                                         echo '<td>R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                         echo '</tr>';
                                     } ?>
@@ -336,8 +428,7 @@
 <?= $modalGerarPagamento ?>
 
 <!-- Modal visualizar anexo -->
-<div id="modal-anexo" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-    aria-hidden="true">
+<div id="modal-anexo" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
         <h3 id="myModalLabel">Visualizar Anexo</h3>
@@ -357,8 +448,7 @@
 </div>
 
 <!-- Modal PIX -->
-<div id="modal-pix" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-    aria-hidden="true">
+<div id="modal-pix" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
         <h3 id="myModalLabel">Pagamento via PIX</h3>
@@ -387,6 +477,7 @@
         <button class="btn btn-danger" data-dismiss="modal" aria-hidden="true" style="color: #FFF">Fechar</button>
     </div>
 </div>
+
 <script src="https://cdn.rawgit.com/cozmo/jsQR/master/dist/jsQR.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
@@ -394,18 +485,20 @@
             event.preventDefault();
             var link = $(this).attr('link');
             var id = $(this).attr('imagem');
-            var url = '<?php echo base_url(); ?>index.php/os/excluirAnexo/';
-            $("#div-visualizar-anexo").html('<img src="' + link + '" alt="">');
-            $("#excluir-anexo").attr('link', url + id);
-            $("#download").attr('href', "<?php echo base_url(); ?>index.php/os/downloadanexo/" + id);
+            var type = $(this).data('type'); // 'anexo' ou 'foto'
+            var url = type === 'foto' ? '<?php echo base_url(); ?>index.php/os/excluirFotoInconsistencia/' : '<?php echo base_url(); ?>index.php/os/excluirAnexo/';
+            var download_url = type === 'foto' ? '<?php echo base_url(); ?>index.php/os/downloadFotoInconsistencia/' : '<?php echo base_url(); ?>index.php/os/downloadanexo/';
 
+            $("#div-visualizar-anexo").html('<img src="' + link + '" alt="" style="max-width: 100%; max-height: 400px;">');
+            $("#excluir-anexo").attr('link', url + id);
+            $("#download").attr('href', download_url + id);
         });
 
         $(document).on('click', '#excluir-anexo', function(event) {
             event.preventDefault();
 
             var link = $(this).attr('link');
-            var idOS = "<?php echo $result->idOs; ?>"
+            var idOS = "<?php echo $result->idOs; ?>";
 
             $('#modal-anexo').modal('hide');
             $("#divAnexos").html("<div class='progress progress-info progress-striped active'><div class='bar' style='width: 100%'></div></div>");
@@ -414,10 +507,11 @@
                 type: "POST",
                 url: link,
                 dataType: 'json',
-                data: "idOs=" + idOS,
+                data: { idOs: idOS },
                 success: function(data) {
                     if (data.result == true) {
-                        $("#divAnexos").load("<?php echo current_url(); ?> #divAnexos");
+                        // Recarregar a página para atualizar as seções de anexos e fotos
+                        location.reload();
                     } else {
                         swal({
                             type: "error",
@@ -425,6 +519,13 @@
                             text: data.mensagem
                         });
                     }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    swal({
+                        type: "error",
+                        title: "Atenção",
+                        text: "Erro ao excluir: " + textStatus
+                    });
                 }
             });
         });
@@ -450,20 +551,18 @@
                     timer: 3000,
                     showConfirmButton: false,
                 });
-
             }).catch(function(err) {
                 swal({
                     type: "error",
                     title: "Atenção",
-                    text: "Erro ao copiar QR Code: ",
-                    err
+                    text: "Erro ao copiar QR Code: " + err
                 });
             });
         } else {
             swal({
                 type: "error",
                 title: "Atenção",
-                text: "Não foi possível decodificar o QR Code.",
+                text: "Não foi possível decodificar o QR Code."
             });
         }
     });
@@ -478,13 +577,13 @@
         var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         var code = jsQR(imageData.data, imageData.width, imageData.height);
         if (code) {
-            var whatsappLink = 'https://api.whatsapp.com/send?phone=55' + <?= isset($zapnumber) ? $zapnumber : "" ?> + '&text=' + code.data;
+            var whatsappLink = 'https://api.whatsapp.com/send?phone=55' + <?= isset($zapnumber) ? $zapnumber : "" ?> + '&text=' + encodeURIComponent(code.data);
             window.open(whatsappLink, '_blank');
         } else {
             swal({
                 type: "error",
                 title: "Atenção",
-                text: "Não foi possível decodificar o QR Code.",
+                text: "Não foi possível decodificar o QR Code."
             });
         }
     });

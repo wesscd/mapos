@@ -546,52 +546,54 @@ if (!empty($_FILES['fotos_inconsistencias']['name'][0])) {
 }
 
                             
-    public function visualizar()
-    {
-        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
-            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
-            redirect('mapos');
-        }
-
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
-            redirect(base_url());
-        }
-
-        $this->data['custom_error'] = '';
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
-
-        $this->load->model('mapos_model');
-        $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
-        $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
-        $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
-        $this->data['emitente'] = $this->mapos_model->getEmitente();
-        $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
-        $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
-        $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
-        $this->data['qrCode'] = $this->os_model->getQrCode(
-            $this->uri->segment(3),
-            $this->data['configuration']['pix_key'],
-            $this->data['emitente']
-        );
-        $this->data['modalGerarPagamento'] = $this->load->view(
-            'cobrancas/modalGerarPagamento',
-            [
-                'id' => $this->uri->segment(3),
-                'tipo' => 'os',
-            ],
-            true
-        );
-        $this->data['view'] = 'os/visualizarOs';
-        $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
-
-        if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
-            $this->data['totalServico'] = $return['totalServico'];
-            $this->data['totalProdutos'] = $return['totalProdutos'];
-        }
-
-        return $this->layout();
+public function visualizar()
+{
+    if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
+        $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+        redirect('mapos');
     }
+
+    if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+        $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
+        redirect(base_url());
+    }
+
+    $this->data['custom_error'] = '';
+    $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
+
+    $this->load->model('mapos_model');
+    $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
+    $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
+    $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
+    $this->data['emitente'] = $this->mapos_model->getEmitente();
+    $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
+    $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
+    $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
+    $this->data['qrCode'] = $this->os_model->getQrCode(
+        $this->uri->segment(3),
+        $this->data['configuration']['pix_key'],
+        $this->data['emitente']
+    );
+    $this->data['modalGerarPagamento'] = $this->load->view(
+        'cobrancas/modalGerarPagamento',
+        [
+            'id' => $this->uri->segment(3),
+            'tipo' => 'os',
+        ],
+        true
+    );
+    // Adicionar fotos de inconsistências
+    $this->data['fotos_inconsistencias'] = $this->os_model->getFotosInconsistencias($this->uri->segment(3));
+    $this->data['view'] = 'os/visualizarOs';
+    $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
+
+    if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
+        $this->data['totalServico'] = $return['totalServico'];
+        $this->data['totalProdutos'] = $return['totalProdutos'];
+    }
+
+    return $this->layout();
+}
 
     public function validarCPF($cpf)
     {
@@ -890,6 +892,67 @@ if (!empty($_FILES['fotos_inconsistencias']['name'][0])) {
             echo json_encode(array('result' => true));
         } else {
             echo json_encode(array('result' => false));
+        }
+    }
+
+    public function excluirFotoInconsistencia($id)
+    {
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para excluir fotos.');
+            echo json_encode(['result' => false, 'mensagem' => 'Permissão negada.']);
+            return;
+        }
+
+        $this->load->model('os_model');
+        $foto = $this->os_model->getFotoById($id);
+
+        if ($foto) {
+            // Deletar o arquivo do servidor
+            $file_path = FCPATH . 'Uploads/inconsistencias/' . $foto->file_path;
+            if (file_exists($file_path)) {
+                unlink($file_path);
+                log_message('debug', 'Arquivo excluído: ' . $file_path);
+            }
+
+            // Deletar o registro do banco
+            $this->db->where('id', $id);
+            $this->db->delete('os_fotos');
+
+            if ($this->db->affected_rows() > 0) {
+                log_message('debug', 'Foto excluída do banco: ID ' . $id);
+                echo json_encode(['result' => true]);
+            } else {
+                log_message('error', 'Erro ao excluir foto do banco: ID ' . $id);
+                echo json_encode(['result' => false, 'mensagem' => 'Erro ao excluir a foto do banco de dados.']);
+            }
+        } else {
+            log_message('error', 'Foto não encontrada: ID ' . $id);
+            echo json_encode(['result' => false, 'mensagem' => 'Foto não encontrada.']);
+        }
+    }
+
+    public function downloadFotoInconsistencia($id)
+    {
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar fotos.');
+            redirect(base_url());
+        }
+
+        $this->load->model('os_model');
+        $foto = $this->os_model->getFotoById($id);
+
+        if ($foto) {
+            $file_path = FCPATH . 'Uploads/inconsistencias/' . $foto->file_path;
+            if (file_exists($file_path)) {
+                $this->load->helper('download');
+                force_download($foto->file_name, file_get_contents($file_path));
+            } else {
+                $this->session->set_flashdata('error', 'Arquivo não encontrado.');
+                redirect(site_url('os/visualizar/' . $foto->os_id));
+            }
+        } else {
+            $this->session->set_flashdata('error', 'Foto não encontrada.');
+            redirect(site_url('os/gerenciar/'));
         }
     }
 

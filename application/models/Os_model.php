@@ -9,6 +9,24 @@ class Os_model extends CI_Model
         parent::__construct();
     }
 
+    public function getFotos($os_id)
+    {
+        $this->db->where('os_id', $os_id);
+        return $this->db->get('os_fotos')->result();
+    }
+
+    public function getFotosInconsistencias($os_id)
+    {
+    $this->db->where('os_id', $os_id);
+    return $this->db->get('os_fotos')->result();
+    }
+
+    public function getFotoById($id)
+    {
+        $this->db->where('id', $id);
+        return $this->db->get('os_fotos')->row();
+    }
+
     public function get($table, $fields, $where = '', $perpage = 0, $start = 0, $one = false, $array = 'array')
     {
         $this->db->select($fields . ',clientes.nomeCliente, clientes.celular as celular_cliente');
@@ -136,15 +154,21 @@ class Os_model extends CI_Model
     public function add($table, $data, $returnId = false)
     {
         $this->db->insert($table, $data);
-        if ($this->db->affected_rows() == '1') {
+        if ($this->db->affected_rows() == 1) {
             if ($returnId == true) {
-                return $this->db->insert_id($table);
+                return $this->db->insert_id();
             }
-
             return true;
+        } else {
+            $error = $this->db->error();
+            log_message('error', 'Erro ao inserir na tabela ' . $table . ': ' . json_encode($error));
+            return false;
         }
-
-        return false;
+    }
+    
+    public function add_batch($table, $data) {
+        $this->db->insert_batch($table, $data);
+        return $this->db->affected_rows() > 0;
     }
 
     public function edit($table, $data, $fieldID, $ID)
