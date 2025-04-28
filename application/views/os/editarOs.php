@@ -339,44 +339,56 @@
                         <!--Anexos-->
                         <div class="tab-pane" id="tab5">
                             <div class="span12" style="padding: 1%; margin-left: 0">
-                                <div class="span12 well" style="padding: 1%; margin-left: 0" id="form-anexos">
-                                    <form id="formAnexos" enctype="multipart/form-data" action="javascript:;"
-                                        accept-charset="utf-8" s method="post">
-                                        <div class="span10">
-                                            <input type="hidden" name="idOsServico" id="idOsServico"
-                                                value="<?php echo $result->idOs; ?>" />
-                                            <label for="">Anexo</label>
-                                            <input type="file" class="span12" name="userfile[]" multiple="multiple"
-                                                size="20" />
-                                        </div>
-                                        <div class="span2">
-                                            <label for="">.</label>
-                                            <button class="button btn btn-success">
-                                                <span class="button__icon"><i class='bx bx-paperclip'></i></span><span
-                                                    class="button__text2">Anexar</span></button>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="span12 pull-left" id="divAnexos" style="margin-left: 0">
-                                    <?php
-                                    foreach ($anexos as $a) {
-                                        if ($a->thumb == null) {
-                                            $thumb = base_url() . 'assets/img/icon-file.png';
-                                            $link = base_url() . 'assets/img/icon-file.png';
-                                        } else {
-                                            $thumb = $a->url . '/thumbs/' . $a->thumb;
-                                            $link = $a->url . '/' . $a->anexo;
-                                        }
-                                        echo '<div class="span3" style="min-height: 150px; margin-left: 0">
-                                                    <a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal">
-                                                        <img src="' . $thumb . '" alt="">
-                                                    </a>
-                                                </div>';
-                                    }
-                                    ?>
-                                </div>
+                                <h5>Imagens do Equipamento</h5>
+                                <div class="span12 pull-left" id="divFotos" style="margin-left: 0; display: flex; flex-wrap: wrap; gap: 10px;">
+    <?php if (!empty($fotos)) { ?>
+        <?php foreach ($fotos as $foto) { ?>
+            <div class="span3" style="min-height: 150px; margin-left: 0">
+                <a style="min-height: 150px;" href="#modal-anexo" imagem="foto_<?php echo $foto->id; ?>" link="<?php echo base_url('uploads/inconsistencias/' . $foto->file_path); ?>" role="button" class="btn anexo span12" data-toggle="modal">
+                    <img src="<?php echo base_url('uploads/inconsistencias/' . $foto->file_path); ?>" alt="Foto" style="max-width: 100%; max-height: 150px; object-fit: cover;">
+                </a>
+            </div>
+        <?php } ?>
+    <?php } else { ?>
+        <p>Nenhuma imagem associada a esta OS.</p>
+    <?php } ?>
+</div>
+                            <h5>Outros Anexos</h5>
+                            <div class="span12 well" style="padding: 1%; margin-left: 0" id="form-anexos">
+                                <form id="formAnexos" enctype="multipart/form-data" action="javascript:;" accept-charset="utf-8" method="post">
+                                    <div class="span10">
+                                        <input type="hidden" name="idOsServico" id="idOsServico" value="<?php echo $result->idOs; ?>" />
+                                        <label for="">Anexo</label>
+                                        <input type="file" class="span12" name="userfile[]" multiple="multiple" size="20" />
+                                    </div>
+                                    <div class="span2">
+                                        <label for="">.</label>
+                                        <button class="button btn btn-success">
+                                            <span class="button__icon"><i class='bx bx-paperclip'></i></span><span class="button__text2">Anexar</span>
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                        </div>
+                            <div class="span12 pull-left" id="divAnexos" style="margin-left: 0; display: flex; flex-wrap: wrap; gap: 10px;">
+                                <?php
+                                foreach ($anexos as $a) {
+                                    if ($a->thumb == null) {   
+                                        $thumb = base_url() . 'assets/img/icon-file.png';
+                                        $link = base_url() . 'assets/img/icon-file.png';
+                                    } else {
+                                        $thumb = $a->url . '/thumbs/' . $a->thumb;
+                                        $link = $a->url . '/' . $a->anexo;
+                                }
+                                echo '<div class="span3" style="min-height: 150px; margin-left: 0">
+                                        <a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal">
+                                            <img src="' . $thumb . '" alt="" style="max-width: 100%; max-height: 150px; object-fit: cover;">
+                                        </a>
+                                    </div>';
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
 
                         <!--Anotações-->
                         <div class="tab-pane" id="tab6">
@@ -1229,6 +1241,25 @@
                 return false;
             }
         });
+
+        $(document).on('click', '.anexo', function(event) {
+            event.preventDefault();
+            var link = $(this).attr('link');
+            var id = $(this).attr('imagem');
+            var url = '<?php echo base_url(); ?>index.php/os/excluirAnexo/';
+            $("#div-visualizar-anexo").html('<img src="' + link + '" alt="" style="max-width: 100%;">');
+    
+        if (id.startsWith('foto_')) {
+            // Para fotos de os_fotos, esconder botão de exclusão
+            $("#excluir-anexo").hide();
+            $("#download").attr('href', link); // Download direto da imagem
+        } else {
+            // Para anexos normais, mostrar botão de exclusão
+            $("#excluir-anexo").show();
+            $("#excluir-anexo").attr('link', url + id);
+            $("#download").attr('href', "<?php echo base_url(); ?>index.php/os/downloadanexo/" + id);
+        }
+    });
 
         $(".datepicker").datepicker({
             dateFormat: 'dd/mm/yy'
