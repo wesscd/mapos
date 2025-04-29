@@ -524,6 +524,16 @@ CREATE TABLE os_checklist (
   FOREIGN KEY (os_id) REFERENCES os(idOs) ON DELETE CASCADE
 );
 -- -----------------------------------------------------
+-- Table `whatsapp_queue` \\ Tabela para fila de envio de mensagens WhatsApp
+-- -----------------------------------------------------
+CREATE TABLE whatsapp_queue (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  to_phone VARCHAR(20),
+  message TEXT,
+  status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+-- -----------------------------------------------------
 -- Table `migrations`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `migrations` (`version` BIGINT(20) NOT NULL);
