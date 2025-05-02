@@ -117,6 +117,28 @@ class Os_model extends CI_Model
         return $this->db->get()->row();
     }
 
+    public function addHistorico($idOs, $descricao)
+    {
+        // Dados do registro de histórico
+        $data = [
+            'idOs' => $idOs,
+            'descricao' => $descricao,
+            'data' => date('Y-m-d H:i:s')
+        ];
+
+        // Insere o registro na tabela os_historico
+        $this->db->insert('os_historico', $data);
+
+        // Verifica se a inserção foi bem-sucedida
+        if ($this->db->affected_rows() > 0) {
+            log_message('info', "Histórico adicionado para OS #$idOs: $descricao");
+            return true;
+        } else {
+            log_message('error', "Erro ao adicionar histórico para OS #$idOs: $descricao");
+            return false;
+        }
+    }
+
     public function getByIdCobrancas($id)
     {
         $this->db->select('os.*, clientes.*, clientes.celular as celular_cliente, garantias.refGarantia, garantias.textoGarantia, usuarios.telefone as telefone_usuario, usuarios.email as email_usuario, usuarios.nome,cobrancas.os_id,cobrancas.idCobranca,cobrancas.status');

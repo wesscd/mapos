@@ -1501,7 +1501,7 @@ public function visualizar()
     private function enviarOsPorWhatsApp($idOs, $telefone, $mensagem)
     {
         // Obtém as configurações da API de WhatsApp
-        $api_url = $this->data['configuration']['whatsapp_api_url']; // Usa endpoint original /messages/send
+        $api_url = $this->data['configuration']['whatsapp_api_url']; // Usa /messages/send
         $api_token = $this->data['configuration']['whatsapp_api_token'];
         $from_number = $this->data['configuration']['whatsapp_number'];
 
@@ -1509,12 +1509,11 @@ public function visualizar()
         log_message('error', "Configurações disponíveis para OS #$idOs: " . print_r($this->data['configuration'], true));
 
         // Validação do número de telefone
-        $telefone = str_replace('+', '', $telefone); // Remove o "+" temporariamente
+        $telefone = str_replace('+', '', $telefone); // Remove o "+"
         if (empty($telefone) || !preg_match('/^55\d{10,11}$/', $telefone)) {
             log_message('error', "Número de telefone inválido para OS #$idOs: $telefone");
             return;
         }
-        $telefone = '+' . $telefone; // Adiciona "+" para Z-API
 
         // Verificar configurações da API
         if (empty($api_url) || empty($api_token)) {
@@ -1577,7 +1576,6 @@ public function visualizar()
         $mensagem = mb_convert_encoding($mensagem, 'UTF-8', 'UTF-8'); // Garante UTF-8 válido
         $mensagem = preg_replace('/[\x00-\x1F\x7F-\x9F]/u', '', $mensagem); // Remove caracteres de controle
         $mensagem = preg_replace('/[\p{So}]/u', '', $mensagem); // Remove emojis
-        $mensagem = str_replace('!', '.', $mensagem); // Substitui ! por .
         $mensagem = trim($mensagem); // Remove espaços extras
 
         // Validação da mensagem
@@ -1597,8 +1595,8 @@ public function visualizar()
 
         // Monta o corpo da requisição pra API (Z-API format)
         $payload = [
-            'phone' => $telefone,
-            'message' => $mensagem
+            'number' => $telefone,
+            'body' => $mensagem
         ];
 
         // Log do payload

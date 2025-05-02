@@ -534,6 +534,16 @@ CREATE TABLE whatsapp_queue (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 -- -----------------------------------------------------
+-- Table `os_historico`
+-- -----------------------------------------------------
+CREATE TABLE os_historico (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idOs INT NOT NULL,
+  descricao TEXT NOT NULL,
+  data DATETIME NOT NULL,
+  FOREIGN KEY (idOs) REFERENCES os(idOs)
+);
+-- -----------------------------------------------------
 -- Table `migrations`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `migrations` (`version` BIGINT(20) NOT NULL);
