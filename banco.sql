@@ -534,6 +534,49 @@ CREATE TABLE whatsapp_queue (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 -- -----------------------------------------------------
+-- Table `configuraçoes whats`
+-- -----------------------------------------------------
+INSERT IGNORE INTO configuracoes (idConfig, config, valor)
+VALUES (2, 'app_name', 'Map-OS'),
+  (3, 'app_theme', 'white'),
+  (4, 'per_page', '10'),
+  (5, 'os_notification', 'cliente'),
+  (6, 'control_estoque', '1'),
+  (
+    7,
+    'notifica_whats',
+    'Prezado(a), {CLIENTE_NOME} a OS de nº {NUMERO_OS} teve o status alterado para: {STATUS_OS} segue a descrição {DESCRI_PRODUTOS} com valor total de {VALOR_OS}! Para mais informações entre em contato conosco. Atenciosamente, {EMITENTE} {TELEFONE_EMITENTE}.'
+  ),
+  (8, 'control_baixa', '0'),
+  (9, 'control_editos', '1'),
+  (10, 'control_datatable', '1'),
+  (11, 'pix_key', ''),
+  (
+    12,
+    'os_status_list',
+    '["Aberto","Orçamento","Negociação","Em Andamento","Concluído","Cancelado","Faturado"]'
+  ),
+  (13, 'control_edit_vendas', '1'),
+  (14, 'email_automatico', '1'),
+  (15, 'control_2vias', '0'),
+  (
+    16,
+    'notifica_whats_criacao',
+    'Prezado(a), {CLIENTE_NOME}, sua OS nº {NUMERO_OS} foi criada com sucesso! Status: {STATUS_OS}. Descrição: {DESCRI_PRODUTOS}. Valor total: {VALOR_OS}. Para mais informações, entre em contato. Atenciosamente, {EMITENTE} {TELEFONE_EMITENTE}.'
+  ),
+  (
+    17,
+    'whatsapp_api_url',
+    'https://dominio.whaticketz/backend/api/messages/send'
+  ),
+  (
+    18,
+    'whatsapp_api_token',
+    'abc123efg456hij789klm012nop345qrs678tuv901wxyz234'
+  ),
+  (19, 'whatsapp_number', '5511999999999'),
+  (20, 'whatsapp_enabled', '1');
+-- -----------------------------------------------------
 -- Table `os_historico`
 -- -----------------------------------------------------
 CREATE TABLE os_historico (
