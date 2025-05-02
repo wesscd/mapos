@@ -397,98 +397,143 @@ class Mapos extends MY_Controller {
     }
 
     public function configurar()
-    {
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema');
-            redirect(base_url());
-        }
-        $this->data['menuConfiguracoes'] = 'Sistema';
-
-        $this->load->library('form_validation');
-        $this->load->model('mapos_model');
-
-        $this->data['custom_error'] = '';
-
-        $this->form_validation->set_rules('app_name', 'Nome do Sistema', 'required|trim');
-        $this->form_validation->set_rules('per_page', 'Registros por página', 'required|numeric|trim');
-        $this->form_validation->set_rules('app_theme', 'Tema do Sistema', 'required|trim');
-        $this->form_validation->set_rules('os_notification', 'Notificação de OS', 'required|trim');
-        $this->form_validation->set_rules('email_automatico', 'Enviar Email Automático', 'required|trim');
-        $this->form_validation->set_rules('control_estoque', 'Controle de Estoque', 'required|trim');
-        $this->form_validation->set_rules('notifica_whats', 'Notificação Whatsapp', 'required|trim');
-        $this->form_validation->set_rules('control_baixa', 'Controle de Baixa', 'required|trim');
-        $this->form_validation->set_rules('control_editos', 'Controle de Edição de OS', 'required|trim');
-        $this->form_validation->set_rules('control_edit_vendas', 'Controle de Edição de Vendas', 'required|trim');
-        $this->form_validation->set_rules('control_datatable', 'Controle de Visualização em DataTables', 'required|trim');
-        $this->form_validation->set_rules('os_status_list[]', 'Controle de visualização de OS', 'required|trim', ['required' => 'Selecione ao menos uma das opções!']);
-        $this->form_validation->set_rules('control_2vias', 'Controle Impressão 2 Vias', 'required|trim');
-        $this->form_validation->set_rules('pix_key', 'Chave Pix', 'trim|valid_pix_key', [
-            'valid_pix_key' => 'Chave Pix inválida!',
-        ]);
-
-        if ($this->form_validation->run() == false) {
-            $this->data['custom_error'] = (validation_errors() ? '<div class="alert">' . validation_errors() . '</div>' : false);
-        } else {
-            // Edição do .env
-            $dataDotEnv = [
-                'IMPRIMIR_ANEXOS' => $this->input->post('imprmirAnexos'),
-                'PAYMENT_GATEWAYS_EFI_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_EFI_PRODUCTION'),
-                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID'),
-                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET'),
-                'PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION'),
-                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY'),
-                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN'),
-                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID'),
-                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET'),
-                'PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION'),
-                'PAYMENT_GATEWAYS_ASAAS_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_PRODUCTION'),
-                'PAYMENT_GATEWAYS_ASAAS_NOTIFY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_NOTIFY'),
-                'PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY'),
-                'PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION'),
-                'API_ENABLED' => $this->input->post('apiEnabled'),
-                'API_TOKEN_EXPIRE_TIME' => $this->input->post('apiExpireTime'),
-                'API_JWT_KEY' => $this->input->post('resetJwtToken'),
-                'EMAIL_PROTOCOL' => $this->input->post('EMAIL_PROTOCOL'),
-                'EMAIL_SMTP_HOST' => $this->input->post('EMAIL_SMTP_HOST'),
-                'EMAIL_SMTP_CRYPTO' => $this->input->post('EMAIL_SMTP_CRYPTO'),
-                'EMAIL_SMTP_PORT' => $this->input->post('EMAIL_SMTP_PORT'),
-                'EMAIL_SMTP_USER' => $this->input->post('EMAIL_SMTP_USER'),
-                'EMAIL_SMTP_PASS' => $this->input->post('EMAIL_SMTP_PASS'),
-            ];
-
-            if (!$this->editDontEnv($dataDotEnv)) {
-                $this->data['custom_error'] = '<div class="alert">Falha ao editar o .env</div>';
-            }
-            // FIM Edição do .env
-
-            $data = [
-                'app_name' => $this->input->post('app_name'),
-                'per_page' => $this->input->post('per_page'),
-                'app_theme' => $this->input->post('app_theme'),
-                'os_notification' => $this->input->post('os_notification'),
-                'email_automatico' => $this->input->post('email_automatico'),
-                'control_estoque' => $this->input->post('control_estoque'),
-                'notifica_whats' => $this->input->post('notifica_whats'),
-                'control_baixa' => $this->input->post('control_baixa'),
-                'control_editos' => $this->input->post('control_editos'),
-                'control_edit_vendas' => $this->input->post('control_edit_vendas'),
-                'control_datatable' => $this->input->post('control_datatable'),
-                'pix_key' => $this->input->post('pix_key'),
-                'os_status_list' => json_encode($this->input->post('os_status_list')),
-                'control_2vias' => $this->input->post('control_2vias'),
-            ];
-            if ($this->mapos_model->saveConfiguracao($data) == true) {
-                $this->session->set_flashdata('success', 'Configurações do sistema atualizadas com sucesso!');
-                redirect(site_url('mapos/configurar'));
-            } else {
-                $this->data['custom_error'] = '<div class="alert">Ocorreu um errro.</div>';
-            }
-        }
-
-        $this->data['view'] = 'mapos/configurar';
-
-        return $this->layout();
+{
+    if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
+        $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema');
+        redirect(base_url());
     }
+    $this->data['menuConfiguracoes'] = 'Sistema';
+
+    $this->load->library('form_validation');
+    $this->load->model('mapos_model');
+
+    $this->data['custom_error'] = '';
+    $this->data['test_message'] = ''; // Inicializa a variável pra exibir o resultado do teste
+
+    // Verifica se o botão "Testar Envio" foi clicado
+    if ($this->input->post('test_whatsapp') == '1') {
+        $test_number = $this->input->post('test_number');
+        $test_message = $this->input->post('test_message');
+
+        if (empty($test_number) || empty($test_message)) {
+            $this->data['test_message'] = '<div class="alert alert-error">Por favor, preencha o número e a mensagem de teste.</div>';
+        } else {
+            // Carrega o helper
+            $this->load->helper('whatsapp');
+
+            // Monta as configurações
+            $configuracoes = [
+                'whatsapp_enabled' => $this->mapos_model->getConfiguracao('whatsapp_enabled'),
+                'whatsapp_api_url' => $this->mapos_model->getConfiguracao('whatsapp_api_url'),
+                'whatsapp_number' => $this->mapos_model->getConfiguracao('whatsapp_number'),
+                'whatsapp_api_token' => $this->mapos_model->getConfiguracao('whatsapp_api_token'),
+            ];
+
+            // Envia a mensagem de teste
+            $result = enviar_mensagem_whatsapp($test_number, $test_message, $configuracoes);
+
+            // Define a mensagem de resultado
+            if ($result['success']) {
+                $this->data['test_message'] = '<div class="alert alert-success">Mensagem enviada com sucesso!</div>';
+            } else {
+                $this->data['test_message'] = '<div class="alert alert-error">Erro ao enviar mensagem: ' . htmlspecialchars($result['message']) . '</div>';
+            }
+        }
+    }
+
+    // Validação do formulário de configurações
+    $this->form_validation->set_rules('app_name', 'Nome do Sistema', 'required|trim');
+    $this->form_validation->set_rules('per_page', 'Registros por página', 'required|numeric|trim');
+    $this->form_validation->set_rules('app_theme', 'Tema do Sistema', 'required|trim');
+    $this->form_validation->set_rules('os_notification', 'Notificação de OS', 'required|trim');
+    $this->form_validation->set_rules('email_automatico', 'Enviar Email Automático', 'required|trim');
+    $this->form_validation->set_rules('control_estoque', 'Controle de Estoque', 'required|trim');
+    $this->form_validation->set_rules('notifica_whats', 'Notificação Whatsapp', 'required|trim');
+    $this->form_validation->set_rules('control_baixa', 'Controle de Baixa', 'required|trim');
+    $this->form_validation->set_rules('control_editos', 'Controle de Edição de OS', 'required|trim');
+    $this->form_validation->set_rules('control_edit_vendas', 'Controle de Edição de Vendas', 'required|trim');
+    $this->form_validation->set_rules('control_datatable', 'Controle de Visualização em DataTables', 'required|trim');
+    $this->form_validation->set_rules('os_status_list[]', 'Controle de visualização de OS', 'required|trim', ['required' => 'Selecione ao menos uma das opções!']);
+    $this->form_validation->set_rules('control_2vias', 'Controle Impressão 2 Vias', 'required|trim');
+    $this->form_validation->set_rules('pix_key', 'Chave Pix', 'trim|valid_pix_key', [
+        'valid_pix_key' => 'Chave Pix inválida!',
+    ]);
+
+    // Novas regras para configurações WhatsApp
+    $this->form_validation->set_rules('whatsapp_enabled', 'Ativar Notificações WhatsApp', 'required|trim');
+    $this->form_validation->set_rules('whatsapp_api_url', 'URL da API WhatsApp', 'trim');
+    $this->form_validation->set_rules('whatsapp_number', 'Número WhatsApp', 'trim');
+    $this->form_validation->set_rules('whatsapp_api_token', 'Token da API WhatsApp', 'trim');
+
+    if ($this->form_validation->run() == false) {
+        $this->data['custom_error'] = (validation_errors() ? '<div class="alert">' . validation_errors() . '</div>' : false);
+    } else {
+        // Edição do .env
+        $dataDotEnv = [
+            'IMPRIMIR_ANEXOS' => $this->input->post('imprmirAnexos'),
+            'PAYMENT_GATEWAYS_EFI_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_EFI_PRODUCTION'),
+            'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID'),
+            'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET'),
+            'PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION'),
+            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY'),
+            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN'),
+            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID'),
+            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET'),
+            'PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION'),
+            'PAYMENT_GATEWAYS_ASAAS_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_PRODUCTION'),
+            'PAYMENT_GATEWAYS_ASAAS_NOTIFY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_NOTIFY'),
+            'PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY'),
+            'PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION'),
+            'API_ENABLED' => $this->input->post('apiEnabled'),
+            'API_TOKEN_EXPIRE_TIME' => $this->input->post('apiExpireTime'),
+            'API_JWT_KEY' => $this->input->post('resetJwtToken'),
+            'EMAIL_PROTOCOL' => $this->input->post('EMAIL_PROTOCOL'),
+            'EMAIL_SMTP_HOST' => $this->input->post('EMAIL_SMTP_HOST'),
+            'EMAIL_SMTP_CRYPTO' => $this->input->post('EMAIL_SMTP_CRYPTO'),
+            'EMAIL_SMTP_PORT' => $this->input->post('EMAIL_SMTP_PORT'),
+            'EMAIL_SMTP_USER' => $this->input->post('EMAIL_SMTP_USER'),
+            'EMAIL_SMTP_PASS' => $this->input->post('EMAIL_SMTP_PASS'),
+        ];
+
+        if (!$this->editDontEnv($dataDotEnv)) {
+            $this->data['custom_error'] = '<div class="alert">Falha ao editar o .env</div>';
+        }
+        // FIM Edição do .env
+
+        $data = [
+            'app_name' => $this->input->post('app_name'),
+            'per_page' => $this->input->post('per_page'),
+            'app_theme' => $this->input->post('app_theme'),
+            'os_notification' => $this->input->post('os_notification'),
+            'email_automatico' => $this->input->post('email_automatico'),
+            'control_estoque' => $this->input->post('control_estoque'),
+            'notifica_whats' => $this->input->post('notifica_whats'),
+            'control_baixa' => $this->input->post('control_baixa'),
+            'control_editos' => $this->input->post('control_editos'),
+            'control_edit_vendas' => $this->input->post('control_edit_vendas'),
+            'control_datatable' => $this->input->post('control_datatable'),
+            'pix_key' => $this->input->post('pix_key'),
+            'os_status_list' => json_encode($this->input->post('os_status_list')),
+            'control_2vias' => $this->input->post('control_2vias'),
+            // Novas configurações WhatsApp
+            'whatsapp_enabled' => $this->input->post('whatsapp_enabled'),
+            'whatsapp_api_url' => $this->input->post('whatsapp_api_url'),
+            'whatsapp_number' => $this->input->post('whatsapp_number'),
+            'whatsapp_api_token' => $this->input->post('whatsapp_api_token'),
+        ];
+
+        if ($this->mapos_model->saveConfiguracao($data) == true) {
+            $this->session->set_flashdata('success', 'Configurações do sistema atualizadas com sucesso!');
+            redirect(site_url('mapos/configurar'));
+        } else {
+            $this->data['custom_error'] = '<div class="alert">Ocorreu um errro.</div>';
+        }
+    }
+
+    $this->data['view'] = 'mapos/configurar';
+
+    return $this->layout();
+}
 
     public function atualizarBanco()
     {

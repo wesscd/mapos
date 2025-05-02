@@ -11,6 +11,7 @@ class Os extends MY_Controller
         parent::__construct();
         $this->load->helper('form');
         $this->load->model('os_model');
+        $this->load->library('form_validation'); // Carrega a biblioteca de validação
         $this->data['menuOs'] = 'OS';
     }
 
@@ -213,6 +214,7 @@ class Os extends MY_Controller
         if (is_numeric($id = $this->os_model->add('os', $data, true))) {
             $this->load->model('mapos_model');
             $this->load->model('usuarios_model');
+            $this->load->model('clientes_model');
 
             $idOs = $id;
             $os = $this->os_model->getById($idOs);
@@ -314,6 +316,7 @@ class Os extends MY_Controller
                 log_message('debug', 'Nenhum arquivo para upload.');
             }
 
+            // Enviar notificação por email
             if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
                 $remetentes = [];
                 switch ($this->data['configuration']['os_notification']) {
@@ -337,6 +340,26 @@ class Os extends MY_Controller
                 }
                 $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
             }
+            // Enviar notificação por WhatsApp
+            if ($this->data['configuration']['whatsapp_enabled'] == 1 && $cliente && !empty($cliente->telefone)) {
+                $telefone_cliente = preg_replace('/[^0-9]/', '', $cliente->telefone);
+
+                if (substr($telefone_cliente, 0, 2) !== '55') {
+                    $telefone_cliente = '55' . $telefone_cliente;
+                }
+                if (substr($telefone_cliente, 0, 1) !== '+') {
+                    $telefone_cliente = '+' . $telefone_cliente;
+                }
+
+                $mensagem = $this->data['configuration']['notifica_whats'];
+                $mensagem = str_replace('{CLIENTE_NOME}', $cliente->nomeCliente, $mensagem);
+                $mensagem = str_replace('{NUMERO_OS}', $idOs, $mensagem);
+
+                $this->enviarOsPorWhatsApp($idOs, $telefone_cliente, $mensagem);
+                //$this->enviarOsPorWhatsApp($idOs, $telefone_cliente, "Teste");
+            } else {
+                log_message('info', 'Notificação via WhatsApp não enviada para OS #' . $idOs . ': WhatsApp desativado ou telefone do cliente não disponível.');
+            }
 
             $this->session->set_flashdata('success', 'OS adicionada com sucesso, você pode adicionar produtos ou serviços a essa OS nas abas de Produtos e Serviços!');
             log_info('Adicionou uma OS. ID: ' . $id);
@@ -351,200 +374,237 @@ class Os extends MY_Controller
     return $this->layout();
 }
 
-    public function editar()
-    {
-        if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
-            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
-            redirect('mapos');
-        }
-
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
-        }
-
-        $this->load->library('form_validation');
-        $this->data['custom_error'] = '';
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
-
-        $this->data['editavel'] = $this->os_model->isEditable($this->input->post('idOs'));
-        if (! $this->data['editavel']) {
-            $this->session->set_flashdata('error', 'Esta OS já e seu status não pode ser alterado e nem suas informações atualizadas. Por favor abrir uma nova OS.');
-            redirect(site_url('os'));
-        }
-
-        if ($this->form_validation->run('os') == false) {
-            $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
-        } else {
-            $dataInicial = $this->input->post('dataInicial');
-            $dataFinal = $this->input->post('dataFinal');
-            $termoGarantiaId = $this->input->post('garantias_id') ?: null;
-
-            try {
-                $dataInicial = explode('/', $dataInicial);
-                $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
-
-                $dataFinal = explode('/', $dataFinal);
-                $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
-            } catch (Exception $e) {
-                $dataInicial = date('Y/m/d');
-            }
-
-            $data = [
-                'dataInicial' => $dataInicial,
-                'clientes_id' => $this->input->post('clientes_id'),
-                'usuarios_id' => $this->input->post('usuarios_id'),
-                'dataFinal' => $dataFinal,
-                'garantia' => set_value('garantia'),
-                'garantias_id' => $termoGarantiaId,
-                'descricao' => $this->input->post('descricao'),
-                'descricaoProduto' => $this->input->post('descricaoProduto'),
-                'defeito' => $this->input->post('defeito'),
-                'status' => $this->input->post('status') ?: 'Aberto',
-                'observacoes' => $this->input->post('observacoes'),
-                'laudoTecnico' => $this->input->post('laudoTecnico'),
-                'faturado' => 0,
-                'tipo_equipamento' => $this->input->post('tipo_equipamento'),
-                'marca_modelo' => $this->input->post('marca_modelo'),
-                'sn' => $this->input->post('sn'),
-                'pn' => $this->input->post('pn'),
-                'service_tag' => $this->input->post('service_tag'),
-                'fonte_alimentacao' => $this->input->post('fonte_alimentacao'),
-                'bateria_pn' => $this->input->post('bateria_pn'),
-                'bateria_sn' => $this->input->post('bateria_sn'),
-                'vga' => $this->input->post('vga'),
-                'hdmi' => $this->input->post('hdmi'),
-                'usb' => $this->input->post('usb'),
-                'displayport' => $this->input->post('displayport'),
-                'tela' => $this->input->post('tela'),
-                'riscado' => $this->input->post('riscado'),
-                'teclado' => $this->input->post('teclado'),
-                'touchpad' => $this->input->post('touchpad'),
-                'webcam' => $this->input->post('webcam'),
-                'microfone' => $this->input->post('microfone'),
-                'carcaca_ok' => $this->input->post('carcaca_ok'),
-                'tampa_ok' => $this->input->post('tampa_ok'),
-                'gabinete' => $this->input->post('gabinete'),
-                'dobradicas_ok' => $this->input->post('dobradicas_ok'),
-                'acabamento' => $this->input->post('acabamento'),
-                'riscado_manchado' => $this->input->post('riscado_manchado'),
-                'borrachas_apoio' => $this->input->post('borrachas_apoio'),
-                'parafusos_carcaca' => $this->input->post('parafusos_carcaca'),
-                'informacoes_complementares' => $this->input->post('informacoes_complementares'),
-                'checklist_trabalho' => $this->input->post('checklist_trabalho'), // Adicionado
-            ];
-
-            $this->db->where('idOs', $this->input->post('idOs'));
-            $this->db->update('os', $data);
-
-            // Upload de fotos de inconsistências
-if (!empty($_FILES['fotos_inconsistencias']['name'][0])) {
-    $config['upload_path'] = './uploads/inconsistencias/';
-    $config['allowed_types'] = 'jpg|png';
-    $config['max_size'] = 5120; // 5MB
-    $config['encrypt_name'] = TRUE;
-    $this->load->library('upload');
-
-    $files = $_FILES['fotos_inconsistencias'];
-    $file_count = count($files['name']);
-
-    for ($i = 0; $i < $file_count; $i++) {
-        $_FILES['foto']['name'] = $files['name'][$i];
-        $_FILES['foto']['type'] = $files['type'][$i];
-        $_FILES['foto']['tmp_name'] = $files['tmp_name'][$i];
-        $_FILES['foto']['error'] = $files['error'][$i];
-        $_FILES['foto']['size'] = $files['size'][$i];
-
-        $this->upload->initialize($config);
-        if ($this->upload->do_upload('foto')) {
-            $upload_data = $this->upload->data();
-            $foto_data = array(
-                'os_id' => $this->input->post('idOs'),
-                'file_path' => $upload_data['file_name'], // Nome do arquivo gerado (ex.: hash.png)
-                'file_name' => $upload_data['orig_name'], // Nome original do arquivo
-                'upload_date' => date('Y-m-d H:i:s')
-            );
-            $this->db->insert('os_fotos', $foto_data);
-        } else {
-            log_message('error', $this->upload->display_errors());
-            $this->session->set_flashdata('error', 'Erro ao fazer upload da foto: ' . $this->upload->display_errors());
-        }
+public function editar()
+{
+    if (! $this->uri->segment(3) || ! is_numeric($this->uri->segment(3))) {
+        $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+        redirect('mapos');
     }
-}
 
-            $os = $this->os_model->getById($this->input->post('idOs'));
+    if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+        $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
+        redirect(base_url());
+    }
 
-            // Verifica para poder fazer a devolução do produto para o estoque caso OS seja cancelada.
-            if (strtolower($this->input->post('status')) == 'cancelado' && strtolower($os->status) != 'cancelado') {
-                $this->devolucaoEstoque($this->input->post('idOs'));
+    $this->load->library('form_validation');
+    $this->data['custom_error'] = '';
+    $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
+
+    $this->data['editavel'] = $this->os_model->isEditable($this->input->post('idOs'));
+    if (! $this->data['editavel']) {
+        $this->session->set_flashdata('error', 'Esta OS já e seu status não pode ser alterado e nem suas informações atualizadas. Por favor abrir uma nova OS.');
+        redirect(site_url('os'));
+    }
+
+    if ($this->form_validation->run('os') == false) {
+        $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
+    } else {
+        $dataInicial = $this->input->post('dataInicial');
+        $dataFinal = $this->input->post('dataFinal');
+        $termoGarantiaId = $this->input->post('garantias_id') ?: null;
+
+        try {
+            $dataInicial = explode('/', $dataInicial);
+            $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
+
+            $dataFinal = explode('/', $dataFinal);
+            $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
+        } catch (Exception $e) {
+            $dataInicial = date('Y/m/d');
+        }
+
+        $data = [
+            'dataInicial' => $dataInicial,
+            'clientes_id' => $this->input->post('clientes_id'),
+            'usuarios_id' => $this->input->post('usuarios_id'),
+            'dataFinal' => $dataFinal,
+            'garantia' => set_value('garantia'),
+            'garantias_id' => $termoGarantiaId,
+            'descricaoProduto' => $this->input->post('descricaoProduto'),
+            'defeito' => $this->input->post('defeito'),
+            'status' => $this->input->post('status') ?: 'Aberto',
+            'observacoes' => $this->input->post('observacoes'),
+            'laudoTecnico' => $this->input->post('laudoTecnico'),
+            'faturado' => 0,
+            'tipo_equipamento' => $this->input->post('tipo_equipamento'),
+            'marca_modelo' => $this->input->post('marca_modelo'),
+            'sn' => $this->input->post('sn'),
+            'pn' => $this->input->post('pn'),
+            'service_tag' => $this->input->post('service_tag'),
+            'fonte_alimentacao' => $this->input->post('fonte_alimentacao'),
+            'bateria_pn' => $this->input->post('bateria_pn'),
+            'bateria_sn' => $this->input->post('bateria_sn'),
+            'vga' => $this->input->post('vga'),
+            'hdmi' => $this->input->post('hdmi'),
+            'usb' => $this->input->post('usb'),
+            'displayport' => $this->input->post('displayport'),
+            'tela' => $this->input->post('tela'),
+            'riscado' => $this->input->post('riscado'),
+            'teclado' => $this->input->post('teclado'),
+            'touchpad' => $this->input->post('touchpad'),
+            'webcam' => $this->input->post('webcam'),
+            'microfone' => $this->input->post('microfone'),
+            'carcaca_ok' => $this->input->post('carcaca_ok'),
+            'tampa_ok' => $this->input->post('tampa_ok'),
+            'gabinete' => $this->input->post('gabinete'),
+            'dobradicas_ok' => $this->input->post('dobradicas_ok'),
+            'acabamento' => $this->input->post('acabamento'),
+            'riscado_manchado' => $this->input->post('riscado_manchado'),
+            'borrachas_apoio' => $this->input->post('borrachas_apoio'),
+            'parafusos_carcaca' => $this->input->post('parafusos_carcaca'),
+            'informacoes_complementares' => $this->input->post('informacoes_complementares'),
+        ];
+
+        $this->db->where('idOs', $this->input->post('idOs'));
+        $this->db->update('os', $data);
+
+        // Upload de fotos de inconsistências
+        if (!empty($_FILES['fotos_inconsistencias']['name'][0])) {
+            $config['upload_path'] = './uploads/inconsistencias/';
+            $config['allowed_types'] = 'jpg|png';
+            $config['max_size'] = 5120; // 5MB
+            $config['encrypt_name'] = TRUE;
+            $this->load->library('upload');
+
+            $files = $_FILES['fotos_inconsistencias'];
+            $file_count = count($files['name']);
+
+            for ($i = 0; $i < $file_count; $i++) {
+                $_FILES['foto']['name'] = $files['name'][$i];
+                $_FILES['foto']['type'] = $files['type'][$i];
+                $_FILES['foto']['tmp_name'] = $files['tmp_name'][$i];
+                $_FILES['foto']['error'] = $files['error'][$i];
+                $_FILES['foto']['size'] = $files['size'][$i];
+
+                $this->upload->initialize($config);
+                if ($this->upload->do_upload('foto')) {
+                    $upload_data = $this->upload->data();
+                    $foto_data = array(
+                        'os_id' => $this->input->post('idOs'),
+                        'file_path' => $upload_data['file_name'],
+                        'file_name' => $upload_data['orig_name'],
+                        'upload_date' => date('Y-m-d H:i:s')
+                    );
+                    $this->db->insert('os_fotos', $foto_data);
+                } else {
+                    log_message('error', $this->upload->display_errors());
+                    $this->session->set_flashdata('error', 'Erro ao fazer upload da foto: ' . $this->upload->display_errors());
+                }
+            }
+        }
+
+        $os = $this->os_model->getById($this->input->post('idOs'));
+
+        // Verifica para poder fazer a devolução do produto para o estoque caso OS seja cancelada.
+        if (strtolower($this->input->post('status')) == 'cancelado' && strtolower($os->status) != 'cancelado') {
+            $this->devolucaoEstoque($this->input->post('idOs'));
+        }
+
+        if (strtolower($os->status) == 'cancelado' && strtolower($this->input->post('status')) != 'cancelado') {
+            $this->debitarEstoque($this->input->post('idOs'));
+        }
+
+        if ($this->os_model->edit('os', $data, 'idOs', $this->input->post('idOs')) == true) {
+            $this->load->model('mapos_model');
+            $this->load->model('usuarios_model');
+            $this->load->model('clientes_model');
+
+            $idOs = $this->input->post('idOs');
+
+            $os = $this->os_model->getById($idOs);
+            $emitente = $this->mapos_model->getEmitente();
+            $tecnico = $this->usuarios_model->getById($os->usuarios_id);
+            $cliente = $this->clientes_model->getById($os->idClientes); // Dados do cliente
+
+            // Verificar configuração de notificação
+            if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
+                $remetentes = [];
+                switch ($this->data['configuration']['os_notification']) {
+                    case 'todos':
+                        array_push($remetentes, $os->email);
+                        array_push($remetentes, $tecnico->email);
+                        // array_push($remetentes, $emitente->email);
+                        break;
+                    case 'cliente':
+                        array_push($remetentes, $os->email);
+                        break;
+                    case 'tecnico':
+                        array_push($remetentes, $tecnico->email);
+                        break;
+                    case 'emitente':
+                        array_push($remetentes, $emitente->email);
+                        break;
+                    default:
+                        array_push($remetentes, $os->email);
+                        break;
+                }
+                $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Editada');
             }
 
-            if (strtolower($os->status) == 'cancelado' && strtolower($this->input->post('status')) != 'cancelado') {
-                $this->debitarEstoque($this->input->post('idOs'));
-            }
+             // Enviar notificação por WhatsApp
+             if ($this->data['configuration']['whatsapp_enabled'] == 1 && $cliente && !empty($cliente->telefone)) {
+                $telefone_cliente = preg_replace('/[^0-9]/', '', $cliente->telefone);
 
-            if ($this->os_model->edit('os', $data, 'idOs', $this->input->post('idOs')) == true) {
-                $this->load->model('mapos_model');
-                $this->load->model('usuarios_model');
-
-                $idOs = $this->input->post('idOs');
-
-                $os = $this->osmodified_model->getById($idOs);
-                $emitente = $this->mapos_model->getEmitente();
-                $tecnico = $this->usuarios_model->getById($os->usuarios_id);
-
-                // Verificar configuração de notificação
-                if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
-                    $remetentes = [];
-                    switch ($this->data['configuration']['os_notification']) {
-                        case 'todos':
-                            array_push($remetentes, $os->email);
-                            array_push($remetentes, $tecnico->email);
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        case 'cliente':
-                            array_push($remetentes, $os->email);
-                            break;
-                        case 'tecnico':
-                            array_push($remetentes, $tecnico->email);
-                            break;
-                        case 'emitente':
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        default:
-                            array_push($remetentes, $os->email);
-                            break;
-                    }
-                    $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Editada');
+                if (substr($telefone_cliente, 0, 2) !== '55') {
+                    $telefone_cliente = '55' . $telefone_cliente;
+                }
+                if (substr($telefone_cliente, 0, 1) !== '+') {
+                    $telefone_cliente = '+' . $telefone_cliente;
                 }
 
-                $this->session->set_flashdata('success', 'Os editada com sucesso!');
-                log_info('Alterou uma OS. ID: ' . $this->input->post('idOs'));
-                redirect(site_url('os/editar/') . $this->input->post('idOs'));
+                $mensagem = $this->data['configuration']['notifica_whats'];
+                $mensagem = str_replace('{CLIENTE_NOME}', $cliente->nomeCliente, $mensagem);
+                $mensagem = str_replace('{NUMERO_OS}', $idOs, $mensagem);
+
+                $this->enviarOsPorWhatsApp($idOs, $telefone_cliente, $mensagem);
+                //$this->enviarOsPorWhatsApp($idOs, $telefone_cliente, "Teste");
             } else {
-                $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro</p></div>';
+                log_message('info', 'Notificação via WhatsApp não enviada para OS #' . $idOs . ': WhatsApp desativado ou telefone do cliente não disponível.');
             }
+
+            $this->session->set_flashdata('success', 'Os editada com sucesso!');
+            log_info('Alterou uma OS. ID: ' . $this->input->post('idOs'));
+            redirect(site_url('os/editar/') . $this->input->post('idOs'));
+        } else {
+            $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro</p></div>';
         }
+    }
 
-        $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
-        $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
-        $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
-        $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
-        $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
-        $this->data['fotos'] = $this->os_model->getFotos($this->uri->segment(3)); // Adicionado
+    $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
 
-        if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
-            $this->data['totalServico'] = $return['totalServico'];
-            $this->data['totalProdutos'] = $return['totalProdutos'];
-        }
+    // Correção para produtos
+    $produtos_query = $this->os_model->getProdutos($this->uri->segment(3));
+    if ($produtos_query) {
+        $this->data['produtos'] = $produtos_query;
+    } else {
+        $this->data['produtos'] = [];
+        log_message('error', 'Erro ao buscar produtos da OS #' . $this->uri->segment(3) . ': ' . $this->db->error()['message']);
+    }
 
-        $this->load->model('mapos_model');
-        $this->data['emitente'] = $this->mapos_model->getEmitente();
+    // Correção para serviços
+    $servicos_query = $this->os_model->getServicos($this->uri->segment(3));
+    if ($servicos_query) {
+        $this->data['servicos'] = $servicos_query;
+    } else {
+        $this->data['servicos'] = [];
+        log_message('error', 'Erro ao buscar serviços da OS #' . $this->uri->segment(3) . ': ' . $this->db->error()['message']);
+    }
 
-        $this->data['view'] = 'os/editarOs';
-        return $this->layout();
+    $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
+    $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
+    $this->data['fotos'] = $this->os_model->getFotos($this->uri->segment(3));
+
+    if ($return = $this->os_model->valorTotalOS($this->uri->segment(3))) {
+        $this->data['totalServico'] = $return['totalServico'];
+        $this->data['totalProdutos'] = $return['totalProdutos'];
+    }
+
+    $this->load->model('mapos_model');
+    $this->data['emitente'] = $this->mapos_model->getEmitente();
+
+    $this->data['view'] = 'os/editarOs';
+    return $this->layout();
 }
-
                             
 public function visualizar()
 {
@@ -1436,6 +1496,138 @@ public function visualizar()
         $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
         $json = ['result' => false];
         echo json_encode($json);
+    }
+
+    private function enviarOsPorWhatsApp($idOs, $telefone, $mensagem)
+    {
+        // Obtém as configurações da API de WhatsApp
+        $api_url = $this->data['configuration']['whatsapp_api_url']; // Usa endpoint original /messages/send
+        $api_token = $this->data['configuration']['whatsapp_api_token'];
+        $from_number = $this->data['configuration']['whatsapp_number'];
+
+        // Log de todas as configurações
+        log_message('error', "Configurações disponíveis para OS #$idOs: " . print_r($this->data['configuration'], true));
+
+        // Validação do número de telefone
+        $telefone = str_replace('+', '', $telefone); // Remove o "+" temporariamente
+        if (empty($telefone) || !preg_match('/^55\d{10,11}$/', $telefone)) {
+            log_message('error', "Número de telefone inválido para OS #$idOs: $telefone");
+            return;
+        }
+        $telefone = '+' . $telefone; // Adiciona "+" para Z-API
+
+        // Verificar configurações da API
+        if (empty($api_url) || empty($api_token)) {
+            log_message('error', "Configurações da API WhatsApp inválidas para OS #$idOs. URL: $api_url, Token: $api_token");
+            return;
+        }
+
+        // Carregar dados da OS
+        $os = $this->os_model->getById($idOs);
+        if (!$os) {
+            log_message('error', "OS #$idOs não encontrada para geração da mensagem WhatsApp.");
+            return;
+        }
+
+        // Substituir placeholders na mensagem
+        if (!empty($mensagem)) {
+            // Sanitizar campos da OS e configurações
+            $descricaoProduto = strip_tags($os->descricaoProduto ?? 'Sem descrição'); // Remove HTML
+            $descricaoProduto = preg_replace('/\s+/', ' ', trim($descricaoProduto)); // Normaliza espaços
+            $placeholders = [
+                '{CLIENTE_NOME}' => mb_convert_encoding($os->nomeCliente ?? 'Cliente', 'UTF-8', 'UTF-8'),
+                '{NUMERO_OS}' => $idOs,
+                '{STATUS_OS}' => mb_convert_encoding($os->status ?? 'Desconhecido', 'UTF-8', 'UTF-8'),
+                '{DESCRI_PRODUTOS}' => mb_convert_encoding($descricaoProduto, 'UTF-8', 'UTF-8'),
+                '{VALOR_OS}' => isset($os->valorTotal) ? number_format($os->valorTotal, 2, ',', '.') : '0,00',
+                '{EMITENTE}' => mb_convert_encoding($this->data['configuration']['nome_empresa'] ?? 'Minha Empresa', 'UTF-8', 'UTF-8'),
+                '{TELEFONE_EMITENTE}' => mb_convert_encoding($this->data['configuration']['telefone_empresa'] ?? '(16) 99999-9999', 'UTF-8', 'UTF-8'),
+            ];
+
+            // Log dos valores dos placeholders
+            log_message('error', "Valores dos placeholders para OS #$idOs: " . print_r($placeholders, true));
+
+            // Substituir placeholders
+            $mensagem = str_replace(
+                array_keys($placeholders),
+                array_values($placeholders),
+                $mensagem
+            );
+        } else {
+            // Mensagem padrão se não fornecida
+            $nomeCliente = mb_convert_encoding($os->nomeCliente ?? 'Cliente', 'UTF-8', 'UTF-8');
+            $descricaoProduto = strip_tags($os->descricaoProduto ?? 'Sem descrição');
+            $descricaoProduto = preg_replace('/\s+/', ' ', trim($descricaoProduto));
+            $placeholders = [
+                '{STATUS_OS}' => mb_convert_encoding($os->status ?? 'Desconhecido', 'UTF-8', 'UTF-8'),
+                '{DESCRI_PRODUTOS}' => mb_convert_encoding($descricaoProduto, 'UTF-8', 'UTF-8'),
+                '{EMITENTE}' => mb_convert_encoding($this->data['configuration']['nome_empresa'] ?? 'Minha Empresa', 'UTF-8', 'UTF-8'),
+            ];
+            $mensagem = "Olá, {$nomeCliente}!\n";
+            $mensagem .= "Atualização sobre a Ordem de Serviço #{$idOs}:\n";
+            $mensagem .= "Status: {$placeholders['{STATUS_OS}']}\n";
+            $mensagem .= "Descrição: {$placeholders['{DESCRI_PRODUTOS}']}\n";
+            $mensagem .= "Data de Início: " . date('d/m/Y', strtotime($os->dataInicial)) . "\n";
+            $mensagem .= "Para mais detalhes, entre em contato conosco!\n";
+            $mensagem .= "Atenciosamente, {$placeholders['{EMITENTE}']}";
+        }
+
+        // Sanitizar mensagem
+        $mensagem = strip_tags($mensagem); // Remove qualquer HTML residual
+        $mensagem = mb_convert_encoding($mensagem, 'UTF-8', 'UTF-8'); // Garante UTF-8 válido
+        $mensagem = preg_replace('/[\x00-\x1F\x7F-\x9F]/u', '', $mensagem); // Remove caracteres de controle
+        $mensagem = preg_replace('/[\p{So}]/u', '', $mensagem); // Remove emojis
+        $mensagem = str_replace('!', '.', $mensagem); // Substitui ! por .
+        $mensagem = trim($mensagem); // Remove espaços extras
+
+        // Validação da mensagem
+        if (empty($mensagem)) {
+            log_message('error', "Mensagem vazia após sanitização para OS #$idOs. Usando mensagem genérica.");
+            $mensagem = "Atualização sobre a OS #{$idOs}. Entre em contato para detalhes.";
+        }
+
+        // Limite de caracteres (Z-API suporta até 4096)
+        if (strlen($mensagem) > 4096) {
+            log_message('error', "Mensagem excede o limite de caracteres para OS #$idOs");
+            $mensagem = substr($mensagem, 0, 4090) . '...';
+        }
+
+        // Log da mensagem
+        log_message('error', "Mensagem a ser enviada para OS #{$idOs}: '$mensagem'");
+
+        // Monta o corpo da requisição pra API (Z-API format)
+        $payload = [
+            'phone' => $telefone,
+            'message' => $mensagem
+        ];
+
+        // Log do payload
+        log_message('error', "Payload enviado para API WhatsApp na OS #{$idOs}: " . json_encode($payload, JSON_UNESCAPED_UNICODE));
+
+        // Faz a requisição pra API
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $api_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $api_token,
+            'Content-Type: application/json'
+        ]);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        // Parse da resposta
+        $response_data = json_decode($response, true);
+
+        // Log do resultado
+        if ($http_code == 200 && (!isset($response_data['error']) || empty($response_data['error']))) {
+            log_message('info', 'Notificação via WhatsApp enviada com sucesso para ' . $telefone . ' na OS #' . $idOs);
+            $this->os_model->addHistorico($idOs, "Notificação enviada via WhatsApp para $telefone");
+        } else {
+            log_message('error', 'Erro ao enviar notificação via WhatsApp para ' . $telefone . ' na OS #' . $idOs . '. Código HTTP: ' . $http_code . ', Resposta: ' . print_r($response_data, true));
+        }
     }
 
     private function enviarOsPorEmail($idOs, $remetentes, $assunto)

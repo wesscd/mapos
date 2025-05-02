@@ -70,7 +70,7 @@
                     <div class="tab-content">
                         <div class="tab-pane active" id="tab1">
                             <div class="span12" id="divCadastrarOs">
-                                <form action="<?php echo current_url(); ?>" method="post" id="formOs">
+                                <form action="<?php echo current_url(); ?>" method="post" id="formOs">                        
                                     <?php echo form_hidden('idOs', $result->idOs) ?>
                                     <div class="span12" style="padding: 1%; margin-left: 0">
                                         <h3>N° OS: <?php echo $result->idOs; ?></h3>

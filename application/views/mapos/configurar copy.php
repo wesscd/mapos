@@ -276,38 +276,36 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Menu Notificações -->
                     <div id="menu3" class="tab-pane fade">
-                        <div class="control-group">
-                            <label for="whatsapp_enabled" class="control-label">Ativar Notificações WhatsApp</label>
-                            <div class="controls">
-                                <select name="whatsapp_enabled" id="whatsapp_enabled">
-                                    <option value="1">Ativar</option>
-                                    <option value="0" <?= ($configuration['whatsapp_enabled'] ?? 0) == 0 ? 'selected' : ''; ?>>Desativar</option>
-                                </select>
-                            <span class="help-inline">Ativar ou desativar envio automático de notificações via WhatsApp.</span>
-                        </div>
-                    </div>
-                        <div class="control-group">
-                            <label for="whatsapp_api_url" class="control-label">URL da API WhatsApp (Ticketz)</label>
-                            <div class="controls">
-                                <input type="text" name="whatsapp_api_url" value="<?= htmlspecialchars($configuration['whatsapp_api_url'] ?? '') ?>" placeholder="ex.: http://localhost:3000/api/messages/send">
-                                <span class="help-inline">URL da API do Ticketz para envio de mensagens.</span>
-                            </div>
-                        </div>
                     <div class="control-group">
-                        <label for="whatsapp_number" class="control-label">Número WhatsApp da Empresa</label>
-                        <div class="controls">
-                            <input type="text" name="whatsapp_number" value="<?= htmlspecialchars($configuration['whatsapp_number'] ?? '') ?>" placeholder="ex.: +5511999999999">
-                               <span class="help-inline">Número registrado no Ticketz (com código do país).</span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="whatsapp_api_token" class="control-label">Token da API WhatsApp</label>
+    <label for="whatsapp_enabled" class="control-label">Ativar Notificações WhatsApp</label>
+    <div class="controls">
+        <select name="whatsapp_enabled" id="whatsapp_enabled">
+            <option value="1">Ativar</option>
+            <option value="0" <?= ($configuration['whatsapp_enabled'] ?? 0) == 0 ? 'selected' : ''; ?>>Desativar</option>
+        </select>
+        <span class="help-inline">Ativar ou desativar envio automático de notificações via WhatsApp.</span>
+    </div>
+</div>
+<div class="control-group">
+    <label for="whatsapp_api_url" class="control-label">URL da API WhatsApp (Ticketz)</label>
+    <div class="controls">
+        <input type="text" name="whatsapp_api_url" value="<?= htmlspecialchars($configuration['whatsapp_api_url'] ?? '') ?>" placeholder="ex.: http://localhost:3000/api/messages/send">
+        <span class="help-inline">URL da API do Ticketz para envio de mensagens.</span>
+    </div>
+</div>
+<div class="control-group">
+    <label for="whatsapp_number" class="control-label">Número WhatsApp da Empresa</label>
+    <div class="controls">
+        <input type="text" name="whatsapp_number" value="<?= htmlspecialchars($configuration['whatsapp_number'] ?? '') ?>" placeholder="ex.: +5511999999999">
+        <span class="help-inline">Número registrado no Ticketz (com código do país).</span>
+    </div>
+</div>
+<div class="control-group">
+                                <label for="whatsapp_api_token" class="control-label">Token da API WhatsApp</label>
                                 <div class="controls">
-                                    <input type="text" name="whatsapp_api_token" value="<?= htmlspecialchars($configuration['whatsapp_api_token'] ?? '') ?>" placeholder="Insira o token da API">
-                                    <span class="help-inline">Codigo token gerado em conexões.</span>
+                                    <input id="whatsapp_api_token" name="whatsapp_api_token" type="text" value="<?php echo isset($config['whatsapp_api_token']) ? $config['whatsapp_api_token'] : ''; ?>" placeholder="Insira o token da API" />
                                 </div>
                             </div>
                         <div class="control-group">
@@ -323,12 +321,22 @@
                                 <span class="help-inline">Selecione a opção de notificação por e-mail no cadastro de OS.</span>
                             </div>
                         </div>
-                        
+                        <div class="control-group">
+                            <label for="email_automatico" class="control-label">Enviar Email Automático</label>
+                            <div class="controls">
+                                <select name="email_automatico" id="email_automatico">
+                                    <option value="1">Ativar</option>
+                                    <option value="0" <?= $configuration['email_automatico'] == '0' ? 'selected' : ''; ?>>Desativar</option>
+                                </select>
+                                <span class="help-inline">Ativar ou Desativar a opção de envio de e-mail automático no cadastro de OS.</span>
+                            </div>
+                        </div>
                         <div class="control-group">
                             <label for="notifica_whats" class="control-label">Notificação do whatsapp</label>
                             <div class="controls">
                                 <textarea rows="5" cols="20" name="notifica_whats" id="notifica_whats" placeholder="Use as tags abaixo para criar seu texto!" style="margin: 0px; width: 606px; height: 86px;"><?php echo $configuration['notifica_whats']; ?></textarea>
-                           
+                            </div>
+                            <div class="span3">
                                 <label for="notifica_whats_select">Tags de preenchimento<span class="required"></span></label>
                                 <select class="span12" name="notifica_whats_select" id="notifica_whats_select" value="">
                                     <option value="0">Selecione...</option>
@@ -346,41 +354,13 @@
                                     <option value="{DATA_INICIAL}">Data Inicial</option>
                                     <option value="{DATA_GARANTIA}">Data da Garantia</option>
                                 </select>
-                            
+                            </div>
                             <span6 class="span10">
                                 Para negrito use: *palavra*
                                 Para itálico use: _palavra_
                                 Para riscado use: ~palavra~
                                 </span>
                         </div>
-                    </div>
-                        <!-- Campos para teste -->
-<div class="control-group">
-    <label for="test_number" class="control-label">Número para Teste</label>
-    <div class="controls">
-        <input id="test_number" name="test_number" type="text" value="" placeholder="Ex.: +558599999999" />
-    </div>
-</div>
-
-<div class="control-group">
-    <label for="test_message" class="control-label">Mensagem de Teste</label>
-    <div class="controls">
-        <textarea id="test_message" name="test_message" rows="3">Mensagem de teste enviada pelo MAPOS!</textarea>
-    </div>
-</div>
-
-<div class="control-group">
-    <div class="controls">
-        <button type="submit" name="test_whatsapp" value="1" class="btn btn-info">Testar Envio</button>
-    </div>
-</div>
-
-<!-- Exibir resultado do teste -->
-<?php if (!empty($test_message)) {
-    echo $test_message;
-} ?>
-
-
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
@@ -502,16 +482,6 @@
                     </div>
                     <!-- Menu E-mail -->
                     <div id="menu7" class="tab-pane fade">
-                    <div class="control-group">
-                            <label for="email_automatico" class="control-label">Enviar Email Automático</label>
-                            <div class="controls">
-                                <select name="email_automatico" id="email_automatico">
-                                    <option value="1">Ativar</option>
-                                    <option value="0" <?= $configuration['email_automatico'] == '0' ? 'selected' : ''; ?>>Desativar</option>
-                                </select>
-                                <span class="help-inline">Ativar ou Desativar a opção de envio de e-mail automático no cadastro de OS.</span>
-                            </div>
-                        </div>
                         <div class="control-group">
                             <label for="EMAIL_PROTOCOL" class="control-label">Protocolo de E-mail</label>
                             <div class="controls">

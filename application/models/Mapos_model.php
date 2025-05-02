@@ -463,4 +463,15 @@ class Mapos_model extends CI_Model
 
         return true;
     }
+
+    // No arquivo application/models/mapos_model.php
+    public function getConfiguracao($key)
+    {
+        $this->db->where('config', $key);
+        $query = $this->db->get('configuracoes', 1);
+        if ($query->num_rows() > 0) {
+            return $query->row()->valor;
+        }
+        return null;
+    }
 }

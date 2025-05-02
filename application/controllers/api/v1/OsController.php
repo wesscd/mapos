@@ -95,6 +95,53 @@ class OsController extends REST_Controller
         ], REST_Controller::HTTP_OK);
     }
 
+    private function enviarMensagemWhatsApp($telefone, $mensagem) {
+        $whatsapp_enabled = $this->getConfig('whatsapp_enabled');
+        $whatsapp_api_url = $this->getConfig('whatsapp_api_url');
+        $whatsapp_number = $this->getConfig('whatsapp_number');
+        $token = $this->getConfig('whatsapp_api_token'); // Lê o token do banco
+    
+        if (!$whatsapp_enabled || !$whatsapp_api_url || !$whatsapp_number || !$token) {
+            $this->log_app('Notificação WhatsApp não enviada: Configurações incompletas.');
+            return false;
+        }
+    
+        $telefone = preg_replace('/[^0-9]/', '', $telefone);
+        if (strlen($telefone) == 11 && substr($telefone, 0, 2) == '55') {
+            $telefone = '+' . $telefone;
+        } elseif (strlen($telefone) == 10) {
+            $telefone = '+55' . $telefone;
+        }
+    
+        $data = [
+            'number' => $telefone,
+            'body' => $mensagem,
+            'saveOnTicket' => true,
+            'linkPreview' => true
+        ];
+    
+        $ch = curl_init($whatsapp_api_url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $token
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    
+        if ($http_code == 200) {
+            $this->log_app('Notificação WhatsApp enviada para ' . $telefone);
+            return true;
+        } else {
+            $this->log_app('Erro ao enviar notificação WhatsApp: ' . $response);
+            return false;
+        }
+    }
+
     public function index_post()
     {
         $this->logged_user();
@@ -184,6 +231,25 @@ class OsController extends REST_Controller
                         break;
                 }
                 $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
+
+                // Enviar notificação WhatsApp
+                if ($this->getConfig('whatsapp_enabled') == 1 && $os->telefone) {
+                    $textoWhatsApp = $this->criarTextoWhats($os, $totalProdutos, $totalServico);
+                
+                    // Carrega o helper e envia a mensagem
+                    $this->load->helper('whatsapp');
+                    $configuracoes = [
+                        'whatsapp_enabled' => $this->getConfig('whatsapp_enabled'),
+                        'whatsapp_api_url' => $this->getConfig('whatsapp_api_url'),
+                        'whatsapp_number' => $this->getConfig('whatsapp_number'),
+                        'whatsapp_api_token' => $this->getConfig('whatsapp_api_token'),
+                    ];
+                    $result = enviar_mensagem_whatsapp($os->telefone, $textoWhatsApp, $configuracoes);
+                    if (!$result['success']) {
+                        $this->log_app('Erro ao enviar mensagem WhatsApp para OS: ' . $result['message']);
+                    }
+                }
+
             }
 
             $this->log_app('Adicionou uma OS. ID: ' . $id);
@@ -309,6 +375,26 @@ class OsController extends REST_Controller
                         break;
                 }
                 $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
+
+                // Enviar notificação WhatsApp
+                if ($this->getConfig('whatsapp_enabled') == 1 && $os->telefone) {
+                    $total = $this->calcTotal($idOs);
+                    $textoWhatsApp = $this->criarTextoWhats($os, $totalProdutos, $totalServico);
+                
+                    // Carrega o helper e envia a mensagem
+                    $this->load->helper('whatsapp');
+                    $configuracoes = [
+                        'whatsapp_enabled' => $this->getConfig('whatsapp_enabled'),
+                        'whatsapp_api_url' => $this->getConfig('whatsapp_api_url'),
+                        'whatsapp_number' => $this->getConfig('whatsapp_number'),
+                        'whatsapp_api_token' => $this->getConfig('whatsapp_api_token'),
+                    ];
+                    $result = enviar_mensagem_whatsapp($os->telefone, $textoWhatsApp, $configuracoes);
+                    if (!$result['success']) {
+                        $this->log_app('Erro ao enviar mensagem WhatsApp para OS ' . $idOs . ': ' . $result['message']);
+                    }
+                }
+
             }
 
             $this->log_app('Alterou uma OS. ID: ' . $id);
