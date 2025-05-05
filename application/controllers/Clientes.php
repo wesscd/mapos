@@ -89,9 +89,30 @@ class Clientes extends MY_Controller
                 'fornecedor' => $this->input->post('fornecedor') ? 1 : 0,
             ];
 
-            if ($this->clientes_model->add('clientes', $data) == true) {
+            $clienteId = $this->clientes_model->add('clientes', $data);
+            if ($clienteId) {
                 $this->session->set_flashdata('success', 'Cliente adicionado com sucesso!');
-                log_info('Adicionou um cliente.');
+                log_info('Adicionou um cliente. ID: ' . $clienteId);
+
+                // Logar configurações disponíveis
+                log_message('debug', 'Configurações disponíveis em adicionar(): ' . print_r($this->data['configuration'], true));
+
+                // Enviar mensagem de boas-vindas via WhatsApp
+                $telefone = !empty($data['celular']) ? $data['celular'] : $data['telefone'];
+                if ($telefone && isset($this->data['configuration']['whatsapp_enabled']) && $this->data['configuration']['whatsapp_enabled'] == '1') {
+                    $telefoneEmitente = ($this->data['configuration']['use_whatsapp_empresa'] ?? 0) == '1'
+                        ? ($this->data['configuration']['whatsapp_number'] ?? 'Não informado')
+                        : ($this->data['configuration']['telefone_empresa'] ?? 'Não informado');
+                    $placeholders = [
+                        '{CLIENTE_NOME}' => $data['nomeCliente'],
+                        '{EMITENTE}' => $this->data['configuration']['app_name'] ?? 'Empresa',
+                        '{TELEFONE_EMITENTE}' => $telefoneEmitente,
+                    ];
+                    log_message('debug', "Placeholder {EMITENTE} definido como: " . ($this->data['configuration']['app_name'] ?? 'Empresa'));
+                    log_message('debug', "Placeholder {TELEFONE_EMITENTE} definido como: " . $telefoneEmitente . " (use_whatsapp_empresa: " . ($this->data['configuration']['use_whatsapp_empresa'] ?? 0) . ")");
+                    $this->enviarWhatsApp($telefone, 'whatsapp_cad_msg', $placeholders, $clienteId, 'boas-vindas');
+                }
+
                 redirect(site_url('clientes/'));
             } else {
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro.</p></div>';
@@ -226,5 +247,125 @@ class Clientes extends MY_Controller
 
         $this->session->set_flashdata('success', 'Cliente excluido com sucesso!');
         redirect(site_url('clientes/gerenciar/'));
+    }
+
+    /**
+     * Envia uma mensagem via WhatsApp usando a Z-API e registra no histórico
+     *
+     * @param string $telefone Número de telefone do destinatário (com DDD, e.g., 5516992636487)
+     * @param string $configChave Chave da configuração do template (e.g., whatsapp_cad_msg)
+     * @param array $placeholders Array associativo com placeholders e valores (e.g., ['{CLIENTE_NOME}' => 'João'])
+     * @param int $idRegistro ID do registro associado (e.g., idClientes)
+     * @param string $tipo Tipo da mensagem para log (e.g., 'boas-vindas')
+     * @return bool Retorna true se o envio for bem-sucedido, false caso contrário
+     */
+    private function enviarWhatsApp($telefone, $configChave, $placeholders, $idRegistro, $tipo)
+    {
+        // Verificar se o WhatsApp está habilitado
+        if (!isset($this->data['configuration']['whatsapp_enabled']) || $this->data['configuration']['whatsapp_enabled'] != '1') {
+            log_message('info', "Envio de WhatsApp ($tipo) para cliente ID #{$idRegistro} não realizado: WhatsApp desabilitado.");
+            return false;
+        }
+
+        // Usar template do banco com placeholders
+        $mensagem = $this->data['configuration'][$configChave] ?? '';
+        if (empty($mensagem)) {
+            log_message('error', "Envio de WhatsApp ($tipo) para cliente ID #{$idRegistro} não realizado: Template '$configChave' vazio ou não encontrado.");
+            return false;
+        }
+        foreach ($placeholders as $key => $value) {
+            $mensagem = str_replace($key, $value, $mensagem);
+        }
+
+        // Logar configuração do banco
+        $templateBanco = $this->data['configuration'][$configChave] ?? 'N/A';
+        log_message('debug', "Template do banco para {$configChave} (cliente ID #{$idRegistro}, tipo: {$tipo}): " . var_export($templateBanco, true));
+
+        // Limpar o número de telefone
+        $telefoneOriginal = $telefone;
+        $telefone = preg_replace('/[^0-9]/', '', $telefone);
+        log_message('debug', "Número de telefone original (cliente ID #{$idRegistro}, tipo: {$tipo}): '{$telefoneOriginal}', após limpeza: '{$telefone}'");
+
+        // Adicionar código do país (55) se ausente
+        if (!preg_match('/^55/', $telefone)) {
+            if (strlen($telefone) == 10 || strlen($telefone) == 11) {
+                $telefone = '55' . $telefone;
+                log_message('debug', "Código do país '55' adicionado ao número (cliente ID #{$idRegistro}, tipo: {$tipo}): '{$telefone}'");
+            }
+        }
+
+        // Validar o número
+        if (strlen($telefone) < 12 || !preg_match('/^55[0-9]{10,11}$/', $telefone)) {
+            log_message('error', "Envio de WhatsApp ($tipo) para cliente ID #{$idRegistro} não realizado: Número de telefone inválido ({$telefone}).");
+            return false;
+        }
+
+        // Logar mensagem
+        log_message('info', "Mensagem a ser enviada (cliente ID #{$idRegistro}, tipo: {$tipo}): '{$mensagem}'");
+
+        // Configurações Z-API
+        $apiUrl = $this->data['configuration']['whatsapp_api_url'] ?? '';
+        $apiToken = $this->data['configuration']['whatsapp_api_token'] ?? '';
+        $numeroApi = $this->data['configuration']['whatsapp_number'] ?? '';
+
+        if (empty($apiUrl) || empty($apiToken) || empty($numeroApi)) {
+            log_message('error', "Envio de WhatsApp ($tipo) para cliente ID #{$idRegistro} não realizado: Configurações da API WhatsApp incompletas.");
+            return false;
+        }
+
+        // Payload conforme especificação da Z-API
+        $payload = [
+            'number' => $telefone,
+            'body' => $mensagem,
+            'saveOnTicket' => true,
+            'linkPreview' => true
+        ];
+        $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        log_message('debug', "Payload montado (cliente ID #{$idRegistro}, tipo: {$tipo}): " . $payloadJson);
+
+        $headers = [
+            'Authorization: Bearer ' . $apiToken,
+            'Content-Type: application/json; charset=utf-8'
+        ];
+        log_message('debug', "Headers da requisição (cliente ID #{$idRegistro}, tipo: {$tipo}): " . implode(', ', $headers));
+
+        // Enviar via cURL
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payloadJson);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        log_message('info', "Resposta da API WhatsApp para cliente ID #{$idRegistro} ({$tipo}): HTTP $httpCode, Resposta: " . $response);
+        if ($curlError) {
+            log_message('error', "Erro cURL para cliente ID #{$idRegistro} ({$tipo}): " . $curlError);
+        }
+
+        // Registrar no histórico
+        $historicoData = [
+            'idClientes' => $idRegistro,
+            'descricao' => "Envio de WhatsApp ($tipo): '$mensagem' para $telefone (HTTP $httpCode)",
+            'data' => date('Y-m-d H:i:s')
+        ];
+        $this->db->insert('clientes_historico', $historicoData);
+        if ($this->db->affected_rows() > 0) {
+            log_message('info', "Registro adicionado em clientes_historico para cliente ID #{$idRegistro} ({$tipo}).");
+        } else {
+            log_message('error', "Falha ao registrar em clientes_historico para cliente ID #{$idRegistro} ({$tipo}).");
+        }
+
+        if ($httpCode == 200) {
+            log_message('info', "Mensagem WhatsApp ($tipo) enviada com sucesso para cliente ID #{$idRegistro}.");
+            return true;
+        } else {
+            log_message('error', "Falha ao enviar WhatsApp ($tipo) para cliente ID #{$idRegistro}. Código HTTP: {$httpCode}. Resposta: {$response}");
+            return false;
+        }
     }
 }

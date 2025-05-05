@@ -397,287 +397,153 @@ class Mapos extends MY_Controller {
     }
 
     public function configurar()
-{
-    if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
-        $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema');
-        redirect(base_url());
-    }
-    $this->data['menuConfiguracoes'] = 'Sistema';
+    {
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema.');
+            redirect(base_url());
+        }
 
-    $this->load->library('form_validation');
-    $this->load->model('mapos_model');
+        $this->load->library('form_validation');
+        $this->data['custom_error'] = '';
 
-    $this->data['custom_error'] = '';
-    $this->data['test_message'] = ''; // Inicializa a variável pra exibir o resultado do teste
+        // Log para depurar os dados recebidos do formulário
+        log_message('debug', 'Dados recebidos do formulário: ' . print_r($this->input->post(), true));
 
-    // Verifica se o botão "Testar Envio" foi clicado
-    if ($this->input->post('test_whatsapp') == '1') {
-        $test_number = $this->input->post('test_number');
-        $test_message = $this->input->post('test_message');
+        if ($this->input->post('test_whatsapp') == '1') {
+            $this->load->library('mapos_whatsapp');
+            $result = $this->mapos_whatsapp->send($this->input->post('test_number'), $this->input->post('test_message'));
 
-        if (empty($test_number) || empty($test_message)) {
-            $this->data['test_message'] = '<div class="alert alert-error">Por favor, preencha o número e a mensagem de teste.</div>';
-        } else {
-            // Carrega o helper
-            $this->load->helper('whatsapp');
-
-            // Monta as configurações
-            $configuracoes = [
-                'whatsapp_enabled' => $this->mapos_model->getConfiguracao('whatsapp_enabled'),
-                'whatsapp_api_url' => $this->mapos_model->getConfiguracao('whatsapp_api_url'),
-                'whatsapp_number' => $this->mapos_model->getConfiguracao('whatsapp_number'),
-                'whatsapp_api_token' => $this->mapos_model->getConfiguracao('whatsapp_api_token'),
-            ];
-
-            // Envia a mensagem de teste
-            $result = enviar_mensagem_whatsapp($test_number, $test_message, $configuracoes);
-
-            // Define a mensagem de resultado
-            if ($result['success']) {
-                $this->data['test_message'] = '<div class="alert alert-success">Mensagem enviada com sucesso!</div>';
+            if ($result === true) {
+                $this->data['test_message'] = '<div class="alert alert-success"><strong>Sucesso!</strong> Mensagem enviada com sucesso.</div>';
             } else {
-                $this->data['test_message'] = '<div class="alert alert-error">Erro ao enviar mensagem: ' . htmlspecialchars($result['message']) . '</div>';
+                $this->data['test_message'] = '<div class="alert alert-danger"><strong>Erro!</strong> Não foi possível enviar a mensagem: ' . $result . '</div>';
             }
         }
-    }
 
-    // Validação do formulário de configurações
-    $this->form_validation->set_rules('app_name', 'Nome do Sistema', 'required|trim');
-    $this->form_validation->set_rules('per_page', 'Registros por página', 'required|numeric|trim');
-    $this->form_validation->set_rules('app_theme', 'Tema do Sistema', 'required|trim');
-    $this->form_validation->set_rules('os_notification', 'Notificação de OS', 'required|trim');
-    $this->form_validation->set_rules('email_automatico', 'Enviar Email Automático', 'required|trim');
-    $this->form_validation->set_rules('control_estoque', 'Controle de Estoque', 'required|trim');
-    $this->form_validation->set_rules('notifica_whats', 'Notificação Whatsapp', 'required|trim');
-    $this->form_validation->set_rules('control_baixa', 'Controle de Baixa', 'required|trim');
-    $this->form_validation->set_rules('control_editos', 'Controle de Edição de OS', 'required|trim');
-    $this->form_validation->set_rules('control_edit_vendas', 'Controle de Edição de Vendas', 'required|trim');
-    $this->form_validation->set_rules('control_datatable', 'Controle de Visualização em DataTables', 'required|trim');
-    $this->form_validation->set_rules('os_status_list[]', 'Controle de visualização de OS', 'required|trim', ['required' => 'Selecione ao menos uma das opções!']);
-    $this->form_validation->set_rules('control_2vias', 'Controle Impressão 2 Vias', 'required|trim');
-    $this->form_validation->set_rules('pix_key', 'Chave Pix', 'trim|valid_pix_key', [
-        'valid_pix_key' => 'Chave Pix inválida!',
-    ]);
+        // Definir regras de validação apenas para campos obrigatórios
+        $this->form_validation->set_rules('app_name', 'Nome do Sistema', 'required|trim');
+        $this->form_validation->set_rules('per_page', 'Itens por Página', 'required|numeric|trim');
 
-    // Novas regras para configurações WhatsApp
-    $this->form_validation->set_rules('whatsapp_enabled', 'Ativar Notificações WhatsApp', 'required|trim');
-    $this->form_validation->set_rules('whatsapp_api_url', 'URL da API WhatsApp', 'trim');
-    $this->form_validation->set_rules('whatsapp_number', 'Número WhatsApp', 'trim');
-    $this->form_validation->set_rules('whatsapp_api_token', 'Token da API WhatsApp', 'trim');
-
-    if ($this->form_validation->run() == false) {
-        $this->data['custom_error'] = (validation_errors() ? '<div class="alert">' . validation_errors() . '</div>' : false);
-    } else {
-        // Edição do .env
-        $dataDotEnv = [
-            'IMPRIMIR_ANEXOS' => $this->input->post('imprmirAnexos'),
-            'PAYMENT_GATEWAYS_EFI_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_EFI_PRODUCTION'),
-            'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID'),
-            'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET'),
-            'PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION'),
-            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY'),
-            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN'),
-            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID'),
-            'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET'),
-            'PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION'),
-            'PAYMENT_GATEWAYS_ASAAS_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_PRODUCTION'),
-            'PAYMENT_GATEWAYS_ASAAS_NOTIFY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_NOTIFY'),
-            'PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY'),
-            'PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION'),
-            'API_ENABLED' => $this->input->post('apiEnabled'),
-            'API_TOKEN_EXPIRE_TIME' => $this->input->post('apiExpireTime'),
-            'API_JWT_KEY' => $this->input->post('resetJwtToken'),
-            'EMAIL_PROTOCOL' => $this->input->post('EMAIL_PROTOCOL'),
-            'EMAIL_SMTP_HOST' => $this->input->post('EMAIL_SMTP_HOST'),
-            'EMAIL_SMTP_CRYPTO' => $this->input->post('EMAIL_SMTP_CRYPTO'),
-            'EMAIL_SMTP_PORT' => $this->input->post('EMAIL_SMTP_PORT'),
-            'EMAIL_SMTP_USER' => $this->input->post('EMAIL_SMTP_USER'),
-            'EMAIL_SMTP_PASS' => $this->input->post('EMAIL_SMTP_PASS'),
-        ];
-
-        if (!$this->editDontEnv($dataDotEnv)) {
-            $this->data['custom_error'] = '<div class="alert">Falha ao editar o .env</div>';
-        }
-        // FIM Edição do .env
-
-        $data = [
-            'app_name' => $this->input->post('app_name'),
-            'per_page' => $this->input->post('per_page'),
-            'app_theme' => $this->input->post('app_theme'),
-            'os_notification' => $this->input->post('os_notification'),
-            'email_automatico' => $this->input->post('email_automatico'),
-            'control_estoque' => $this->input->post('control_estoque'),
-            'notifica_whats' => $this->input->post('notifica_whats'),
-            'control_baixa' => $this->input->post('control_baixa'),
-            'control_editos' => $this->input->post('control_editos'),
-            'control_edit_vendas' => $this->input->post('control_edit_vendas'),
-            'control_datatable' => $this->input->post('control_datatable'),
-            'pix_key' => $this->input->post('pix_key'),
-            'os_status_list' => json_encode($this->input->post('os_status_list')),
-            'control_2vias' => $this->input->post('control_2vias'),
-            // Novas configurações WhatsApp
-            'whatsapp_enabled' => $this->input->post('whatsapp_enabled'),
-            'whatsapp_api_url' => $this->input->post('whatsapp_api_url'),
-            'whatsapp_number' => $this->input->post('whatsapp_number'),
-            'whatsapp_api_token' => $this->input->post('whatsapp_api_token'),
-        ];
-
-        if ($this->mapos_model->saveConfiguracao($data) == true) {
-            $this->session->set_flashdata('success', 'Configurações do sistema atualizadas com sucesso!');
-            redirect(site_url('mapos/configurar'));
+        if ($this->form_validation->run('configuracoes') == false) {
+            $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
+            log_message('error', 'Erro de validação do formulário: ' . validation_errors());
         } else {
-            $this->data['custom_error'] = '<div class="alert">Ocorreu um errro.</div>';
+            $data = array(
+                'app_name' => $this->input->post('app_name'),
+                'telefone_empresa' => $this->input->post('telefone_empresa'),
+                'use_whatsapp_empresa' => $this->input->post('use_whatsapp_empresa'),
+                'app_theme' => $this->input->post('app_theme'),
+                'per_page' => $this->input->post('per_page'),
+                'control_datatable' => $this->input->post('control_datatable'),
+                'control_baixa' => $this->input->post('control_baixa'),
+                'control_editos' => $this->input->post('control_editos'),
+                'control_edit_vendas' => $this->input->post('control_edit_vendas'),
+                'pix_key' => $this->input->post('pix_key'),
+                'control_estoque' => $this->input->post('control_estoque'),
+                'whatsapp_enabled' => $this->input->post('whatsapp_enabled'),
+                'whatsapp_api_url' => $this->input->post('whatsapp_api_url'),
+                'whatsapp_number' => $this->input->post('whatsapp_number'),
+                'whatsapp_api_token' => $this->input->post('whatsapp_api_token'),
+                'os_notification' => $this->input->post('os_notification'),
+                'notifica_whats' => $this->input->post('notifica_whats'),
+                'notifica_whats_criac' => $this->input->post('notifica_whats_criac'),
+                'whatsapp_cad_msg' => $this->input->post('whatsapp_cad_msg'),
+                'control_2vias' => $this->input->post('control_2vias'),
+                'os_status_list' => json_encode($this->input->post('os_status_list')),
+                'email_automatico' => $this->input->post('email_automatico'),
+            );
+
+            // Log para verificar os dados enviados ao modelo
+            log_message('debug', 'Dados enviados ao modelo: ' . print_r($data, true));
+
+            // Atualizar variáveis de ambiente
+            $envVars = array(
+                'PAYMENT_GATEWAYS_EFI_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_EFI_PRODUCTION'),
+                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_ID'),
+                'PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_EFI_CREDENTIAIS_CLIENT_SECRET'),
+                'PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_EFI_BOLETO_EXPIRATION'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_ACCESS_TOKEN'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_ID'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_CREDENTIALS_CLIENT_SECRET'),
+                'PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_MERCADO_PAGO_BOLETO_EXPIRATION'),
+                'PAYMENT_GATEWAYS_ASAAS_PRODUCTION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_PRODUCTION'),
+                'PAYMENT_GATEWAYS_ASAAS_NOTIFY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_NOTIFY'),
+                'PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_CREDENTIAIS_API_KEY'),
+                'PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION' => $this->input->post('PAYMENT_GATEWAYS_ASAAS_BOLETO_EXPIRATION'),
+                'IMPRIMIR_ANEXOS' => $this->input->post('imprmirAnexos'),
+                'API_ENABLED' => $this->input->post('apiEnabled'),
+                'API_TOKEN_EXPIRE_TIME' => $this->input->post('apiExpireTime'),
+                'EMAIL_PROTOCOL' => $this->input->post('EMAIL_PROTOCOL'),
+                'EMAIL_SMTP_HOST' => $this->input->post('EMAIL_SMTP_HOST'),
+                'EMAIL_SMTP_CRYPTO' => $this->input->post('EMAIL_SMTP_CRYPTO'),
+                'EMAIL_SMTP_PORT' => $this->input->post('EMAIL_SMTP_PORT'),
+                'EMAIL_SMTP_USER' => $this->input->post('EMAIL_SMTP_USER'),
+                'EMAIL_SMTP_PASS' => $this->input->post('EMAIL_SMTP_PASS'),
+            );
+
+            // Resetar token JWT se solicitado
+            if ($this->input->post('resetJwtToken') == 'sim') {
+                $this->mapos_model->resetJwtToken();
+            }
+
+            // Salvar configurações
+            $retorno = $this->mapos_model->saveConfiguracao($data, $envVars);
+
+            // Log para verificar o resultado do modelo
+            log_message('debug', 'Resultado do saveConfiguracao: ' . ($retorno ? 'Sucesso' : 'Falha'));
+
+            if ($retorno) {
+                $this->session->set_flashdata('success', 'Configurações salvas com sucesso!');
+                log_info('Alterou configurações do sistema.');
+            } else {
+                $this->session->set_flashdata('error', 'Ocorreu um erro ao salvar as configurações.');
+            }
+            redirect(site_url('mapos/configurar'));
         }
+
+        $this->data['configuration'] = $this->mapos_model->getConfiguracao();
+        $this->data['menuConfiguracoes'] = 'Configuracoes';
+        $this->data['view'] = 'mapos/configurar';
+
+        return $this->layout();
     }
-
-    $this->data['view'] = 'mapos/configurar';
-
-    return $this->layout();
-}
 
     public function atualizarBanco()
     {
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema');
+            $this->session->set_flashdata('error', 'Você não tem permissão para atualizar o banco de dados.');
             redirect(base_url());
         }
 
-        $this->load->library('migration');
+        $this->load->model('migrations_model');
+        $result = $this->migrations_model->run_migrations();
 
-        if ($this->migration->latest() === false) {
-            $this->session->set_flashdata('error', $this->migration->error_string());
-        } else {
+        if ($result) {
             $this->session->set_flashdata('success', 'Banco de dados atualizado com sucesso!');
+            log_info('Atualizou o banco de dados.');
+        } else {
+            $this->session->set_flashdata('error', 'Ocorreu um erro ao atualizar o banco de dados.');
         }
-
-        return redirect(site_url('mapos/configurar'));
+        redirect(site_url('mapos/configurar'));
     }
 
     public function atualizarMapos()
     {
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para configurar o sistema');
+            $this->session->set_flashdata('error', 'Você não tem permissão para atualizar o sistema.');
             redirect(base_url());
         }
 
-        $this->load->library('github_updater');
+        $this->load->library('mapos_update');
+        $result = $this->mapos_update->update();
 
-        if (!$this->github_updater->has_update()) {
-            $this->session->set_flashdata('success', 'Seu mapos já está atualizado!');
-
-            return redirect(site_url('mapos/configurar'));
-        }
-
-        $success = $this->github_updater->update();
-
-        if ($success) {
-            $this->session->set_flashdata('success', 'Mapos atualizado com sucesso!');
+        if ($result) {
+            $this->session->set_flashdata('success', 'Sistema atualizado com sucesso!');
+            log_info('Atualizou o sistema Mapos.');
         } else {
-            $this->session->set_flashdata('error', 'Erro ao atualizar mapos!');
+            $this->session->set_flashdata('error', 'Ocorreu um erro ao atualizar o sistema.');
         }
-
-        return redirect(site_url('mapos/configurar'));
-    }
-
-    public function calendario()
-    {
-        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para visualizar O.S.');
-            redirect(base_url());
-        }
-        $this->load->model('os_model');
-        $status = $this->input->get('status') ?: null;
-        $start = $this->input->get('start') ?: null;
-        $end = $this->input->get('end') ?: null;
-
-        $allOs = $this->mapos_model->calendario(
-            $start,
-            $end,
-            $status
-        );
-        $events = array_map(function ($os) {
-            switch ($os->status) {
-                case 'Aberto':
-                    $cor = '#00cd00';
-                    break;
-                case 'Negociação':
-                    $cor = '#AEB404';
-                    break;
-                case 'Em Andamento':
-                    $cor = '#436eee';
-                    break;
-                case 'Orçamento':
-                    $cor = '#CDB380';
-                    break;
-                case 'Cancelado':
-                    $cor = '#CD0000';
-                    break;
-                case 'Finalizado':
-                    $cor = '#256';
-                    break;
-                case 'Faturado':
-                    $cor = '#B266FF';
-                    break;
-                case 'Aguardando Peças':
-                    $cor = '#FF7F00';
-                    break;
-                case 'Aprovado':
-                    $cor = '#808080';
-                    break;
-                default:
-                    $cor = '#E0E4CC';
-                    break;
-            }
-
-            return [
-                'title' => "OS: {$os->idOs}, Cliente: {$os->nomeCliente}",
-                'start' => $os->dataFinal,
-                'end' => $os->dataFinal,
-                'color' => $cor,
-                'extendedProps' => [
-                    'id' => $os->idOs,
-                    'cliente' => '<b>Cliente:</b> ' . $os->nomeCliente,
-                    'dataInicial' => '<b>Data Inicial:</b> ' . date('d/m/Y', strtotime($os->dataInicial)),
-                    'dataFinal' => '<b>Data Final:</b> ' . date('d/m/Y', strtotime($os->dataFinal)),
-                    'garantia' => '<b>Garantia:</b> ' . $os->garantia . ' dias',
-                    'status' => '<b>Status da OS:</b> ' . $os->status,
-                    'description' => '<b>Descrição/Produto:</b> ' . strip_tags(html_entity_decode($os->descricaoProduto)),
-                    'defeito' => '<b>Defeito:</b> ' . strip_tags(html_entity_decode($os->defeito)),
-                    'observacoes' => '<b>Observações:</b> ' . strip_tags(html_entity_decode($os->observacoes)),
-                    'subtotal' => '<br><b>Subtotal:</b> R$ ' . number_format($os->totalProdutos + $os->totalServicos, 2, ',', '.'),
-                    'desconto' => '<b>Desconto:</b> -R$ ' . ($os->desconto > 0 ? number_format(($os->totalProdutos + $os->totalServicos) - $os->valor_desconto, 2, ',', '.') : number_format($os->desconto, 2, ',', '.')),
-                    'total' => '<b>Total:</b> R$ ' . ($os->valor_desconto == 0 ? number_format($os->totalProdutos + $os->totalServicos, 2, ',', '.') : number_format($os->valor_desconto, 2, ',', '.')),
-                    'faturado' => '<br><b>Faturado:</b> ' . ($os->faturado ? 'SIM' : 'PENDENTE'),
-                    'editar' => $this->os_model->isEditable($os->idOs),
-                ],
-            ];
-        }, $allOs);
-
-        return $this->output
-            ->set_content_type('application/json')
-            ->set_status_header(200)
-            ->set_output(json_encode($events));
-    }
-
-    private function editDontEnv(array $data)
-    {
-        $env_file_path = dirname(__FILE__, 2) . DIRECTORY_SEPARATOR . '.env';
-        $env_file = file_get_contents($env_file_path);
-
-        foreach ($data as $constante => $valor) {
-            if ($constante == 'API_JWT_KEY' && $valor == 'sim') {
-                $base64 = base64_encode(openssl_random_pseudo_bytes(32));
-                $valor = '"' . $base64 . '"';
-                $env_file = str_replace("$constante=" . '"' . $_ENV[$constante] . '"', "$constante={$valor}", $env_file);
-            } else {
-                if (isset($_ENV[$constante])) {
-                    $env_file = str_replace("$constante={$_ENV[$constante]}", "$constante={$valor}", $env_file);
-                } else {
-                    file_put_contents($env_file_path, $env_file . "\n{$constante}={$valor}\n");
-                    $env_file = file_get_contents($env_file_path);
-                }
-            }
-        }
-        return file_put_contents($env_file_path, $env_file) ? true : false;
+        redirect(site_url('mapos/configurar'));
     }
 }

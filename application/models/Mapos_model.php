@@ -1,4 +1,4 @@
-<?php
+<?php if (!defined('BASEPATH')) { exit('No direct script access allowed'); }
 
 class Mapos_model extends CI_Model
 {
@@ -444,34 +444,67 @@ class Mapos_model extends CI_Model
     }
 
     /**
-     * Salvar configurações do sistema
-     *
-     * @param  array  $data
-     * @return bool
+     * Recupera configurações do sistema.
+     * @param string|null $key Chave específica da configuração (opcional).
+     * @return array|string Retorna todas as configurações como array associativo se $key for null, ou o valor da chave específica.
      */
-    public function saveConfiguracao($data)
+    public function getConfiguracao($key = null)
     {
-        try {
-            foreach ($data as $key => $valor) {
-                $this->db->set('valor', $valor);
-                $this->db->where('config', $key);
-                $this->db->update('configuracoes');
+        if ($key === null) {
+            // Retorna todas as configurações como um array associativo
+            $this->db->select('config, valor');
+            $query = $this->db->get('configuracoes');
+            $configuracoes = [];
+            foreach ($query->result() as $row) {
+                $configuracoes[$row->config] = $row->valor;
             }
-        } catch (Exception $e) {
-            return false;
+            return $configuracoes;
+        } else {
+            // Retorna o valor de uma chave específica
+            $this->db->select('valor');
+            $this->db->where('config', $key);
+            $query = $this->db->get('configuracoes', 1);
+            if ($query->num_rows() > 0) {
+                return $query->row()->valor;
+            }
+            return null;
         }
-
-        return true;
     }
 
-    // No arquivo application/models/mapos_model.php
-    public function getConfiguracao($key)
+    /**
+     * Salva configurações do sistema.
+     * @param array $data Array com pares chave-valor a serem salvos.
+     * @param array $envVars Variáveis de ambiente (opcional).
+     * @return bool Retorna true se as configurações forem salvas com sucesso, false caso contrário.
+     */
+    public function saveConfiguracao($data, $envVars = [])
     {
-        $this->db->where('config', $key);
-        $query = $this->db->get('configuracoes', 1);
-        if ($query->num_rows() > 0) {
-            return $query->row()->valor;
+        $this->db->trans_start();
+
+        foreach ($data as $key => $valor) {
+            $this->db->where('config', $key);
+            $query = $this->db->get('configuracoes');
+
+            if ($query->num_rows() > 0) {
+                // Atualiza configuração existente
+                $this->db->where('config', $key);
+                $this->db->update('configuracoes', ['valor' => $valor]);
+            } else {
+                // Insere nova configuração
+                $this->db->insert('configuracoes', ['config' => $key, 'valor' => $valor]);
+            }
         }
-        return null;
+
+        // Atualiza variáveis de ambiente (se necessário)
+        if (!empty($envVars)) {
+            // Placeholder: Implementar lógica para atualizar .env ou outro sistema de variáveis de ambiente
+            // Exemplo: Escrever em um arquivo .env ou atualizar uma tabela de configurações de ambiente
+            foreach ($envVars as $key => $value) {
+                // Lógica específica depende da implementação do sistema
+            }
+        }
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
     }
 }

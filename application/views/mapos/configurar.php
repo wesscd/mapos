@@ -30,6 +30,23 @@
                             </div>
                         </div>
                         <div class="control-group">
+                            <label for="telefone_empresa" class="control-label">Telefone da Empresa</label>
+                            <div class="controls">
+                                <input type="text" name="telefone_empresa" value="<?= htmlspecialchars($configuration['telefone_empresa'] ?? '') ?>" placeholder="ex.: (11) 99999-9999">
+                                <span class="help-inline">Telefone da empresa para contato</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label for="use_whatsapp_empresa" class="control-label">Usar número do WhatsApp como telefone da empresa</label>
+                            <div class="controls">
+                                <select name="use_whatsapp_empresa" id="use_whatsapp_empresa">
+                                    <option value="0">Não</option>
+                                    <option value="1" <?= ($configuration['use_whatsapp_empresa'] ?? 0) == 1 ? 'selected' : ''; ?>>Sim</option>
+                                </select>
+                                <span class="help-inline">Selecione 'Sim' para usar o número do WhatsApp como telefone da empresa nas mensagens</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
                             <label for="app_theme" class="control-label">Tema do Sistema</label>
                             <div class="controls">
                                 <select name="app_theme" id="app_theme">
@@ -41,7 +58,7 @@
                                     <option value="whitegreen" <?= $configuration['app_theme'] == 'whitegreen' ? 'selected' : ''; ?>>White green</option>
                                     <option value="whiteblack" <?= $configuration['app_theme'] == 'whiteblack' ? 'selected' : ''; ?>>White black</option>
                                 </select>
-                                <span class="help-inline">Selecione o tema que que deseja usar no sistema</span>
+                                <span class="help-inline">Selecione o tema que deseja usar no sistema</span>
                             </div>
                         </div>
                         <div class="control-group">
@@ -70,7 +87,8 @@
                             <div class="span8">
                                 <div class="span9">
                                     <button type="submit" class="button btn btn-primary">
-                                    <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -91,7 +109,7 @@
                             <label for="control_editos" class="control-label">Controle de edição de OS</label>
                             <div class="controls">
                                 <select name="control_editos" id="control_editos">
-                                    <option value="1" <?= $configuration['control_editos'] == '0' ? 'selected' : ''; ?>>Ativar</option>
+                                    <option value="1" <?= $configuration['control_editos'] == '1' ? 'selected' : ''; ?>>Ativar</option>
                                     <option value="0" <?= $configuration['control_editos'] == '0' ? 'selected' : ''; ?>>Desativar</option>
                                 </select>
                                 <span class="help-inline">Ativar ou desativar a permissão para alterar ou excluir OS faturada e/ou cancelada.</span>
@@ -101,7 +119,7 @@
                             <label for="control_edit_vendas" class="control-label">Controle de edição de Vendas</label>
                             <div class="controls">
                                 <select name="control_edit_vendas" id="control_edit_vendas">
-                                    <option value="1" <?= $configuration['control_edit_vendas'] == '0' ? 'selected' : ''; ?>>Ativar</option>
+                                    <option value="1" <?= $configuration['control_edit_vendas'] == '1' ? 'selected' : ''; ?>>Ativar</option>
                                     <option value="0" <?= $configuration['control_edit_vendas'] == '0' ? 'selected' : ''; ?>>Desativar</option>
                                 </select>
                                 <span class="help-inline">Ativar ou desativar a permissão para alterar ou excluir vendas faturada.</span>
@@ -114,10 +132,9 @@
                                 <span class="help-inline">Chave Pix para Recebimento de Pagamentos</span>
                             </div>
                         </div>
-
-                        <!-- Configrações do EFI -->
+                        <!-- Configurações do EFI -->
                         <hr>
-                        <h5 style="margin-left:10px;">Configrações do EFI (antiga GerenciaNet)</h5>
+                        <h5 style="margin-left:10px;">Configurações do EFI (antiga GerenciaNet)</h5>
                         <div class="control-group">
                             <label for="EFI_PRODUCTION" class="control-label">Ambiente</label>
                             <div class="controls">
@@ -155,10 +172,9 @@
                                 <span class="help-inline">A quantidade de dias selecionado será somado a data que a cobrança for gerada.</span>
                             </div>
                         </div>
-
-                        <!-- Configrações do Mercado Pago -->
+                        <!-- Configurações do Mercado Pago -->
                         <hr>
-                        <h5 style="margin-left:10px;">Configrações do Mercado Pago</h5>
+                        <h5 style="margin-left:10px;">Configurações do Mercado Pago</h5>
                         <div class="control-group">
                             <label for="MERCADO_PAGO_CREDENTIALS_PUBLIC_KEY" class="control-label">PUBLIC_KEY</label>
                             <div class="controls">
@@ -200,10 +216,9 @@
                                 <span class="help-inline">A quantidade de dias selecionado será somado a data que a cobrança for gerada.</span>
                             </div>
                         </div>
-
-                        <!-- Configrações do ASAAS -->
+                        <!-- Configurações do ASAAS -->
                         <hr>
-                        <h5 style="margin-left:10px;">Configrações do ASAAS</h5>
+                        <h5 style="margin-left:10px;">Configurações do ASAAS</h5>
                         <div class="control-group">
                             <label for="ASAAS_PRODUCTION" class="control-label">Ambiente</label>
                             <div class="controls">
@@ -244,17 +259,16 @@
                                 <span class="help-inline">A quantidade de dias selecionado será somado a data que a cobrança for gerada.</span>
                             </div>
                         </div>
-
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <!-- Menu Produtos -->
                     <div id="menu2" class="tab-pane fade">
                         <div class="control-group">
@@ -270,13 +284,13 @@
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <!-- Menu Notificações -->
                     <div id="menu3" class="tab-pane fade">
                         <div class="control-group">
@@ -286,9 +300,9 @@
                                     <option value="1">Ativar</option>
                                     <option value="0" <?= ($configuration['whatsapp_enabled'] ?? 0) == 0 ? 'selected' : ''; ?>>Desativar</option>
                                 </select>
-                            <span class="help-inline">Ativar ou desativar envio automático de notificações via WhatsApp.</span>
+                                <span class="help-inline">Ativar ou desativar envio automático de notificações via WhatsApp.</span>
+                            </div>
                         </div>
-                    </div>
                         <div class="control-group">
                             <label for="whatsapp_api_url" class="control-label">URL da API WhatsApp (Ticketz)</label>
                             <div class="controls">
@@ -296,20 +310,20 @@
                                 <span class="help-inline">URL da API do Ticketz para envio de mensagens.</span>
                             </div>
                         </div>
-                    <div class="control-group">
-                        <label for="whatsapp_number" class="control-label">Número WhatsApp da Empresa</label>
-                        <div class="controls">
-                            <input type="text" name="whatsapp_number" value="<?= htmlspecialchars($configuration['whatsapp_number'] ?? '') ?>" placeholder="ex.: +5511999999999">
-                               <span class="help-inline">Número registrado no Ticketz (com código do país).</span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="whatsapp_api_token" class="control-label">Token da API WhatsApp</label>
-                                <div class="controls">
-                                    <input type="text" name="whatsapp_api_token" value="<?= htmlspecialchars($configuration['whatsapp_api_token'] ?? '') ?>" placeholder="Insira o token da API">
-                                    <span class="help-inline">Codigo token gerado em conexões.</span>
-                                </div>
+                        <div class="control-group">
+                            <label for="whatsapp_number" class="control-label">Número WhatsApp da Empresa</label>
+                            <div class="controls">
+                                <input type="text" name="whatsapp_number" value="<?= htmlspecialchars($configuration['whatsapp_number'] ?? '') ?>" placeholder="ex.: +5511999999999">
+                                <span class="help-inline">Número registrado no Ticketz (com código do país).</span>
                             </div>
+                        </div>
+                        <div class="control-group">
+                            <label for="whatsapp_api_token" class="control-label">Token da API WhatsApp</label>
+                            <div class="controls">
+                                <input type="text" name="whatsapp_api_token" value="<?= htmlspecialchars($configuration['whatsapp_api_token'] ?? '') ?>" placeholder="Insira o token da API">
+                                <span class="help-inline">Código token gerado em conexões.</span>
+                            </div>
+                        </div>
                         <div class="control-group">
                             <label for="os_notification" class="control-label">Notificação de OS</label>
                             <div class="controls">
@@ -323,12 +337,11 @@
                                 <span class="help-inline">Selecione a opção de notificação por e-mail no cadastro de OS.</span>
                             </div>
                         </div>
-                        
+                        <!-- Notificação de Atualização de OS -->
                         <div class="control-group">
-                            <label for="notifica_whats" class="control-label">Notificação do whatsapp</label>
+                            <label for="notifica_whats" class="control-label">Notificação do WhatsApp (Atualização)</label>
                             <div class="controls">
                                 <textarea rows="5" cols="20" name="notifica_whats" id="notifica_whats" placeholder="Use as tags abaixo para criar seu texto!" style="margin: 0px; width: 606px; height: 86px;"><?php echo $configuration['notifica_whats']; ?></textarea>
-                           
                                 <label for="notifica_whats_select">Tags de preenchimento<span class="required"></span></label>
                                 <select class="span12" name="notifica_whats_select" id="notifica_whats_select" value="">
                                     <option value="0">Selecione...</option>
@@ -346,46 +359,89 @@
                                     <option value="{DATA_INICIAL}">Data Inicial</option>
                                     <option value="{DATA_GARANTIA}">Data da Garantia</option>
                                 </select>
-                            
-                            <span6 class="span10">
-                                Para negrito use: *palavra*
-                                Para itálico use: _palavra_
-                                Para riscado use: ~palavra~
-                                </span>
+                                <span6 class="span10">
+                                    Para negrito use: *palavra* <br>
+                                    Para itálico use: _palavra_ <br>
+                                    Para riscado use: ~palavra~
+                                </span6>
+                            </div>
                         </div>
-                    </div>
+                        <!-- Notificação de Criação de OS -->
+                        <div class="control-group">
+                            <label for="notifica_whats_criac" class="control-label">Notificação do WhatsApp (Criação)</label>
+                            <div class="controls">
+                                <textarea rows="5" cols="20" name="notifica_whats_criac" id="notifica_whats_criac" placeholder="Use as tags abaixo para criar seu texto!" style="margin: 0px; width: 606px; height: 86px;"><?php echo $configuration['notifica_whats_criac'] ?? ''; ?></textarea>
+                                <label for="notifica_whats_criac_select">Tags de preenchimento<span class="required"></span></label>
+                                <select class="span12" name="notifica_whats_criac_select" id="notifica_whats_criac_select" value="">
+                                    <option value="0">Selecione...</option>
+                                    <option value="{CLIENTE_NOME}">Nome do Cliente</option>
+                                    <option value="{NUMERO_OS}">Número da OS</option>
+                                    <option value="{STATUS_OS}">Status da OS</option>
+                                    <option value="{VALOR_OS}">Valor da OS</option>
+                                    <option value="{DESCRI_PRODUTOS}">Descrição produtos</option>
+                                    <option value="{EMITENTE}">Nome emitente</option>
+                                    <option value="{TELEFONE_EMITENTE}">Telefone emitente</option>
+                                    <option value="{OBS_OS}">Observações</option>
+                                    <option value="{DEFEITO_OS}">Defeitos</option>
+                                    <option value="{LAUDO_OS}">Laudo</option>
+                                    <option value="{DATA_FINAL}">Data Final</option>
+                                    <option value="{DATA_INICIAL}">Data Inicial</option>
+                                    <option value="{DATA_GARANTIA}">Data da Garantia</option>
+                                </select>
+                                <span6 class="span10">
+                                    Para negrito use: *palavra* <br>
+                                    Para itálico use: _palavra_ <br>
+                                    Para riscado use: ~palavra~
+                                </span6>
+                            </div>
+                        </div>
+                        <!-- Mensagem de Boas-Vindas -->
+                        <div class="control-group">
+                            <label for="whatsapp_cad_msg" class="control-label">Notificação do WhatsApp<br>(Boas-Vindas)</label>
+                            <div class="controls">
+                                <textarea rows="5" cols="20" name="whatsapp_cad_msg" id="whatsapp_cad_msg" placeholder="Use as tags abaixo para criar seu texto!" style="margin: 0px; width: 606px; height: 86px;"><?php echo $configuration['whatsapp_cad_msg'] ?? ''; ?></textarea>
+                                <label for="whatsapp_cad_msg_select">Tags de preenchimento<span class="required"></span></label>
+                                <select class="span12" name="whatsapp_cad_msg_select" id="whatsapp_cad_msg_select" value="">
+                                    <option value="0">Selecione...</option>
+                                    <option value="{CLIENTE_NOME}">Nome do Cliente</option>
+                                    <option value="{EMITENTE}">Nome emitente</option>
+                                    <option value="{TELEFONE_EMITENTE}">Telefone emitente</option>
+                                </select>
+                                <span6 class="span10">
+                                    Para negrito use: *palavra* <br>
+                                    Para itálico use: _palavra_ <br>
+                                    Para riscado use: ~palavra~
+                                </span6>
+                            </div>
+                        </div>
                         <!-- Campos para teste -->
-<div class="control-group">
-    <label for="test_number" class="control-label">Número para Teste</label>
-    <div class="controls">
-        <input id="test_number" name="test_number" type="text" value="" placeholder="Ex.: +558599999999" />
-    </div>
-</div>
-
-<div class="control-group">
-    <label for="test_message" class="control-label">Mensagem de Teste</label>
-    <div class="controls">
-        <textarea id="test_message" name="test_message" rows="3">Mensagem de teste enviada pelo MAPOS!</textarea>
-    </div>
-</div>
-
-<div class="control-group">
-    <div class="controls">
-        <button type="submit" name="test_whatsapp" value="1" class="btn btn-info">Testar Envio</button>
-    </div>
-</div>
-
-<!-- Exibir resultado do teste -->
-<?php if (!empty($test_message)) {
-    echo $test_message;
-} ?>
-
-
+                        <div class="control-group">
+                            <label for="test_number" class="control-label">Número para Teste</label>
+                            <div class="controls">
+                                <input id="test_number" name="test_number" type="text" value="" placeholder="Ex.: +558599999999" />
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label for="test_message" class="control-label">Mensagem de Teste</label>
+                            <div class="controls">
+                                <textarea id="test_message" name="test_message" rows="3">Mensagem de teste enviada pelo MAPOS!</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <button type="submit" name="test_whatsapp" value="1" class="btn btn-info">Testar Envio</button>
+                            </div>
+                        </div>
+                        <!-- Exibir resultado do teste -->
+                        <?php if (!empty($test_message)) {
+                            echo $test_message;
+                        } ?>
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -396,9 +452,11 @@
                             <div class="span8">
                                 <div class="span9" style="display:flex">
                                     <button href="#modal-confirmabanco" data-toggle="modal" type="button" class="button btn btn-warning">
-                                      <span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Banco de Dados</span></button>
+                                        <span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Banco de Dados</span>
+                                    </button>
                                     <button href="#modal-confirmaratualiza" data-toggle="modal" type="button" class="button btn btn-danger">
-                                      <span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar Mapos</span></button>
+                                        <span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar Mapos</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -444,8 +502,9 @@
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -494,15 +553,16 @@
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <!-- Menu E-mail -->
                     <div id="menu7" class="tab-pane fade">
-                    <div class="control-group">
+                        <div class="control-group">
                             <label for="email_automatico" class="control-label">Enviar Email Automático</label>
                             <div class="controls">
                                 <select name="email_automatico" id="email_automatico">
@@ -547,7 +607,7 @@
                             <label for="EMAIL_SMTP_USER" class="control-label">Usuário</label>
                             <div class="controls">
                                 <input type="text" name="EMAIL_SMTP_USER" value="<?= $_ENV['EMAIL_SMTP_USER'] ?>" id="EMAIL_SMTP_USER">
-                                <span class="help-inline">Informe nome de usuáriodo e-mail.</span>
+                                <span class="help-inline">Informe nome de usuário do e-mail.</span>
                             </div>
                         </div>
                         <div class="control-group">
@@ -560,8 +620,9 @@
                         <div class="form-actions">
                             <div class="span8">
                                 <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
+                                    <button type="submit" class="button btn btn-primary">
+                                        <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -586,8 +647,8 @@
             <h7 style="text-align: left"><br>* ./assets/arquivos</h7>
         </div>
         <div class="modal-footer" style="display:flex;justify-content: center">
-          <button class="button btn btn-mini btn-danger" data-dismiss="modal" aria-hidden="true"><span class="button__icon"><i class='bx bx-x' ></i></span> <span class="button__text2">Cancelar</span></button>
-          <button id="update-mapos" type="button" class="button btn btn-warning"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar</span></button>
+            <button class="button btn btn-mini btn-danger" data-dismiss="modal" aria-hidden="true"><span class="button__icon"><i class='bx bx-x'></i></span> <span class="button__text2">Cancelar</span></button>
+            <button id="update-mapos" type="button" class="button btn btn-warning"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar</span></button>
         </div>
     </form>
 </div>
@@ -605,8 +666,8 @@
             </h7>
         </div>
         <div class="modal-footer" style="display:flex;justify-content: center">
-          <button class="button btn btn-mini btn-danger" data-dismiss="modal" aria-hidden="true"><span class="button__icon"><i class='bx bx-x' ></i></span> <span class="button__text2">Cancelar</span></button>
-          <button id="update-database" type="button" class="button btn btn-warning"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar</span></button>
+            <button class="button btn btn-mini btn-danger" data-dismiss="modal" aria-hidden="true"><span class="button__icon"><i class='bx bx-x'></i></span> <span class="button__text2">Cancelar</span></button>
+            <button id="update-database" type="button" class="button btn btn-warning"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar</span></button>
         </div>
     </form>
 </div>
@@ -618,10 +679,26 @@
         window.location = "<?= site_url('mapos/atualizarMapos') ?>"
     });
     $(document).ready(function() {
+        // Manipulador para notifica_whats
         $('#notifica_whats_select').change(function() {
-            if ($(this).val() != "0")
+            if ($(this).val() != "0") {
                 document.getElementById("notifica_whats").value += $(this).val();
-            $(this).prop('selectedIndex', 0);
+                $(this).prop('selectedIndex', 0);
+            }
+        });
+        // Manipulador para notifica_whats_criac
+        $('#notifica_whats_criac_select').change(function() {
+            if ($(this).val() != "0") {
+                document.getElementById("notifica_whats_criac").value += $(this).val();
+                $(this).prop('selectedIndex', 0);
+            }
+        });
+        // Manipulador para whatsapp_cad_msg
+        $('#whatsapp_cad_msg_select').change(function() {
+            if ($(this).val() != "0") {
+                document.getElementById("whatsapp_cad_msg").value += $(this).val();
+                $(this).prop('selectedIndex', 0);
+            }
         });
     });
 </script>
