@@ -278,33 +278,33 @@ CREATE TABLE IF NOT EXISTS `vendas` (
 -- Estrutura da tabela `cobrancas`
 --
 CREATE TABLE IF NOT EXISTS `cobrancas` (
-  `idCobranca` INT(11) NOT NULL AUTO_INCREMENT,
-  `charge_id` varchar(255) DEFAULT NULL,
-  `conditional_discount_date` date DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `custom_id` int(11) DEFAULT NULL,
-  `expire_at` date NOT NULL,
-  `message` varchar(255) NOT NULL,
-  `payment_method` varchar(11) DEFAULT NULL,
-  `payment_url` varchar(255) DEFAULT NULL,
-  `request_delivery_address` varchar(64) DEFAULT NULL,
-  `status` varchar(36) NOT NULL,
-  `total` varchar(15) DEFAULT NULL,
-  `barcode` varchar(255) NOT NULL,
-  `link` varchar(255) NOT NULL,
-  `payment_gateway` varchar(255) NULL DEFAULT NULL,
-  `payment` varchar(64) NOT NULL,
-  `pdf` varchar(255) DEFAULT NULL,
-  `vendas_id` int(11) DEFAULT NULL,
-  `os_id` int(11) DEFAULT NULL,
-  `clientes_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`idCobranca`),
-  INDEX `fk_cobrancas_os1` (`os_id` ASC),
-  CONSTRAINT `fk_cobrancas_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  INDEX `fk_cobrancas_vendas1` (`vendas_id` ASC),
-  CONSTRAINT `fk_cobrancas_vendas1` FOREIGN KEY (`vendas_id`) REFERENCES `vendas` (`idVendas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  INDEX `fk_cobrancas_clientes1` (`clientes_id` ASC),
-  CONSTRAINT `fk_cobrancas_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION
+`idCobranca` INT(11) NOT NULL AUTO_INCREMENT,
+`charge_id` varchar(255) DEFAULT NULL,
+`conditional_discount_date` date DEFAULT NULL,
+`created_at` datetime DEFAULT NULL,
+`custom_id` int(11) DEFAULT NULL,
+`expire_at` date NOT NULL,
+`message` varchar(255) NOT NULL,
+`payment_method` varchar(11) DEFAULT NULL,
+`payment_url` varchar(255) DEFAULT NULL,
+`request_delivery_address` varchar(64) DEFAULT NULL,
+`status` varchar(36) NOT NULL,
+`total` varchar(15) DEFAULT NULL,
+`barcode` varchar(255) NOT NULL,
+`link` varchar(255) NOT NULL,
+`payment_gateway` varchar(255) NULL DEFAULT NULL,
+`payment` varchar(64) NOT NULL,
+`pdf` varchar(255) DEFAULT NULL,
+`vendas_id` int(11) DEFAULT NULL,
+`os_id` int(11) DEFAULT NULL,
+`clientes_id` int(11) DEFAULT NULL,
+PRIMARY KEY (`idCobranca`),
+INDEX `fk_cobrancas_os1` (`os_id` ASC),
+CONSTRAINT `fk_cobrancas_os1` FOREIGN KEY (`os_id`) REFERENCES `os` (`idOs`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+INDEX `fk_cobrancas_vendas1` (`vendas_id` ASC),
+CONSTRAINT `fk_cobrancas_vendas1` FOREIGN KEY (`vendas_id`) REFERENCES `vendas` (`idVendas`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+INDEX `fk_cobrancas_clientes1` (`clientes_id` ASC),
+CONSTRAINT `fk_cobrancas_clientes1` FOREIGN KEY (`clientes_id`) REFERENCES `clientes` (`idClientes`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE utf8mb4_general_ci;
 -- -----------------------------------------------------
 -- Table `itens_de_vendas`
@@ -561,21 +561,29 @@ VALUES (2, 'app_name', 'Map-OS'),
   (15, 'control_2vias', '0'),
   (
     16,
-    'notifica_whats_criacao',
+    'notifica_whats_criac',
     'Prezado(a), {CLIENTE_NOME}, sua OS nº {NUMERO_OS} foi criada com sucesso! Status: {STATUS_OS}. Descrição: {DESCRI_PRODUTOS}. Valor total: {VALOR_OS}. Para mais informações, entre em contato. Atenciosamente, {EMITENTE} {TELEFONE_EMITENTE}.'
   ),
   (
     17,
     'whatsapp_api_url',
-    'https://dominio.whaticketz/backend/api/messages/send'
+    'https://whatiteck.online/backend/api/messages/send'
   ),
   (
     18,
     'whatsapp_api_token',
-    'abc123efg456hij789klm012nop345qrs678tuv901wxyz234'
+    'abc1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
   ),
-  (19, 'whatsapp_number', '5511999999999'),
-  (20, 'whatsapp_enabled', '1');
+  (19, 'whatsapp_number', '5516992636487'),
+  (20, 'whatsapp_enabled', '1'),
+  (21, 'nome_empresa', 'Minha Empresa'),
+  (22, 'telefone_empresa', '(16) 99999-9999'),
+  (
+    23,
+    'whatsapp_cad_msg',
+    'Bem-vindo(a), {CLIENTE_NOME}, à {EMITENTE}! Estamos felizes em tê-lo(a) conosco. Qualquer dúvida, é só nos chamar pelo {TELEFONE_EMITENTE}. Atenciosamente, Equipe {EMITENTE}.'
+  ),
+  (24, 'use_whatsapp_empresa', '1');
 -- -----------------------------------------------------
 -- Table `os_historico`
 -- -----------------------------------------------------
@@ -585,6 +593,17 @@ CREATE TABLE os_historico (
   descricao TEXT NOT NULL,
   data DATETIME NOT NULL,
   FOREIGN KEY (idOs) REFERENCES os(idOs)
+);
+-- -----------------------------------------------------
+-- Table `clientes_historico`
+-- -----------------------------------------------------
+CREATE TABLE clientes_historico (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  idClientes INT NOT NULL,
+  descricao TEXT NOT NULL,
+  data DATETIME NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (idClientes) REFERENCES clientes(idClientes) ON DELETE CASCADE
 );
 -- -----------------------------------------------------
 -- Table `migrations`
