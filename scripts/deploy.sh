@@ -18,7 +18,7 @@ compose=(docker compose --env-file .env.local -f compose.prod.yaml)
 "${compose[@]}" exec -T php composer check-platform-reqs --no-dev </dev/null
 "${compose[@]}" exec -T php php index.php tools migrate </dev/null
 "${compose[@]}" exec -T -u root php sh -c 'mkdir -p application/cache/htmlpurifier; chown -R www-data:www-data application/cache application/logs; chgrp www-data application/.env; chmod 660 application/.env' </dev/null
-"${compose[@]}" up -d --build --no-deps php nginx
+"${compose[@]}" up -d --build --no-deps --force-recreate php nginx
 "${compose[@]}" exec -T nginx nginx -t </dev/null
 "${compose[@]}" exec -T nginx nginx -s reload </dev/null
 rm -- .maintenance
