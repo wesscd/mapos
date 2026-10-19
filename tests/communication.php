@@ -6,6 +6,7 @@ $ci->load->library('comunicacao_service');
 $communication = $ci->comunicacao_service;
 $settings = ['whatsapp' => 1, 'email' => 1, 'inicio' => 0, 'fim' => 24, 'intervalo_dias' => 1, 'limite_lembretes' => 2];
 $communication->saveConfig($settings);
+$assert($communication->destination('whatsapp', (object) ['celular' => '+1 202 555 0123', 'telefone' => '']) === '12025550123', 'Explicit international country prefixes are preserved');
 $db->where('idClientes', $customer)->update('clientes', ['celular' => '(11) 99999-9999']);
 $id = $workflow->createOrder(['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0, 'dataInicial' => date('Y-m-d'), 'dataFinal' => date('Y-m-d')]);
 $assert($db->where('os_id', $id)->count_all_results('com_fila') === 0, 'No automatic notification without explicit customer preference');

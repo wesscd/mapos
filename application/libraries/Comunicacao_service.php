@@ -80,14 +80,18 @@ class Comunicacao_service
         if ($channel === 'email') {
             return filter_var($customer->email, FILTER_VALIDATE_EMAIL) ? $customer->email : null;
         }
-        $number = preg_replace('/\D/', '', (string) ($customer->celular ?: $customer->telefone));
+        $raw = trim((string) ($customer->celular ?: $customer->telefone));
+        $international = str_starts_with($raw, '+') || str_starts_with($raw, '00');
+        $number = preg_replace('/\D/', '', $raw);
         if (str_starts_with($number, '00')) {
             $number = substr($number, 2);
         }
-        if (in_array(strlen($number), [10, 11], true)) {
+        if (! $international && in_array(strlen($number), [10, 11], true)) {
             $number = '55' . $number;
+        } elseif (! $international && strlen($number) < 12) {
+            return null;
         }
-        return preg_match('/^[1-9][0-9]{11,14}$/D', $number) ? $number : null;
+        return preg_match('/^[1-9][0-9]{7,14}$/D', $number) ? $number : null;
     }
 
     public function capture($id, $event, $source, array $context = [])
@@ -173,7 +177,8 @@ class Comunicacao_service
         }
         $context = json_decode($job->contexto, true);
         if (isset($context['aprovacao'])) {
-            return (bool) $db->get_where('os_aprovacoes', ['id' => $context['aprovacao'], 'os_id' => $job->os_id, 'status' => 'pendente'])->row();
+            return ! $order->entregue_em && ! (int) $order->faturado && $order->status !== 'Cancelado'
+                && (bool) $db->get_where('os_aprovacoes', ['id' => $context['aprovacao'], 'os_id' => $job->os_id, 'status' => 'pendente'])->row();
         }
         if (in_array($job->evento, ['pronto', 'lembrete_retirada'], true)) {
             return in_array($order->status, ['Finalizado', 'Faturado'], true) && ! $order->entregue_em

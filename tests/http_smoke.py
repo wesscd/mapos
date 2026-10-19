@@ -22,7 +22,7 @@ assert response.headers.get("X-CSRF-Token"), "Responses must expose the refreshe
 for path in ["operacoes", "os", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0"]:
     response = client.open(base + "/index.php/" + path, timeout=30)
     body = response.read().decode()
-    assert response.status == 200 and "A PHP Error was encountered" not in body and "Database Error" not in body, path
+    assert response.status == 200 and all(error not in body for error in ["A PHP Error was encountered", "Database Error", "An uncaught Exception was encountered", "Fatal error:"]), path
     assert "login" not in response.url, path
 for path in ["/application/.env", "/.env.local", "/.git/config", "/banco.sql", "/install/index.php", "/scripts/install.php", "/tests/run.php", "/.secrets/whatsapp-token", "/services/whatsapp/package.json", "/index.php/comunicacao_worker/process"]:
     try:

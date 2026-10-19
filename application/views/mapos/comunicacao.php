@@ -36,7 +36,7 @@
             <p>O teste é enviado ao destinatário informado, mesmo com as automações desativadas ou fora do horário. Use um contato sob seu controle.</p>
             <?= form_open('comunicacao/salvar') ?><input type="hidden" name="acao" value="teste">
                 <label>Canal<select name="canal"><option value="whatsapp">WhatsApp</option><option value="email">E-mail</option></select></label>
-                <label>Telefone com DDI e DDD, ou e-mail<input name="destino" required maxlength="254"></label>
+                <label>Telefone com DDD (outros países: +DDI), ou e-mail<input name="destino" required maxlength="254"></label>
                 <button class="btn btn-primary">Enviar mensagem de teste</button>
             </form>
         </section>

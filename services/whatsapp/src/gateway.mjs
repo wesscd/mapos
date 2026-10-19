@@ -30,7 +30,7 @@ export class Gateway {
       return row ? [200, { status: row.status }] : [404, { error: 'Mensagem não localizada.' }];
     }
     if (method !== 'POST' || path !== '/messages') return [404, { error: 'Recurso não encontrado.' }];
-    if (!/^[a-f0-9]{48}$/.test(data.key || '') || !/^[1-9][0-9]{11,14}$/.test(data.to || '')
+    if (!/^[a-f0-9]{48}$/.test(data.key || '') || !/^[1-9][0-9]{7,14}$/.test(data.to || '')
       || typeof data.text !== 'string' || !data.text.trim() || data.text.length > 6000) {
       return [422, { error: 'Mensagem inválida.' }];
     }
