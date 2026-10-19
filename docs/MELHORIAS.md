@@ -1,5 +1,8 @@
 # Melhorias do fork
 
+Para conexão WhatsApp/Baileys, Gmail e notificações automáticas, consulte
+[COMUNICACAO.md](COMUNICACAO.md).
+
 ## Operação
 
 O menu **Operações** reúne OS em aberto, prazos vencidos, conclusões por responsável

@@ -31,3 +31,5 @@ application/.env
 assets/userImage
 /application/cache/htmlpurifier/
 /.maintenance
+/.secrets/
+/services/whatsapp/node_modules/

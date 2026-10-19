@@ -12,6 +12,8 @@ jobs:
       - name: Configure disposable environment
         run: |
           printf 'MAPOS_DB_PASSWORD=%s\nMAPOS_DB_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" > .env.local
+          mkdir -p .secrets
+          openssl rand -hex 32 > .secrets/whatsapp-token
           docker compose --env-file .env.local -f compose.dev.yaml up -d --build
       - name: Install locked dependencies and initialize configuration
         run: |
@@ -35,6 +37,9 @@ jobs:
           for script in scripts/*.sh; do bash -n "$script"; done
           docker compose --env-file .env.local -f compose.dev.yaml exec -T nginx nginx -t
           python3 tests/http_smoke.py http://localhost:8000 /tmp/mapos-ci-admin.json
+      - name: Test WhatsApp gateway with a simulated transport
+        run: |
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T whatsapp npm test
       - name: Clean disposable environment
         if: always()
         run: docker compose --env-file .env.local -f compose.dev.yaml down -v

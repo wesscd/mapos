@@ -37,6 +37,10 @@ class MY_Email extends CI_Email
      */
     public function __construct($config = [])
     {
+        $smtpFile = '/var/lib/mapos-communication/smtp.json';
+        if (is_readable($smtpFile)) {
+            $config = array_merge($config, json_decode(file_get_contents($smtpFile), true) ?: []);
+        }
         parent::__construct($config);
 
         log_message('debug', 'Email Queue Class Initialized');

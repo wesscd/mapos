@@ -77,6 +77,7 @@
         <div class="menu-bar">
             <div class="menu">
                 <ul class="menu-links" style="position: relative;">
+                    <li><a href="<?= site_url('mine/comunicacao') ?>"><i class="bx bx-message iconX"></i><span class="title">Comunicação</span></a></li>
                     <li class="<?php if (isset($menuPainel)) {
                         echo 'active';
                     }; ?>"><a class="tip-bottom" title="" href="<?php echo base_url() ?>index.php/mine/painel"><i class='bx bx-home-alt iconX'></i> <span class="title">Painel</span></a></li>

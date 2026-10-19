@@ -8,4 +8,5 @@ RUN apt-get update \
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY php.ini /usr/local/etc/php/conf.d/mapos.ini
+RUN mkdir -p /var/lib/mapos-communication && chown www-data:www-data /var/lib/mapos-communication
 WORKDIR /var/www/html

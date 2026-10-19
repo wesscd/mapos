@@ -141,41 +141,17 @@ class Os extends MY_Controller
                 'faturado' => 0,
             ];
 
-            if (is_numeric($id = $this->os_model->add('os', $data, true))) {
+            if (is_numeric($id = $this->os_workflow->createOrder($data))) {
                 $this->load->model('mapos_model');
                 $this->load->model('usuarios_model');
 
                 $idOs = $id;
-                $this->os_workflow->event($id, 'criacao', 'OS criada. Status: ' . $data['status']);
                 $os = $this->os_model->getById($idOs);
                 $emitente = $this->mapos_model->getEmitente();
 
                 $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
-                // Verificar configuração de notificação
-                if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
-                    $remetentes = [];
-                    switch ($this->data['configuration']['os_notification']) {
-                        case 'todos':
-                            array_push($remetentes, $os->email);
-                            array_push($remetentes, $tecnico->email);
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        case 'cliente':
-                            array_push($remetentes, $os->email);
-                            break;
-                        case 'tecnico':
-                            array_push($remetentes, $tecnico->email);
-                            break;
-                        case 'emitente':
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        default:
-                            array_push($remetentes, $os->email);
-                            break;
-                    }
-                    $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
-                }
+                // Automatic notifications are handled by the transactional communication outbox.
 
                 $this->session->set_flashdata('success', 'OS adicionada com sucesso, você pode adicionar produtos ou serviços a essa OS nas abas de Produtos e Serviços!');
                 log_info('Adicionou uma OS. ID: ' . $id);
@@ -259,30 +235,7 @@ class Os extends MY_Controller
                 $emitente = $this->mapos_model->getEmitente();
                 $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
-                // Verificar configuração de notificação
-                if ($this->data['configuration']['os_notification'] != 'nenhum' && $this->data['configuration']['email_automatico'] == 1) {
-                    $remetentes = [];
-                    switch ($this->data['configuration']['os_notification']) {
-                        case 'todos':
-                            array_push($remetentes, $os->email);
-                            array_push($remetentes, $tecnico->email);
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        case 'cliente':
-                            array_push($remetentes, $os->email);
-                            break;
-                        case 'tecnico':
-                            array_push($remetentes, $tecnico->email);
-                            break;
-                        case 'emitente':
-                            array_push($remetentes, $emitente->email);
-                            break;
-                        default:
-                            array_push($remetentes, $os->email);
-                            break;
-                    }
-                    $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Editada');
-                }
+                // Automatic notifications are handled by the transactional communication outbox.
 
                 $this->session->set_flashdata('success', 'Os editada com sucesso!');
                 log_info('Alterou uma OS. ID: ' . $this->input->post('idOs'));

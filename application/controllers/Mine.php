@@ -241,6 +241,28 @@ class Mine extends CI_Controller
         $this->load->view('conecte/template', $data);
     }
 
+    public function comunicacao()
+    {
+        if (! $this->session->userdata('conectado') || ! $this->session->userdata('cliente_id')) {
+            redirect('mine');
+        }
+        $this->load->library('comunicacao_service');
+        $this->load->helper('form');
+        $customer = (int) $this->session->userdata('cliente_id');
+        if ($this->input->method() === 'post') {
+            try {
+                $this->comunicacao_service->savePreference($customer, $this->input->post('canal'), 'Preferência informada na área do cliente.', 'cliente:' . $customer);
+                $this->session->set_flashdata('success', 'Preferência de comunicação atualizada.');
+            } catch (DomainException $error) {
+                $this->session->set_flashdata('error', $error->getMessage());
+            }
+            redirect('mine/comunicacao');
+        }
+        $data['preference'] = $this->comunicacao_service->preference($customer);
+        $data['output'] = 'conecte/comunicacao';
+        $this->load->view('conecte/template', $data);
+    }
+
     public function conta()
     {
         if (! session_id() || ! $this->session->userdata('conectado')) {
@@ -792,7 +814,8 @@ class Mine extends CI_Controller
                 'faturado' => 0,
             ];
 
-            if (is_numeric($id = $this->Conecte_model->add('os', $data, true))) {
+            $this->load->library('os_workflow');
+            if (is_numeric($id = $this->os_workflow->createOrder($data))) {
                 $this->load->model('mapos_model');
                 $this->load->model('usuarios_model');
 
@@ -805,9 +828,7 @@ class Mine extends CI_Controller
                 foreach ($usuarios as $usuario) {
                     array_push($remetentes, $usuario->email);
                 }
-                array_push($remetentes, $os->email);
-
-                $this->enviarOsPorEmail($idOs, $remetentes, 'Nova Ordem de Serviço #' . $idOs . ' - Criada pelo Cliente');
+                // Customer notifications use the same transactional outbox and preferences.
                 $this->session->set_flashdata('success', 'OS adicionada com sucesso!');
                 redirect('mine/detalhesOs/' . $id);
             } else {

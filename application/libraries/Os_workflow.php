@@ -63,7 +63,7 @@ class Os_workflow
         }
     }
 
-    public function event($id, $type, $description)
+    public function event($id, $type, $description, array $context = [])
     {
         $this->ci->db->insert('os_eventos', [
             'os_id' => (int) $id,
@@ -72,6 +72,41 @@ class Os_workflow
             'descricao' => $description,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
+        $source = 'event:' . $this->ci->db->insert_id();
+        $events = ['criacao' => 'abertura', 'status' => 'status', 'prazo' => 'prazo', 'entrega' => 'entrega'];
+        $event = $events[$type] ?? null;
+        if ($type === 'status') {
+            $order = $this->ci->db->get_where('os', ['idOs' => $id])->row();
+            $event = $order && $order->status === 'Finalizado' ? 'pronto' : 'status';
+        } elseif ($type === 'orcamento' && isset($context['aprovacao'])) {
+            $event = 'orcamento';
+        }
+        if ($event) {
+            $this->ci->load->library('comunicacao_service');
+            $this->ci->comunicacao_service->capture($id, $event, $source, $context);
+        }
+    }
+
+    public function createOrder(array $data)
+    {
+        return $this->transaction(function () use ($data) {
+            $this->ci->db->insert('os', $data);
+            $id = $this->ci->db->insert_id();
+            $this->event($id, 'criacao', 'OS criada. Status: ' . $data['status']);
+            return $id;
+        });
+    }
+
+    public function deliver($id)
+    {
+        return $this->transaction(function () use ($id) {
+            $order = $this->lockOrder($id);
+            if (! in_array($order->status, ['Finalizado', 'Faturado'], true) || $order->entregue_em) {
+                throw new DomainException('A OS deve estar finalizada e ainda não ter sido entregue.');
+            }
+            $this->ci->db->where('idOs', $id)->update('os', ['entregue_em' => date('Y-m-d H:i:s')]);
+            $this->event($id, 'entrega', 'Entrega do equipamento ao cliente registrada.');
+        });
     }
 
     private function stock($product, $quantity, $direction)
@@ -251,6 +286,9 @@ class Os_workflow
             }
             if ($data['status'] !== $order->status) {
                 $data['concluida_em'] = in_array($data['status'], ['Finalizado', 'Faturado'], true) ? date('Y-m-d H:i:s') : null;
+                if (! in_array($data['status'], ['Finalizado', 'Faturado'], true)) {
+                    $data['entregue_em'] = null;
+                }
             }
             $this->ci->db->where('idOs', $id)->update('os', $data);
             if ($data['status'] !== $order->status) {
@@ -258,6 +296,9 @@ class Os_workflow
             }
             if ($data['usuarios_id'] != $order->usuarios_id || $data['dataFinal'] !== $order->dataFinal) {
                 $this->event($id, 'planejamento', 'Responsável ou prazo atualizado. Prazo: ' . $data['dataFinal']);
+            }
+            if ($data['dataFinal'] !== $order->dataFinal) {
+                $this->event($id, 'prazo', 'Prazo atualizado para: ' . $data['dataFinal']);
             }
             if ($after || (isset($data['clientes_id']) && $data['clientes_id'] != $order->clientes_id)) {
                 $this->invalidateBudget($id);
@@ -285,6 +326,7 @@ class Os_workflow
                 $this->ci->db->delete($table, ['os_id' => $id]);
             }
             $this->ci->db->delete('os', ['idOs' => $id]);
+            $this->ci->db->where('os_id', $id)->where('status', 'pendente')->update('com_fila', ['status' => 'cancelado', 'erro' => 'OS excluída.']);
             if ($order->lancamento) {
                 $this->ci->db->delete('lancamentos', ['idLancamentos' => $order->lancamento]);
             }
@@ -337,7 +379,8 @@ class Os_workflow
             }
             $this->invalidateBudget($id);
             $this->ci->db->insert('os_aprovacoes', ['os_id' => $id, 'status' => 'pendente', 'valor' => $value, 'snapshot' => $snapshot, 'fingerprint' => hash('sha256', $snapshot), 'created_at' => date('Y-m-d H:i:s')]);
-            $this->event($id, 'orcamento', 'Orçamento enviado para aprovação na área do cliente. Valor: R$ ' . number_format($value, 2, ',', '.'));
+            $approval = $this->ci->db->insert_id();
+            $this->event($id, 'orcamento', 'Orçamento enviado para aprovação na área do cliente. Valor: R$ ' . number_format($value, 2, ',', '.'), ['aprovacao' => (int) $approval]);
         });
     }
 

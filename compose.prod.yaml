@@ -4,6 +4,33 @@ services:
     build: ./docker/runtime
     volumes:
       - .:/var/www/html
+      - communication_private:/var/lib/mapos-communication
+    secrets:
+      - whatsapp_token
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  whatsapp:
+    build: ./services/whatsapp
+    volumes:
+      - whatsapp_data:/data
+    secrets:
+      - whatsapp_token
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  communication-worker:
+    build: ./docker/runtime
+    command: [sh, -c, 'while true; do php index.php comunicacao_worker process; sleep 15; done']
+    volumes:
+      - .:/var/www/html
+      - communication_private:/var/lib/mapos-communication
+    secrets:
+      - whatsapp_token
     depends_on:
       db:
         condition: service_healthy
@@ -39,6 +66,11 @@ services:
     restart: unless-stopped
 volumes:
   db:
+  whatsapp_data:
+  communication_private:
+secrets:
+  whatsapp_token:
+    file: ./.secrets/whatsapp-token
 networks:
   proxy:
     external: true

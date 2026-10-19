@@ -101,6 +101,7 @@ class OsController extends REST_Controller
     public function index_post()
     {
         $this->logged_user();
+        $this->os_workflow->setActor($this->logged_user()->usuario->idUsuarios);
         if (! $this->permission->checkPermission($this->logged_user()->level, 'aOs')) {
             $this->response([
                 'status' => false,
@@ -155,7 +156,7 @@ class OsController extends REST_Controller
             'faturado' => 0,
         ];
 
-        if (is_numeric($id = $this->os_model->add('os', $data, true))) {
+        if (is_numeric($id = $this->os_workflow->createOrder($data))) {
             $this->load->model('mapos_model');
             $this->load->model('usuarios_model');
 
@@ -164,30 +165,7 @@ class OsController extends REST_Controller
             $emitente = $this->mapos_model->getEmitente();
             $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
-            // Verificar configuração de notificação
-            if ($this->getConfig('os_notification') != 'nenhum' && $this->getConfig('email_automatico') == 1) {
-                $remetentes = [];
-                switch ($this->getConfig('os_notification')) {
-                    case 'todos':
-                        array_push($remetentes, $os->email);
-                        array_push($remetentes, $tecnico->email);
-                        array_push($remetentes, $emitente->email);
-                        break;
-                    case 'cliente':
-                        array_push($remetentes, $os->email);
-                        break;
-                    case 'tecnico':
-                        array_push($remetentes, $tecnico->email);
-                        break;
-                    case 'emitente':
-                        array_push($remetentes, $emitente->email);
-                        break;
-                    default:
-                        array_push($remetentes, $os->email);
-                        break;
-                }
-                $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
-            }
+            // Automatic notifications are handled by the transactional communication outbox.
 
             $this->log_app('Adicionou uma OS. ID: ' . $id);
 
@@ -207,6 +185,7 @@ class OsController extends REST_Controller
     public function index_put($id)
     {
         $this->logged_user();
+        $this->os_workflow->setActor($this->logged_user()->usuario->idUsuarios);
         if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
             $this->response([
                 'status' => false,
@@ -289,30 +268,7 @@ class OsController extends REST_Controller
             $emitente = $this->mapos_model->getEmitente();
             $tecnico = $this->usuarios_model->getById($os->usuarios_id);
 
-            // Verificar configuração de notificação
-            if ($this->getConfig('os_notification') != 'nenhum' && $this->getConfig('email_automatico') == 1) {
-                $remetentes = [];
-                switch ($this->getConfig('os_notification')) {
-                    case 'todos':
-                        array_push($remetentes, $os->email);
-                        array_push($remetentes, $tecnico->email);
-                        array_push($remetentes, $emitente->email);
-                        break;
-                    case 'cliente':
-                        array_push($remetentes, $os->email);
-                        break;
-                    case 'tecnico':
-                        array_push($remetentes, $tecnico->email);
-                        break;
-                    case 'emitente':
-                        array_push($remetentes, $emitente->email);
-                        break;
-                    default:
-                        array_push($remetentes, $os->email);
-                        break;
-                }
-                $this->enviarOsPorEmail($idOs, $remetentes, 'Ordem de Serviço - Criada');
-            }
+            // Automatic notifications are handled by the transactional communication outbox.
 
             $this->log_app('Alterou uma OS. ID: ' . $id);
 

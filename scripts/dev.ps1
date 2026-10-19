@@ -9,6 +9,12 @@ try {
     if (-not (Test-Path '.env.local')) {
         throw 'Configure .env.local first; see docs/AMBIENTE.md.'
     }
+    if (-not (Test-Path '.secrets/whatsapp-token')) {
+        New-Item -ItemType Directory -Force '.secrets' | Out-Null
+        $tokenBytes = New-Object byte[] 32
+        [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($tokenBytes)
+        [System.IO.File]::WriteAllText((Join-Path (Get-Location) '.secrets/whatsapp-token'), [Convert]::ToBase64String($tokenBytes))
+    }
     $compose = @('compose', '--env-file', '.env.local', '-f', 'compose.dev.yaml')
     switch ($Action) {
         'up' {

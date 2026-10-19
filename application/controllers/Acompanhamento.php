@@ -16,6 +16,9 @@ class Acompanhamento extends MY_Controller
             if ($action === 'orcamento') {
                 $this->os_workflow->requestApproval((int) $id);
                 $message = 'Orçamento disponível para aprovação na área do cliente.';
+            } elseif ($action === 'entrega') {
+                $this->os_workflow->deliver((int) $id);
+                $message = 'Entrega ao cliente registrada.';
             } elseif ($action === 'checklist') {
                 $this->os_workflow->checklist((int) $id, $this->input->post('descricao'), $this->input->post('item_id'), $this->input->post('concluido') === '1');
                 $message = 'Checklist atualizado.';

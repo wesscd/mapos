@@ -14,11 +14,17 @@ touch .maintenance
 trap 'echo "Implantação interrompida. Preserve o backup e verifique os logs antes de remover .maintenance." >&2' ERR
 git merge --ff-only "$target"
 compose=(docker compose --env-file .env.local -f compose.prod.yaml)
+install -d -m 700 .secrets
+if [[ ! -f .secrets/whatsapp-token ]]; then
+    openssl rand -hex 32 > .secrets/whatsapp-token
+fi
+chmod 644 .secrets/whatsapp-token
+"${compose[@]}" stop communication-worker
 "${compose[@]}" exec -T -e COMPOSER_ALLOW_SUPERUSER=1 php composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader </dev/null
 "${compose[@]}" exec -T php composer check-platform-reqs --no-dev </dev/null
 "${compose[@]}" exec -T php php index.php tools migrate </dev/null
 "${compose[@]}" exec -T -u root php sh -c 'mkdir -p application/cache/htmlpurifier; chown -R www-data:www-data application/cache application/logs; chgrp www-data application/.env; chmod 660 application/.env' </dev/null
-"${compose[@]}" up -d --build --no-deps --force-recreate php nginx
+"${compose[@]}" up -d --build --no-deps --force-recreate php nginx whatsapp communication-worker
 "${compose[@]}" exec -T nginx nginx -t </dev/null
 "${compose[@]}" exec -T nginx nginx -s reload </dev/null
 rm -- .maintenance
