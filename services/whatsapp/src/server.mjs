@@ -21,14 +21,14 @@ const server = createServer(async (req, res) => {
     res.writeHead(401); res.end('{"error":"Unauthorized"}'); return;
   }
   let size = 0;
-  let chunks = '';
+  const chunks = [];
   try {
     for await (const chunk of req) {
       size += chunk.length;
       if (size > 32000) { res.writeHead(413); res.end('{}'); return; }
-      chunks += chunk.toString();
+      chunks.push(chunk);
     }
-    const data = chunks ? JSON.parse(chunks) : {};
+    const data = size ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
     const [code, body] = await gateway.route(req.method, req.url, data);
     res.writeHead(code); res.end(JSON.stringify(body));
   } catch {
