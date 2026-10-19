@@ -1,9 +1,8 @@
 param(
     [ValidateSet('up', 'stop', 'status', 'logs', 'php', 'composer')]
-    [string]$Action = 'up',
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$CommandArguments
+    [string]$Action = 'up'
 )
+$CommandArguments = $args
 $ErrorActionPreference = 'Stop'
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
