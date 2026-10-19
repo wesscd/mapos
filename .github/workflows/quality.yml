@@ -32,7 +32,7 @@ jobs:
           docker compose --env-file .env.local -f compose.dev.yaml exec -T php sh -c 'find application/controllers application/models application/libraries application/database/migrations tests scripts -name "*.php" -print0 | xargs -0 -n1 php -l >/dev/null'
           docker compose --env-file .env.local -f compose.dev.yaml exec -T php php tests/run.php
           docker compose --env-file .env.local -f compose.dev.yaml exec -T php php index.php tools migrate
-          bash -n scripts/backup.sh scripts/verify-backup.sh scripts/deploy.sh
+          for script in scripts/*.sh; do bash -n "$script"; done
           docker compose --env-file .env.local -f compose.dev.yaml exec -T nginx nginx -t
           python3 tests/http_smoke.py http://localhost:8000 /tmp/mapos-ci-admin.json
       - name: Clean disposable environment

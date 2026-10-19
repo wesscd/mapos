@@ -57,7 +57,7 @@ jobs:
 
       - name: Create release archive
         run: |
-          zip -r "${{ inputs.tag }}-release.zip" ./
+          zip -r "${{ inputs.tag }}-release.zip" ./ -x '.git/*' '.env.local' 'application/.env' 'docker/data/*' 'application/logs/*' 'application/cache/htmlpurifier/*' '*.zip'
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
