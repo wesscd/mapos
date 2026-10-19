@@ -50,7 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer update --optimize-autoloader --prefer-lowest --prefer-stable
+          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
       - name: List installed dependencies
         run: composer show -D

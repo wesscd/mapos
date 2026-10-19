@@ -1,0 +1,58 @@
+/* Shared improvements preserve the existing themes and Bootstrap behavior. */
+:root { --mapos-accent: #2563eb; --mapos-radius: 12px; }
+.widget-box { border-radius: var(--mapos-radius); overflow: visible; }
+input, select, textarea, button { font: inherit; }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible { outline: 3px solid #60a5fa !important; outline-offset: 2px; }
+.mapos-workflow, .mapos-operations { padding: 20px; margin: 0 0 24px; background: #f4f7fb; color: #17243a; border-radius: var(--mapos-radius); }
+.mapos-workflow h2, .mapos-operations h1 { font-size: 25px; line-height: 1.3; margin: 6px 0 12px; }
+.mapos-workflow h3, .mapos-operations h2 { font-size: 18px; line-height: 1.4; margin: 0 0 14px; }
+.mapos-eyebrow { color: #355e94; font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+.mapos-section-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 18px; }
+.mapos-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; margin-bottom: 18px; }
+.mapos-card { min-width: 0; padding: 20px; background: #fff; color: #17243a; border: 1px solid #dce5f0; border-radius: var(--mapos-radius); box-shadow: 0 4px 12px #10234005; margin-bottom: 18px; }
+.mapos-grid > .mapos-card { margin-bottom: 0; }
+.mapos-pill { display: inline-block; padding: 5px 10px; border-radius: 20px; background: #e8f0ff; color: #214b85; font-size: 12px; font-weight: 600; }
+.mapos-muted { color: #58697e; }
+.mapos-check form, .mapos-ranking li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; margin: 0; border-bottom: 1px solid #e8edf4; }
+.mapos-inline-form { margin-top: 18px; }
+.mapos-inline-form input { box-sizing: border-box; width: 100%; height: 40px; }
+.mapos-workflow .btn, .mapos-operations .btn { min-height: 36px; border-radius: 6px; }
+.mapos-workflow .btn-primary { background: #2563eb; border-color: #1d4ed8; color: #fff; text-shadow: none; }
+.mapos-history summary { cursor: pointer; font-size: 16px; font-weight: 600; }
+.mapos-history ol { margin: 18px 0 0; list-style: none; }
+.mapos-history li { padding: 12px 0; border-top: 1px solid #e8edf4; overflow-wrap: anywhere; }
+.mapos-history time { display: inline-block; min-width: 135px; color: #58697e; font-size: 12px; }
+.mapos-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.mapos-metrics strong { display: block; font-size: 30px; line-height: 1.4; margin: 10px 0; }
+.mapos-metrics small { display: block; color: #58697e; }
+.mapos-table-scroll { max-width: 100%; overflow-x: auto; }
+.mapos-ranking { list-style: none; margin: 0; }
+.mapos-operations .table th, .mapos-operations .table td { border-color: #e8edf4; color: #17243a; text-align: left; }
+.mapos-operations a { color: #1d4ed8; }
+@media (max-width: 900px) {
+    .mapos-grid { grid-template-columns: 1fr; }
+    .mapos-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+    .mapos-workflow, .mapos-operations { padding: 14px; }
+    .mapos-section-heading { flex-direction: column; }
+    .mapos-card { padding: 16px; }
+    .mapos-metrics { gap: 10px; }
+    .mapos-metrics strong { font-size: 24px; }
+    .mapos-check form { flex-wrap: wrap; }
+    .widget-content { overflow-x: auto; }
+    .widget-content input:not([type=checkbox]):not([type=radio]):not([type=hidden]), .widget-content select, .widget-content textarea { max-width: 100%; box-sizing: border-box; }
+    .btn, .button { min-height: 36px; }
+    .mapos-history time { display: block; }
+    .modal { max-height: calc(100vh - 30px); overflow-y: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+.mapos-mobile-nav { display: none; }
+@media (max-width: 767px) {
+    body { padding-bottom: 76px; }
+    .mapos-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1045; background: #fff; border-top: 1px solid #dce5f0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); justify-content: space-around; }
+    .mapos-mobile-nav a { color: #214b85; padding: 12px 8px; font-weight: 600; font-size: 12px; text-align: center; }
+}

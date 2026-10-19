@@ -513,8 +513,24 @@ class Mine extends CI_Controller
             redirect('mine/painel');
         }
 
+        $data['aprovacoes'] = $this->db->where('os_id', (int) $id)->where_in('status', ['pendente', 'aprovado', 'rejeitado'])->order_by('id', 'desc')->limit(5)->get('os_aprovacoes')->result();
         $data['output'] = 'conecte/visualizar_os';
         $this->load->view('conecte/template', $data);
+    }
+
+    public function responderOrcamento($id = null)
+    {
+        if ($this->input->method() !== 'post' || ! $this->session->userdata('conectado')) {
+            show_error('Operação não permitida.', 403);
+        }
+        $this->load->library('os_workflow');
+        try {
+            $this->os_workflow->answerApproval((int) $id, (int) $this->input->post('aprovacao_id'), (int) $this->session->userdata('cliente_id'), $this->input->post('resposta'));
+            $this->session->set_flashdata('success', 'Resposta do orçamento registrada.');
+        } catch (DomainException $error) {
+            $this->session->set_flashdata('error', $error->getMessage());
+        }
+        redirect('mine/visualizarOs/' . (int) $id);
     }
 
     public function validarCPF($cpf)

@@ -14,6 +14,8 @@ try {
         'up' {
             & docker @compose up -d --build
             if ($LASTEXITCODE -ne 0) { throw 'Unable to start containers.' }
+            & docker @compose exec -T -u root php sh -c 'mkdir -p application/cache/htmlpurifier; chown -R www-data:www-data application/cache application/logs'
+            if ($LASTEXITCODE -ne 0) { throw 'Unable to prepare runtime directories.' }
             & docker @compose exec -T php composer install --no-interaction --prefer-dist
         }
         'stop' { & docker @compose stop }

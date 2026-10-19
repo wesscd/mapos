@@ -318,7 +318,7 @@ class Os_model extends CI_Model
         $valorDesconto = 0;
         if ($servicos = $this->getServicos($id)) {
             foreach ($servicos as $s) {
-                $preco = $s->preco ?: $s->precoVenda;
+                $preco = $s->preco ?? 0;
                 $totalServico = $totalServico + ($preco * ($s->quantidade ?: 1));
             }
         }

@@ -1,3 +1,4 @@
+<?php $this->load->view('conecte/aprovacao'); ?>
 <?php $totalServico = 0;
 $totalProdutos = 0; ?>
 <div class="row-fluid" style="margin-top: 0">

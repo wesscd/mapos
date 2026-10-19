@@ -1,44 +1,36 @@
-function getCookie(name) {
-    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    if (match) {
-        return match[2];
+/* Tokens are rendered by the server, so cookies can remain HttpOnly. */
+$(function () {
+    var name = $('meta[name="csrf-token-name"]').attr('content');
+    var token = $('meta[name="csrf-token"]').attr('content');
+    if (!name || !token) return;
+    function updateForms() {
+        $('form').each(function () {
+            if (this.method.toLowerCase() === 'get') return;
+            var input = $(this).find('input[name="' + name + '"]');
+            if (!input.length) input = $('<input>', { type: 'hidden', name: name }).appendTo(this);
+            input.val(token);
+        });
     }
-}
-
-function setCsrfTokenInAllForms(csrfTokenName, csrfCookieName) {
-    $('input[name="' + csrfTokenName + '"]').remove();
-    var forms = document.querySelectorAll("form");
-    forms.forEach(function (form) {
-        var csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = csrfTokenName;
-        csrfInput.value = getCookie(csrfCookieName);
-        form.appendChild(csrfInput);
-    });
-}
-
-$(document).ready(function () {
-    // Add CSRF token input to each form and ajax requests
-    var csrfTokenName = $('meta[name="csrf-token-name"]').attr('content');
-    var csrfCookieName = $('meta[name="csrf-cookie-name"]').attr('content');
-
-    setCsrfTokenInAllForms(csrfTokenName, csrfCookieName);
-
-    $.ajaxSetup({
-        credentials: "include",
-        beforeSend: function (jqXHR, settings) {
-            if (typeof settings.data === 'object') {
-                settings.data[csrfTokenName] = getCookie(csrfCookieName);
-            } else {
-                settings.data += '&' + $.param({
-                    [csrfTokenName]: getCookie(csrfCookieName)
-                });
-            }
-
-            return true;
-        },
-        complete: function () {
-            setCsrfTokenInAllForms(csrfTokenName, csrfCookieName);
+    updateForms();
+    $.ajaxPrefilter(function (options, original, xhr) {
+        if (options.crossDomain || /^(GET|HEAD|OPTIONS)$/i.test(options.type)) return;
+        if (window.FormData && options.data instanceof FormData) {
+            options.data.set(name, token);
+        } else if (typeof options.data === 'string') {
+            var params = new URLSearchParams(options.data);
+            params.set(name, token);
+            options.data = params.toString();
+        } else {
+            options.data = options.data || {};
+            options.data[name] = token;
         }
+        xhr.always(function () {
+            var next = xhr.getResponseHeader('X-CSRF-Token');
+            if (next) {
+                token = next;
+                $('meta[name="csrf-token"]').attr('content', next);
+                updateForms();
+            }
+        });
     });
 });

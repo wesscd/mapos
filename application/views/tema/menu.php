@@ -1,3 +1,10 @@
+<nav class="mapos-mobile-nav" aria-label="Navegação rápida">
+    <a href="<?= site_url('mapos') ?>">Início</a>
+    <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) { ?>
+    <a href="<?= site_url('os') ?>">Ordens</a><a href="<?= site_url('operacoes') ?>">Operações</a>
+    <?php } ?>
+    <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'aOs')) { ?><a href="<?= site_url('os/adicionar') ?>">Nova OS</a><?php } ?>
+</nav>
 <!--sidebar-menu-->
 <nav id="sidebar">
     <div id="newlog">
@@ -31,6 +38,9 @@
         <div class="menu">
 
             <ul class="menu-links" style="position: relative;">
+                <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) { ?>
+                <li class="<?= isset($menuOperacoes) ? 'active' : '' ?>"><a href="<?= site_url('operacoes') ?>"><i class="bx bx-bar-chart-alt-2 iconX"></i><span class="title">Operações</span><span class="title-tooltip">Operações</span></a></li>
+                <?php } ?>
                 <li class="<?php if (isset($menuPainel)) {
                     echo 'active';
                 }; ?>">

@@ -1,0 +1,360 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+/** Coordinates OS changes, stock and the customer approval snapshot. */
+class Os_workflow
+{
+    private $ci;
+    private $actor;
+
+    public function setActor($id)
+    {
+        $this->actor = (int) $id;
+    }
+
+    public function __construct()
+    {
+        $this->ci = &get_instance();
+    }
+
+    public function details($id)
+    {
+        return [
+            'checklist' => $this->ci->db->order_by('id')->get_where('os_checklist', ['os_id' => $id])->result(),
+            'eventos' => $this->ci->db->order_by('id', 'desc')->limit(100)->get_where('os_eventos', ['os_id' => $id])->result(),
+            'aprovacoes' => $this->ci->db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $id])->result(),
+        ];
+    }
+
+    private function transaction(callable $work)
+    {
+        $db = $this->ci->db;
+        $debug = $db->db_debug;
+        $db->db_debug = false;
+        $db->trans_begin();
+        try {
+            $result = $work();
+            if (! $db->trans_status()) {
+                throw new RuntimeException('Não foi possível concluir a operação. Tente novamente.');
+            }
+            $db->trans_commit();
+            return $result;
+        } catch (Throwable $error) {
+            $db->trans_rollback();
+            throw $error;
+        } finally {
+            $db->db_debug = $debug;
+        }
+    }
+
+    private function lockOrder($id)
+    {
+        $order = $this->ci->db->query('SELECT * FROM os WHERE idOs = ? FOR UPDATE', [(int) $id])->row();
+        if (! $order) {
+            throw new DomainException('Ordem de serviço não encontrada.');
+        }
+        return $order;
+    }
+
+    private function editable($order)
+    {
+        if ((int) $order->faturado || in_array($order->status, ['Cancelado', 'Faturado'], true)) {
+            throw new DomainException('Reabra a OS antes de alterar seus itens. OS faturadas não permitem alterações de valores.');
+        }
+    }
+
+    public function event($id, $type, $description)
+    {
+        $this->ci->db->insert('os_eventos', [
+            'os_id' => (int) $id,
+            'usuario_id' => $this->actor ?: ($this->ci->session->userdata('id_admin') ?: null),
+            'tipo' => $type,
+            'descricao' => $description,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    private function stock($product, $quantity, $direction)
+    {
+        if ($quantity <= 0 || ! in_array($direction, ['+', '-'], true)) {
+            throw new DomainException('Quantidade inválida.');
+        }
+        $db = $this->ci->db;
+        $db->query('SELECT idProdutos FROM produtos WHERE idProdutos = ? FOR UPDATE', [(int) $product]);
+        // The operator is selected exclusively by application code; values use bindings.
+        $sql = $direction === '-'
+            ? 'UPDATE produtos SET estoque = estoque - ? WHERE idProdutos = ? AND estoque >= ?'
+            : 'UPDATE produtos SET estoque = estoque + ? WHERE idProdutos = ?';
+        $values = $direction === '-' ? [$quantity, (int) $product, $quantity] : [$quantity, (int) $product];
+        $db->query($sql, $values);
+        if ($db->affected_rows() !== 1) {
+            throw new DomainException('Estoque insuficiente ou produto indisponível.');
+        }
+    }
+
+    private function invalidateBudget($id)
+    {
+        $this->ci->db->where('os_id', $id)->where_in('status', ['pendente', 'aprovado'])->update('os_aprovacoes', ['status' => 'substituido']);
+    }
+
+    private function resetDiscount($id)
+    {
+        $this->ci->db->where('idOs', $id)->update('os', ['desconto' => 0, 'valor_desconto' => 0, 'tipo_desconto' => null]);
+        $this->invalidateBudget($id);
+    }
+
+    public function addProduct(array $item, $controlStock)
+    {
+        return $this->transaction(function () use ($item, $controlStock) {
+            $this->editable($this->lockOrder($item['os_id']));
+            if (filter_var($item['quantidade'], FILTER_VALIDATE_INT) === false || $item['quantidade'] <= 0 || ! is_numeric($item['preco']) || $item['preco'] < 0) {
+                throw new DomainException('Informe quantidade e preço válidos.');
+            }
+            if ($controlStock) {
+                $this->stock($item['produtos_id'], $item['quantidade'], '-');
+            }
+            $product = $this->ci->db->get_where('produtos', ['idProdutos' => $item['produtos_id']])->row();
+            if (! $product) {
+                throw new DomainException('Produto não encontrado.');
+            }
+            $item['custo_unitario'] = $product->precoCompra;
+            $item['subTotal'] = round($item['preco'] * $item['quantidade'], 2);
+            $this->ci->db->insert('produtos_os', $item);
+            $id = $this->ci->db->insert_id();
+            $this->resetDiscount($item['os_id']);
+            $this->event($item['os_id'], 'produto', 'Produto adicionado. Quantidade: ' . $item['quantidade']);
+            return $id;
+        });
+    }
+
+    public function removeProduct($orderId, $itemId, $controlStock)
+    {
+        return $this->transaction(function () use ($orderId, $itemId, $controlStock) {
+            $this->editable($this->lockOrder($orderId));
+            $item = $this->ci->db->get_where('produtos_os', ['idProdutos_os' => (int) $itemId, 'os_id' => (int) $orderId])->row();
+            if (! $item) {
+                throw new DomainException('Produto não encontrado nesta OS.');
+            }
+            if ($controlStock) {
+                $this->stock($item->produtos_id, $item->quantidade, '+');
+            }
+            $this->ci->db->delete('produtos_os', ['idProdutos_os' => $item->idProdutos_os]);
+            $this->resetDiscount($orderId);
+            $this->event($orderId, 'produto', 'Produto removido; estoque devolvido quando habilitado.');
+        });
+    }
+
+    public function service($id, array $data = [], $removeId = null)
+    {
+        return $this->transaction(function () use ($id, $data, $removeId) {
+            $this->editable($this->lockOrder($id));
+            if ($removeId) {
+                $this->ci->db->delete('servicos_os', ['idServicos_os' => (int) $removeId, 'os_id' => (int) $id]);
+                if ($this->ci->db->affected_rows() !== 1) {
+                    throw new DomainException('Serviço não encontrado nesta OS.');
+                }
+            } else {
+                if (! is_numeric($data['quantidade']) || $data['quantidade'] <= 0 || ! is_numeric($data['preco']) || $data['preco'] < 0) {
+                    throw new DomainException('Informe quantidade e preço válidos.');
+                }
+                $data['os_id'] = (int) $id;
+                $data['subTotal'] = round($data['quantidade'] * $data['preco'], 2);
+                $this->ci->db->insert('servicos_os', $data);
+                $inserted = $this->ci->db->insert_id();
+            }
+            $this->resetDiscount($id);
+            $this->event($id, 'servico', $removeId ? 'Serviço removido.' : 'Serviço adicionado.');
+            return $removeId ? null : $this->ci->db->get_where('servicos_os', ['idServicos_os' => $inserted])->row();
+        });
+    }
+
+    public function discount($id, $type, $value)
+    {
+        return $this->transaction(function () use ($id, $type, $value) {
+            $this->editable($this->lockOrder($id));
+            if (! in_array($type, ['real', 'porcento'], true) || ! is_numeric($value) || $value < 0) {
+                throw new DomainException('Desconto inválido.');
+            }
+            $this->ci->load->model('os_model');
+            $totals = $this->ci->os_model->valorTotalOS($id);
+            $gross = $totals['totalProdutos'] + $totals['totalServico'];
+            $amount = $type === 'porcento' ? round($gross * $value / 100, 2) : round($value, 2);
+            if ($amount > $gross || ($type === 'porcento' && $value > 100)) {
+                throw new DomainException('O desconto não pode exceder o valor da OS.');
+            }
+            $this->ci->db->where('idOs', $id)->update('os', ['tipo_desconto' => $type, 'desconto' => $value, 'valor_desconto' => $gross - $amount]);
+            $this->invalidateBudget($id);
+            $this->event($id, 'desconto', 'Desconto atualizado. Valor líquido: R$ ' . number_format($gross - $amount, 2, ',', '.'));
+        });
+    }
+
+    public function changeLine($id, $itemId, $quantity, $price, $product, $controlStock = false)
+    {
+        return $this->transaction(function () use ($id, $itemId, $quantity, $price, $product, $controlStock) {
+            $this->editable($this->lockOrder($id));
+            if (! is_numeric($quantity) || $quantity <= 0 || ! is_numeric($price) || $price < 0
+                || ($product && filter_var($quantity, FILTER_VALIDATE_INT) === false)) {
+                throw new DomainException('Informe quantidade e preço válidos.');
+            }
+            $table = $product ? 'produtos_os' : 'servicos_os';
+            $key = $product ? 'idProdutos_os' : 'idServicos_os';
+            $item = $this->ci->db->get_where($table, [$key => (int) $itemId, 'os_id' => (int) $id])->row();
+            if (! $item) {
+                throw new DomainException('Item não encontrado nesta OS.');
+            }
+            if ($product && $controlStock && (float) $quantity !== (float) $item->quantidade) {
+                $delta = $quantity - $item->quantidade;
+                $this->stock($item->produtos_id, abs($delta), $delta > 0 ? '-' : '+');
+            }
+            $this->ci->db->where($key, $itemId)->update($table, ['quantidade' => $quantity, 'preco' => $price, 'subTotal' => round($quantity * $price, 2)]);
+            $this->resetDiscount($id);
+            $this->event($id, 'item', 'Quantidade ou preço de item atualizado.');
+            return $this->ci->db->get_where($table, [$key => $itemId])->row();
+        });
+    }
+
+    public function invoice($id, array $data)
+    {
+        return $this->transaction(function () use ($id, $data) {
+            $order = $this->lockOrder($id);
+            $this->editable($order);
+            $this->ci->load->model('os_model');
+            $totals = $this->ci->os_model->valorTotalOS($id);
+            $gross = round($totals['totalProdutos'] + $totals['totalServico'], 2);
+            $net = $order->tipo_desconto ? (float) $order->valor_desconto : $gross;
+            if ($gross <= 0 || $net < 0 || $net > $gross) {
+                throw new DomainException('Confira os itens e o desconto antes de faturar.');
+            }
+            $data = array_merge($data, ['valor' => $gross, 'desconto' => $gross - $net, 'valor_desconto' => $net, 'tipo_desconto' => 'real', 'tipo' => 'receita', 'clientes_id' => $order->clientes_id]);
+            $this->ci->db->insert('lancamentos', $data);
+            $entry = $this->ci->db->insert_id();
+            $this->ci->db->where('idOs', $id)->update('os', ['faturado' => 1, 'status' => 'Faturado', 'valorTotal' => $gross, 'lancamento' => $entry, 'concluida_em' => $order->concluida_em ?: date('Y-m-d H:i:s')]);
+            $this->event($id, 'status', $order->status . ' → Faturado');
+            return $entry;
+        });
+    }
+
+    public function updateOrder($id, array $data, $controlStock)
+    {
+        return $this->transaction(function () use ($id, $data, $controlStock) {
+            $order = $this->lockOrder($id);
+            if ((int) $order->faturado && $data['status'] !== $order->status) {
+                throw new DomainException('Uma OS faturada não pode mudar de status.');
+            }
+            $before = $order->status === 'Cancelado';
+            $after = $data['status'] === 'Cancelado';
+            if ($controlStock && $before !== $after) {
+                $items = $this->ci->db->order_by('produtos_id')->get_where('produtos_os', ['os_id' => $id])->result();
+                foreach ($items as $item) {
+                    $this->stock($item->produtos_id, $item->quantidade, $after ? '+' : '-');
+                }
+            }
+            if ($data['status'] !== $order->status) {
+                $data['concluida_em'] = in_array($data['status'], ['Finalizado', 'Faturado'], true) ? date('Y-m-d H:i:s') : null;
+            }
+            $this->ci->db->where('idOs', $id)->update('os', $data);
+            if ($data['status'] !== $order->status) {
+                $this->event($id, 'status', $order->status . ' → ' . $data['status']);
+            }
+            if ($data['usuarios_id'] != $order->usuarios_id || $data['dataFinal'] !== $order->dataFinal) {
+                $this->event($id, 'planejamento', 'Responsável ou prazo atualizado. Prazo: ' . $data['dataFinal']);
+            }
+            if ($after || (isset($data['clientes_id']) && $data['clientes_id'] != $order->clientes_id)) {
+                $this->invalidateBudget($id);
+            }
+            return true;
+        });
+    }
+
+    public function deleteOrder($id, $controlStock)
+    {
+        return $this->transaction(function () use ($id, $controlStock) {
+            $order = $this->lockOrder($id);
+            $charges = $this->ci->db->get_where('cobrancas', ['os_id' => $id])->result();
+            foreach ($charges as $charge) {
+                if ($charge->status !== 'canceled') {
+                    throw new DomainException('Cancele a cobrança antes de excluir a OS.');
+                }
+            }
+            if ($controlStock && $order->status !== 'Cancelado') {
+                foreach ($this->ci->db->order_by('produtos_id')->get_where('produtos_os', ['os_id' => $id])->result() as $item) {
+                    $this->stock($item->produtos_id, $item->quantidade, '+');
+                }
+            }
+            foreach (['cobrancas', 'servicos_os', 'produtos_os', 'anexos', 'anotacoes_os', 'equipamentos_os', 'os_checklist', 'os_aprovacoes', 'os_eventos'] as $table) {
+                $this->ci->db->delete($table, ['os_id' => $id]);
+            }
+            $this->ci->db->delete('os', ['idOs' => $id]);
+            if ($order->lancamento) {
+                $this->ci->db->delete('lancamentos', ['idLancamentos' => $order->lancamento]);
+            }
+        });
+    }
+
+    public function checklist($id, $description = null, $itemId = null, $done = false)
+    {
+        return $this->transaction(function () use ($id, $description, $itemId, $done) {
+            $this->editable($this->lockOrder($id));
+            if ($itemId) {
+                $item = $this->ci->db->get_where('os_checklist', ['id' => (int) $itemId, 'os_id' => (int) $id])->row();
+                if (! $item) {
+                    throw new DomainException('Item não encontrado.');
+                }
+                $this->ci->db->where('id', $item->id)->update('os_checklist', ['concluido' => (int) $done]);
+                $description = $item->descricao . ($done ? ': concluído' : ': reaberto');
+            } else {
+                $description = trim((string) $description);
+                if ($description === '' || mb_strlen($description) > 180) {
+                    throw new DomainException('Descreva o item em até 180 caracteres.');
+                }
+                $this->ci->db->insert('os_checklist', ['os_id' => $id, 'descricao' => $description, 'created_at' => date('Y-m-d H:i:s')]);
+            }
+            $this->event($id, 'checklist', $description);
+        });
+    }
+
+    private function budget($id)
+    {
+        $this->ci->load->model('os_model');
+        $totals = $this->ci->os_model->valorTotalOS($id);
+        $order = $this->ci->db->get_where('os', ['idOs' => $id])->row();
+        $snapshot = [
+            'produtos' => $this->ci->db->select('p.descricao, i.quantidade, i.preco')->from('produtos_os i')->join('produtos p', 'p.idProdutos = i.produtos_id')->where('i.os_id', $id)->order_by('i.idProdutos_os')->get()->result_array(),
+            'servicos' => $this->ci->db->select('s.nome, i.quantidade, i.preco')->from('servicos_os i')->join('servicos s', 's.idServicos = i.servicos_id')->where('i.os_id', $id)->order_by('i.idServicos_os')->get()->result_array(),
+            'valor' => round($order->tipo_desconto ? $order->valor_desconto : $totals['totalProdutos'] + $totals['totalServico'], 2),
+        ];
+        return json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
+    public function requestApproval($id)
+    {
+        return $this->transaction(function () use ($id) {
+            $this->editable($this->lockOrder($id));
+            $snapshot = $this->budget($id);
+            $value = json_decode($snapshot, true)['valor'];
+            if ($value <= 0) {
+                throw new DomainException('Adicione produtos ou serviços com valor antes de solicitar aprovação.');
+            }
+            $this->invalidateBudget($id);
+            $this->ci->db->insert('os_aprovacoes', ['os_id' => $id, 'status' => 'pendente', 'valor' => $value, 'snapshot' => $snapshot, 'fingerprint' => hash('sha256', $snapshot), 'created_at' => date('Y-m-d H:i:s')]);
+            $this->event($id, 'orcamento', 'Orçamento enviado para aprovação na área do cliente. Valor: R$ ' . number_format($value, 2, ',', '.'));
+        });
+    }
+
+    public function answerApproval($id, $approvalId, $customerId, $answer)
+    {
+        return $this->transaction(function () use ($id, $approvalId, $customerId, $answer) {
+            $order = $this->lockOrder($id);
+            $this->editable($order);
+            if ((int) $order->clientes_id !== (int) $customerId || ! in_array($answer, ['aprovado', 'rejeitado'], true)) {
+                throw new DomainException('Solicitação inválida.');
+            }
+            $approval = $this->ci->db->get_where('os_aprovacoes', ['id' => $approvalId, 'os_id' => $id, 'status' => 'pendente'])->row();
+            if (! $approval || ! hash_equals($approval->fingerprint, hash('sha256', $this->budget($id)))) {
+                throw new DomainException('O orçamento mudou. Solicite uma nova versão antes de responder.');
+            }
+            $this->ci->db->where('id', $approval->id)->update('os_aprovacoes', ['status' => $answer, 'cliente_id' => $customerId, 'respondido_em' => date('Y-m-d H:i:s')]);
+            $this->event($id, 'orcamento', 'Cliente ' . ($answer === 'aprovado' ? 'aprovou' : 'rejeitou') . ' o orçamento de R$ ' . number_format($approval->valor, 2, ',', '.') . '.');
+        });
+    }
+}

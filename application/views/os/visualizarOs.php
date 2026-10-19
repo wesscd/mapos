@@ -1,3 +1,4 @@
+<?php $this->load->view('os/workflow'); ?>
 <link href="<?= base_url('assets/css/custom.css'); ?>" rel="stylesheet">
 <div class="row-fluid" style="margin-top: 0">
     <div class="span12">

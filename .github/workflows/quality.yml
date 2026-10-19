@@ -1,0 +1,40 @@
+name: Validate fork
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure disposable environment
+        run: |
+          printf 'MAPOS_DB_PASSWORD=%s\nMAPOS_DB_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" > .env.local
+          docker compose --env-file .env.local -f compose.dev.yaml up -d --build
+      - name: Install locked dependencies and initialize configuration
+        run: |
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php composer install --no-interaction --prefer-dist
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot -e "CREATE DATABASE mapos_fork_test CHARACTER SET utf8mb4; GRANT ALL ON mapos_fork_test.* TO mapos;"'
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, subprocess, secrets
+          env=dict(line.split('=',1) for line in Path('.env.local').read_text().splitlines())
+          data=dict(dbpassword=env['MAPOS_DB_PASSWORD'], full_name='CI Admin', email='ci@example.test', password=secrets.token_urlsafe(24), base_url='http://localhost:8000/')
+          Path('/tmp/mapos-ci-admin.json').write_text(json.dumps(dict(email=data['email'], password=data['password'])))
+          subprocess.run(['docker','compose','--env-file','.env.local','-f','compose.dev.yaml','exec','-T','php','php','scripts/install.php'],input=json.dumps(data),text=True,check=True)
+          PY
+      - name: Validate syntax, dependencies, migrations and business rules
+        run: |
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php composer validate --no-check-publish
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php composer check-platform-reqs
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php sh -c 'find application/controllers application/models application/libraries application/database/migrations tests scripts -name "*.php" -print0 | xargs -0 -n1 php -l >/dev/null'
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php php tests/run.php
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T php php index.php tools migrate
+          bash -n scripts/backup.sh scripts/verify-backup.sh scripts/deploy.sh
+          docker compose --env-file .env.local -f compose.dev.yaml exec -T nginx nginx -t
+          python3 tests/http_smoke.py http://localhost:8000 /tmp/mapos-ci-admin.json
+      - name: Clean disposable environment
+        if: always()
+        run: docker compose --env-file .env.local -f compose.dev.yaml down -v

@@ -11,6 +11,7 @@ class Os extends MY_Controller
         parent::__construct();
         $this->load->helper('form');
         $this->load->model('os_model');
+        $this->load->library('os_workflow');
         $this->data['menuOs'] = 'OS';
     }
 
@@ -145,6 +146,7 @@ class Os extends MY_Controller
                 $this->load->model('usuarios_model');
 
                 $idOs = $id;
+                $this->os_workflow->event($id, 'criacao', 'OS criada. Status: ' . $data['status']);
                 $os = $this->os_model->getById($idOs);
                 $emitente = $this->mapos_model->getEmitente();
 
@@ -204,7 +206,7 @@ class Os extends MY_Controller
         $this->data['custom_error'] = '';
         $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
 
-        $this->data['editavel'] = $this->os_model->isEditable($this->input->post('idOs'));
+        $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
         if (! $this->data['editavel']) {
             $this->session->set_flashdata('error', 'Esta OS já e seu status não pode ser alterado e nem suas informações atualizadas. Por favor abrir uma nova OS.');
 
@@ -241,19 +243,13 @@ class Os extends MY_Controller
                 'usuarios_id' => $this->input->post('usuarios_id'),
                 'clientes_id' => $this->input->post('clientes_id'),
             ];
-            $os = $this->os_model->getById($this->input->post('idOs'));
-
-            //Verifica para poder fazer a devolução do produto para o estoque caso OS seja cancelada.
-
-            if (strtolower($this->input->post('status')) == 'cancelado' && strtolower($os->status) != 'cancelado') {
-                $this->devolucaoEstoque($this->input->post('idOs'));
+            try {
+                $saved = $this->os_workflow->updateOrder($this->input->post('idOs'), $data, ! empty($this->data['configuration']['control_estoque']));
+            } catch (DomainException $error) {
+                $saved = false;
+                $this->data['custom_error'] = '<div class="alert alert-error">' . html_escape($error->getMessage()) . '</div>';
             }
-
-            if (strtolower($os->status) == 'cancelado' && strtolower($this->input->post('status')) != 'cancelado') {
-                $this->debitarEstoque($this->input->post('idOs'));
-            }
-
-            if ($this->os_model->edit('os', $data, 'idOs', $this->input->post('idOs')) == true) {
+            if ($saved) {
                 $this->load->model('mapos_model');
                 $this->load->model('usuarios_model');
 
@@ -292,11 +288,12 @@ class Os extends MY_Controller
                 log_info('Alterou uma OS. ID: ' . $this->input->post('idOs'));
                 redirect(site_url('os/editar/') . $this->input->post('idOs'));
             } else {
-                $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro</p></div>';
+                $this->data['custom_error'] = $this->data['custom_error'] ?: '<div class="form_error"><p>Ocorreu um erro</p></div>';
             }
         }
 
         $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
+        $this->data['workflow'] = $this->os_workflow->details($this->uri->segment(3));
 
         $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
         $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
@@ -333,6 +330,7 @@ class Os extends MY_Controller
 
         $this->load->model('mapos_model');
         $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
+        $this->data['workflow'] = $this->os_workflow->details($this->uri->segment(3));
         $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
         $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
         $this->data['emitente'] = $this->mapos_model->getEmitente();
@@ -571,74 +569,19 @@ class Os extends MY_Controller
         redirect(site_url('os'));
     }
 
-    private function devolucaoEstoque($id)
-    {
-        if ($produtos = $this->os_model->getProdutos($id)) {
-            $this->load->model('produtos_model');
-            if ($this->data['configuration']['control_estoque']) {
-                foreach ($produtos as $p) {
-                    $this->produtos_model->updateEstoque($p->produtos_id, $p->quantidade, '+');
-                    log_info('ESTOQUE: Produto id ' . $p->produtos_id . ' voltou ao estoque. Quantidade: ' . $p->quantidade . '. Motivo: Cancelamento/Exclusão');
-                }
-            }
-        }
-    }
-
-    private function debitarEstoque($id)
-    {
-        if ($produtos = $this->os_model->getProdutos($id)) {
-            $this->load->model('produtos_model');
-            if ($this->data['configuration']['control_estoque']) {
-                foreach ($produtos as $p) {
-                    $this->produtos_model->updateEstoque($p->produtos_id, $p->quantidade, '-');
-                    log_info('ESTOQUE: Produto id ' . $p->produtos_id . ' baixa do estoque. Quantidade: ' . $p->quantidade . '. Motivo: Mudou status que já estava Cancelado para outro');
-                }
-            }
-        }
-    }
-
     public function excluir()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'dOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para excluir O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'dOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
-        $id = $this->input->post('id');
-        $os = $this->os_model->getByIdCobrancas($id);
-        if ($os == null) {
-            $os = $this->os_model->getById($id);
-            if ($os == null) {
-                $this->session->set_flashdata('error', 'Erro ao tentar excluir OS.');
-                redirect(base_url() . 'index.php/os/gerenciar/');
-            }
+        $id = (int) $this->input->post('id');
+        try {
+            $this->os_workflow->deleteOrder($id, ! empty($this->data['configuration']['control_estoque']));
+            log_info('Removeu uma OS. ID: ' . $id);
+            $this->session->set_flashdata('success', 'OS excluída com sucesso.');
+        } catch (DomainException $error) {
+            $this->session->set_flashdata('error', $error->getMessage());
         }
-
-        if (isset($os->idCobranca) != null) {
-            if ($os->status == 'canceled') {
-                $this->os_model->delete('cobrancas', 'os_id', $id);
-            } else {
-                $this->session->set_flashdata('error', 'Existe uma cobrança associada a esta OS, deve cancelar e/ou excluir a cobrança primeiro!');
-                redirect(site_url('os/gerenciar/'));
-            }
-        }
-
-        $osStockRefund = $this->os_model->getById($id);
-        //Verifica para poder fazer a devolução do produto para o estoque caso OS seja excluida.
-        if (strtolower($osStockRefund->status) != 'cancelado') {
-            $this->devolucaoEstoque($id);
-        }
-
-        $this->os_model->delete('servicos_os', 'os_id', $id);
-        $this->os_model->delete('produtos_os', 'os_id', $id);
-        $this->os_model->delete('anexos', 'os_id', $id);
-        $this->os_model->delete('os', 'idOs', $id);
-        if ((int) $os->faturado === 1) {
-            $this->os_model->delete('lancamentos', 'descricao', "Fatura de OS - #${id}");
-        }
-
-        log_info('Removeu uma OS. ID: ' . $id);
-        $this->session->set_flashdata('success', 'OS excluída com sucesso!');
         redirect(site_url('os/gerenciar/'));
     }
 
@@ -728,175 +671,66 @@ class Os extends MY_Controller
 
     public function adicionarProduto()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
         $this->load->library('form_validation');
-
-        if ($this->form_validation->run('adicionar_produto_os') === false) {
-            $errors = validation_errors();
-
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(400)
-                ->set_output(json_encode($errors));
+        if (! $this->form_validation->run('adicionar_produto_os')) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(validation_errors()));
         }
-
-        $preco = $this->input->post('preco');
-        $quantidade = $this->input->post('quantidade');
-        $subtotal = $preco * $quantidade;
-        $produto = $this->input->post('idProduto');
-        $data = [
-            'quantidade' => $quantidade,
-            'subTotal' => $subtotal,
-            'produtos_id' => $produto,
-            'preco' => $preco,
-            'os_id' => $this->input->post('idOsProduto'),
-        ];
-
-        $id = $this->input->post('idOsProduto');
-        $os = $this->os_model->getById($id);
-        if ($os == null) {
-            $this->session->set_flashdata('error', 'Erro ao tentar inserir produto na OS.');
-            redirect(base_url() . 'index.php/os/gerenciar/');
-        }
-
-        if ($this->os_model->add('produtos_os', $data) == true) {
-            $this->load->model('produtos_model');
-
-            if ($this->data['configuration']['control_estoque']) {
-                $this->produtos_model->updateEstoque($produto, $quantidade, '-');
-            }
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $id);
-            $this->db->update('os');
-
-            log_info('Adicionou produto a uma OS. ID (OS): ' . $this->input->post('idOsProduto'));
-
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(200)
-                ->set_output(json_encode(['result' => true]));
-        } else {
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(500)
-                ->set_output(json_encode(['result' => false]));
+        try {
+            $this->os_workflow->addProduct([
+                'os_id' => (int) $this->input->post('idOsProduto'),
+                'produtos_id' => (int) $this->input->post('idProduto'),
+                'quantidade' => $this->input->post('quantidade'),
+                'preco' => $this->input->post('preco'),
+            ], ! empty($this->data['configuration']['control_estoque']));
+            return $this->output->set_content_type('application/json')->set_output(json_encode(['result' => true]));
+        } catch (DomainException $error) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode($error->getMessage()));
         }
     }
 
     public function excluirProduto()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
-        $id = $this->input->post('idProduto');
-        $idOs = $this->input->post('idOs');
-
-        $os = $this->os_model->getById($idOs);
-        if ($os == null) {
-            $this->session->set_flashdata('error', 'Erro ao tentar excluir produto na OS.');
-            redirect(base_url() . 'index.php/os/gerenciar/');
-        }
-
-        if ($this->os_model->delete('produtos_os', 'idProdutos_os', $id) == true) {
-            $quantidade = $this->input->post('quantidade');
-            $produto = $this->input->post('produto');
-
-            $this->load->model('produtos_model');
-
-            if ($this->data['configuration']['control_estoque']) {
-                $this->produtos_model->updateEstoque($produto, $quantidade, '+');
-            }
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $idOs);
-            $this->db->update('os');
-
-            log_info('Removeu produto de uma OS. ID (OS): ' . $idOs);
-
-            echo json_encode(['result' => true]);
-        } else {
-            echo json_encode(['result' => false]);
+        try {
+            $this->os_workflow->removeProduct((int) $this->input->post('idOs'), (int) $this->input->post('idProduto'), ! empty($this->data['configuration']['control_estoque']));
+            return $this->output->set_content_type('application/json')->set_output(json_encode(['result' => true]));
+        } catch (DomainException $error) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(['result' => false, 'message' => $error->getMessage()]));
         }
     }
 
     public function adicionarServico()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
         $this->load->library('form_validation');
-
-        if ($this->form_validation->run('adicionar_servico_os') === false) {
-            $errors = validation_errors();
-
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(400)
-                ->set_output(json_encode($errors));
+        if (! $this->form_validation->run('adicionar_servico_os')) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(validation_errors()));
         }
-
-        $data = [
-            'servicos_id' => $this->input->post('idServico'),
-            'quantidade' => $this->input->post('quantidade'),
-            'preco' => $this->input->post('preco'),
-            'os_id' => $this->input->post('idOsServico'),
-            'subTotal' => $this->input->post('preco') * $this->input->post('quantidade'),
-        ];
-
-        if ($this->os_model->add('servicos_os', $data) == true) {
-            log_info('Adicionou serviço a uma OS. ID (OS): ' . $this->input->post('idOsServico'));
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $this->input->post('idOsServico'));
-            $this->db->update('os');
-
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(200)
-                ->set_output(json_encode(['result' => true]));
-        } else {
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(500)
-                ->set_output(json_encode(['result' => false]));
+        try {
+            $this->os_workflow->service((int) $this->input->post('idOsServico'), ['servicos_id' => (int) $this->input->post('idServico'), 'quantidade' => $this->input->post('quantidade'), 'preco' => $this->input->post('preco')]);
+            return $this->output->set_content_type('application/json')->set_output(json_encode(['result' => true]));
+        } catch (DomainException $error) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode($error->getMessage()));
         }
     }
 
     public function excluirServico()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
-        $ID = $this->input->post('idServico');
-        $idOs = $this->input->post('idOs');
-
-        if ($this->os_model->delete('servicos_os', 'idServicos_os', $ID) == true) {
-            log_info('Removeu serviço de uma OS. ID (OS): ' . $idOs);
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $idOs);
-            $this->db->update('os');
-            echo json_encode(['result' => true]);
-        } else {
-            echo json_encode(['result' => false]);
+        try {
+            $this->os_workflow->service((int) $this->input->post('idOs'), [], (int) $this->input->post('idServico'));
+            return $this->output->set_content_type('application/json')->set_output(json_encode(['result' => true]));
+        } catch (DomainException $error) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(['result' => false, 'message' => $error->getMessage()]));
         }
     }
 
@@ -1057,51 +891,15 @@ class Os extends MY_Controller
 
     public function adicionarDesconto()
     {
-        if (! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
-            $this->session->set_flashdata('error', 'Você não tem permissão para editar O.S.');
-            redirect(base_url());
+        if ($this->input->method() !== 'post' || ! $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) {
+            show_error('Operação não permitida.', 403);
         }
-
-        if ($this->input->post('desconto') == '') {
-            return $this->output
-                ->set_content_type('application/json')
-                ->set_status_header(400)
-                ->set_output(json_encode(['messages' => 'Campo desconto vazio']));
-        } else {
-            $idOs = $this->input->post('idOs');
-            $data = [
-                'tipo_desconto' => $this->input->post('tipoDesconto'),
-                'desconto' => $this->input->post('desconto'),
-                'valor_desconto' => $this->input->post('resultado'),
-            ];
-            $editavel = $this->os_model->isEditable($idOs);
-            if (! $editavel) {
-                return $this->output
-                    ->set_content_type('application/json')
-                    ->set_status_header(400)
-                    ->set_output(json_encode(['result' => false, 'messages', 'Desconto não pode ser adiciona. Os não ja Faturada/Cancelada']));
-            }
-            if ($this->os_model->edit('os', $data, 'idOs', $idOs) == true) {
-                log_info('Adicionou um desconto na OS. ID: ' . $idOs);
-
-                return $this->output
-                    ->set_content_type('application/json')
-                    ->set_status_header(201)
-                    ->set_output(json_encode(['result' => true, 'messages' => 'Desconto adicionado com sucesso!']));
-            } else {
-                log_info('Ocorreu um erro ao tentar adiciona desconto a OS: ' . $idOs);
-
-                return $this->output
-                    ->set_content_type('application/json')
-                    ->set_status_header(400)
-                    ->set_output(json_encode(['result' => false, 'messages', 'Ocorreu um erro ao tentar adiciona desconto a OS.']));
-            }
+        try {
+            $this->os_workflow->discount((int) $this->input->post('idOs'), $this->input->post('tipoDesconto'), $this->input->post('desconto'));
+            return $this->output->set_content_type('application/json')->set_output(json_encode(['result' => true, 'messages' => 'Desconto atualizado.']));
+        } catch (DomainException $error) {
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(['result' => false, 'messages' => $error->getMessage()]));
         }
-
-        return $this->output
-            ->set_content_type('application/json')
-            ->set_status_header(400)
-            ->set_output(json_encode(['result' => false, 'messages', 'Ocorreu um erro ao tentar adiciona desconto a OS.']));
     }
 
     public function faturar()
@@ -1156,48 +954,13 @@ class Os extends MY_Controller
                 'usuarios_id' => $this->session->userdata('id_admin'),
             ];
 
-            $this->db->trans_start();
-
-            $editavel = $this->os_model->isEditable($os_id);
-            if (!$editavel) {
-                $this->db->trans_rollback();
-                return $this->output
-                    ->set_content_type('application/json')
-                    ->set_status_header(400)
-                    ->set_output(json_encode(['result' => false]));
-            }
-
-            if ($this->os_model->add('lancamentos', $data)) {
-                $this->db->set('faturado', 1);
-                $this->db->set('valorTotal', $valorTotal);
-
-                if ($valorDesconto > 0) {
-                    $this->db->set('desconto', $valorTotalComDesconto);
-                    $this->db->set('valor_desconto', $valorDesconto);
-                } else {
-                    $this->db->set('desconto', 0);
-                    $this->db->set('valor_desconto', $valorTotal);
-                }
-
-                $this->db->set('status', 'Faturado');
-                $this->db->where('idOs', $os_id);
-                $this->db->update('os');
-
-                log_info('Faturou uma OS. ID: ' . $os_id);
-
-                $this->db->trans_complete();
-
-                if ($this->db->trans_status() === false) {
-                    $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
-                    $json = ['result' => false];
-                } else {
-                    $this->session->set_flashdata('success', 'OS faturada com sucesso!');
-                    $json = ['result' => true];
-                }
-            } else {
-                $this->db->trans_rollback();
-                $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar faturar OS.');
-                $json = ['result' => false];
+            try {
+                $this->os_workflow->invoice((int) $os_id, $data);
+                $this->session->set_flashdata('success', 'OS faturada com sucesso!');
+                $json = ['result' => true];
+            } catch (DomainException $error) {
+                $this->session->set_flashdata('error', $error->getMessage());
+                $json = ['result' => false, 'message' => $error->getMessage()];
             }
 
             echo json_encode($json);

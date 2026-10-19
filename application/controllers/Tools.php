@@ -23,13 +23,6 @@ class Tools extends CI_Controller
 
         $this->load->dbforge();
 
-        $this->load->library('Seeder');
-
-        // initiate faker
-        $this->faker = Faker\Factory::create();
-
-        // initiate seeder
-        $this->seeder = Seeder::create();
     }
 
     public function index()
@@ -86,6 +79,13 @@ class Tools extends CI_Controller
 
     public function seed($name = null)
     {
+        if (ENVIRONMENT === 'production' || ! class_exists('Faker\\Factory')) {
+            fwrite(STDERR, "Seeders são permitidos apenas em desenvolvimento com as dependências de desenvolvimento instaladas.\n");
+            exit(1);
+        }
+        $this->load->library('Seeder');
+        $this->faker = Faker\Factory::create();
+        $this->seeder = Seeder::create();
         if ($name) {
             $this->seeder->call($name);
 

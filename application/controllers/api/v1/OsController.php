@@ -11,6 +11,7 @@ class OsController extends REST_Controller
         parent::__construct();
 
         $this->load->model('os_model');
+        $this->load->library('os_workflow');
         $this->load->model('Api_model');
     }
 
@@ -272,14 +273,14 @@ class OsController extends REST_Controller
             'faturado' => 0,
         ];
 
-        if (strtolower($this->put('status')) == 'cancelado' && strtolower($os->status) != 'cancelado') {
-            $this->devolucaoEstoque($id);
+        unset($data['faturado']);
+        try {
+            $saved = $this->os_workflow->updateOrder((int) $id, $data, (bool) $this->getConfig('control_estoque'));
+        } catch (DomainException $error) {
+            $this->response(['status' => false, 'message' => $error->getMessage()], REST_Controller::HTTP_BAD_REQUEST);
+            return;
         }
-        if (strtolower($os->status) == 'cancelado' && strtolower($this->put('status')) != 'cancelado') {
-            $this->debitarEstoque($id);
-        }
-
-        if ($this->os_model->edit('os', $data, 'idOs', $id)) {
+        if ($saved) {
             $this->load->model('mapos_model');
             $this->load->model('usuarios_model');
 
@@ -330,416 +331,75 @@ class OsController extends REST_Controller
 
     public function index_delete($id)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'dOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Apagar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        if (! $id) {
-            $this->response([
-                'status' => false,
-                'message' => 'Informe o ID da OS!',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $os = $this->os_model->getByIdCobrancas($id);
-        if ($os == null) {
-            $os = $this->os_model->getById($id);
-            if ($os == null) {
-                $this->response([
-                    'status' => false,
-                    'message' => 'Erro ao tentar excluir OS!',
-                ], REST_Controller::HTTP_BAD_REQUEST);
-            }
-        }
-
-        if (isset($os->idCobranca) != null) {
-            if ($os->status == 'canceled') {
-                $this->os_model->delete('cobrancas', 'os_id', $id);
-            } else {
-                $this->response([
-                    'status' => false,
-                    'message' => 'Existe uma cobrança associada a esta OS, deve cancelar e/ou excluir a cobrança primeiro!',
-                ], REST_Controller::HTTP_BAD_REQUEST);
-            }
-        }
-
-        $osStockRefund = $this->os_model->getById($id);
-        //Verifica para poder fazer a devolução do produto para o estoque caso OS seja excluida.
-        if (strtolower($osStockRefund->status) != 'cancelado') {
-            $this->devolucaoEstoque($id);
-        }
-
-        $this->os_model->delete('servicos_os', 'os_id', $id);
-        $this->os_model->delete('produtos_os', 'os_id', $id);
-        $this->os_model->delete('anexos', 'os_id', $id);
-
-        if ((int) $os->faturado === 1) {
-            $this->os_model->delete('lancamentos', 'descricao', "Fatura de OS - #${id}");
-        }
-
-        if ($this->os_model->delete('os', 'idOs', $id)) {
-            $this->log_app('Removeu uma OS ID' . $id);
-            $this->response([
-                'status' => true,
-                'message' => 'OS excluída com sucesso!',
-            ], REST_Controller::HTTP_OK);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível excluir a OS Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('dOs', function () use ($id) {
+            return $this->os_workflow->deleteOrder((int) $id, (bool) $this->getConfig('control_estoque'));
+        });
     }
 
     public function desconto_post($id)
     {
-        if (empty($this->post('desconto', true)) || empty($this->post('valor_desconto', true))) {
-            $this->response([
-                'status' => false,
-                'message' => 'Campos Desconto e Valor com desconto obrigatórios',
-            ], REST_Controller::HTTP_BAD_REQUEST);
+        $this->workflowMutation('eOs', function () use ($id) {
+            return $this->os_workflow->discount((int) $id, $this->post('tipoDesconto') ?: 'real', $this->post('desconto'));
+        });
+    }
+
+    private function workflowMutation($permission, callable $action, $created = false)
+    {
+        $user = $this->logged_user();
+        $this->os_workflow->setActor($user->usuario->idUsuarios);
+        if (! $this->permission->checkPermission($user->level, $permission)) {
+            $this->response(['status' => false, 'message' => 'Operação não permitida.'], REST_Controller::HTTP_UNAUTHORIZED);
+            return;
         }
-
-        $data = [
-            'tipo_desconto' => $this->post('tipoDesconto', true) ?: 'real',
-            'desconto' => $this->post('desconto', true),
-            'valor_desconto' => $this->post('valor_desconto', true),
-        ];
-
-        $editavel = $this->isEditable($id);
-
-        if (! $editavel) {
-            $this->response([
-                'status' => false,
-                'message' => 'Desconto não pode ser adiciona. Os não ja Faturada/Cancelada',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
+        try {
+            $result = $action();
+            $this->response(['status' => true, 'result' => $result], $created ? REST_Controller::HTTP_CREATED : REST_Controller::HTTP_OK);
+        } catch (DomainException $error) {
+            $this->response(['status' => false, 'message' => $error->getMessage()], REST_Controller::HTTP_BAD_REQUEST);
         }
-
-        if ($this->os_model->edit('os', $data, 'idOs', $id)) {
-            $this->log_app('Adicionou um desconto na OS. ID: ' . $id);
-            $this->response([
-                'status' => true,
-                'message' => 'Desconto adicionado com sucesso!',
-            ], REST_Controller::HTTP_CREATED);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Ocorreu um erro ao tentar adicionar desconto à OS.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
     }
 
     public function produtos_post($id)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        $_POST = (array) json_decode(trim(file_get_contents('php://input')));
-        $_POST['idOsProduto'] = $id;
-
-        $this->load->library('form_validation');
-
-        if ($this->form_validation->run('adicionar_produto_os') === false) {
-            $this->response([
-                'status' => false,
-                'message' => validation_errors(),
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $data = [
-            'produtos_id' => $this->post('idProduto', true),
-            'preco' => $this->post('preco', true),
-            'quantidade' => $this->post('quantidade', true),
-            'subTotal' => $this->post('preco', true) * $this->post('quantidade', true),
-            'os_id' => $id,
-        ];
-
-        $os = $this->os_model->getById($id);
-        if ($os == null) {
-            $this->response([
-                'status' => false,
-                'message' => 'Erro ao tentar inserir produto na OS. OS Não encontrada!',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        if ($this->os_model->add('produtos_os', $data)) {
-            $lastProdutoOs = $this->Api_model->lastRow('produtos_os', 'idProdutos_os');
-
-            $this->load->model('produtos_model');
-
-            $this->produtoEstoque($this->post('idProduto', true), $this->post('quantidade', true), '-');
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $id);
-            $this->db->update('os');
-
-            $this->log_app('Adicionou produto a uma OS. ID (OS): ' . $id);
-
-            $result = $lastProdutoOs;
-            unset($result->descricao);
-            $result->produto = $this->produtos_model->getById($this->post('idProduto', true));
-
-            $this->response([
-                'status' => true,
-                'message' => 'Produto adicinado com sucesso!',
-                'result' => $result,
-            ], REST_Controller::HTTP_CREATED);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível adicionar o Produto. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id) {
+            $item = $this->os_workflow->addProduct(['os_id' => (int) $id, 'produtos_id' => (int) $this->post('idProduto'), 'preco' => $this->post('preco'), 'quantidade' => $this->post('quantidade')], (bool) $this->getConfig('control_estoque'));
+            return $this->db->get_where('produtos_os', ['idProdutos_os' => $item])->row();
+        }, true);
     }
 
     public function produtos_put($id, $idProdutos_os)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        if (! $id || ! $idProdutos_os) {
-            $this->response([
-                'status' => false,
-                'message' => 'Informe a OS e o Produto',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $ddAntigo = $this->Api_model->getRowById('produtos_os', 'idProdutos_os', $idProdutos_os);
-
-        $subTotal = $this->put('preco', true) * $this->put('quantidade', true);
-
-        $data = [
-            'quantidade' => $this->put('quantidade', true),
-            'preco' => $this->put('preco', true),
-            'subTotal' => $subTotal,
-        ];
-
-        if ($this->os_model->edit('produtos_os', $data, 'idProdutos_os', $idProdutos_os)) {
-            $operacao = $ddAntigo->quantidade > $this->put('quantidade', true) ? '+' : '-';
-            $diferenca = $operacao == '+' ? $ddAntigo->quantidade - $this->put('quantidade', true) : $this->put('quantidade', true) - $ddAntigo->quantidade;
-
-            if ($diferenca) {
-                $this->produtoEstoque($ddAntigo->produtos_id, $diferenca, $operacao);
-            }
-
-            $this->log_app("Atualizou a quantidade do produto id <b>{$ddAntigo->produtos_id}</b> na OS id <b>{$id}</b> de <b>{$ddAntigo->quantidade}</b> para <b>{$this->put('quantidade', true)}</b>");
-
-            $data['idProdutos_os'] = $idProdutos_os;
-
-            $this->response([
-                'status' => true,
-                'message' => 'Produto da OS editado com sucesso!',
-                'result' => $data,
-            ], REST_Controller::HTTP_OK);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível editar o Produto da OS. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id, $idProdutos_os) {
+            return $this->os_workflow->changeLine((int) $id, (int) $idProdutos_os, $this->put('quantidade'), $this->put('preco'), true, (bool) $this->getConfig('control_estoque'));
+        });
     }
 
     public function produtos_delete($id, $idProdutos_os)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        $os = $this->os_model->getById($id);
-        if ($os == null) {
-            $this->response([
-                'status' => false,
-                'message' => 'Não foi possível excluir o Produto da OS.',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $ddAntigo = $this->Api_model->getRowById('produtos_os', 'idProdutos_os', $idProdutos_os);
-
-        if (! $ddAntigo) {
-            $this->response([
-                'status' => false,
-                'message' => 'Não foi encontrado esse Produto na OS.',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        if ($this->os_model->delete('produtos_os', 'idProdutos_os', $idProdutos_os)) {
-            $this->produtoEstoque($ddAntigo->produtos_id, $ddAntigo->quantidade, '+');
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $id);
-            $this->db->update('os');
-
-            $this->log_app('Removeu produto de uma OS. ID (OS): ' . $id);
-
-            $this->response([
-                'status' => true,
-                'message' => 'Produto da OS excluído com sucesso!',
-            ], REST_Controller::HTTP_OK);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível excluir o Produto da OS. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id, $idProdutos_os) {
+            return $this->os_workflow->removeProduct((int) $id, (int) $idProdutos_os, (bool) $this->getConfig('control_estoque'));
+        });
     }
 
     public function servicos_post($id)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        $_POST = (array) json_decode(trim(file_get_contents('php://input')));
-        $_POST['idOsServico'] = $id;
-
-        $this->load->library('form_validation');
-
-        if ($this->form_validation->run('adicionar_servico_os') === false) {
-            $this->response([
-                'status' => false,
-                'message' => validation_errors(),
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $data = [
-            'servicos_id' => $this->post('idServico', true),
-            'quantidade' => $this->post('quantidade', true),
-            'preco' => $this->post('preco', true),
-            'subTotal' => $this->post('preco', true) * $this->post('quantidade', true),
-            'os_id' => $id,
-        ];
-
-        if ($this->os_model->add('servicos_os', $data)) {
-            $lastServicoOs = $this->Api_model->lastRow('servicos_os', 'idServicos_os');
-
-            $this->load->model('servicos_model');
-
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $id);
-            $this->db->update('os');
-
-            $this->log_app('Adicionou serviço a uma OS. ID (OS): ' . $id);
-
-            $result = $lastServicoOs;
-            unset($result->servico);
-            $result->servico = $this->servicos_model->getById($this->post('idServico', true));
-
-            $this->response([
-                'status' => true,
-                'message' => 'Serviço adicinado com sucesso!',
-                'result' => $result,
-            ], REST_Controller::HTTP_CREATED);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível adicionar o Serviço. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id) {
+            return $this->os_workflow->service((int) $id, ['servicos_id' => (int) $this->post('idServico'), 'preco' => $this->post('preco'), 'quantidade' => $this->post('quantidade')]);
+        }, true);
     }
 
     public function servicos_put($id, $idServicos_os)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        if (! $id || ! $idServicos_os) {
-            $this->response([
-                'status' => false,
-                'message' => 'Informe a OS e o Serviço',
-            ], REST_Controller::HTTP_BAD_REQUEST);
-        }
-
-        $ddAntigo = $this->Api_model->getRowById('servicos_os', 'idServicos_os', $idServicos_os);
-
-        $subTotal = $this->put('preco', true) * $this->put('quantidade', true);
-
-        $data = [
-            'quantidade' => $this->put('quantidade', true),
-            'preco' => $this->put('preco', true),
-            'subTotal' => $subTotal,
-        ];
-
-        if ($this->os_model->edit('servicos_os', $data, 'idServicos_os', $idServicos_os)) {
-            $this->log_app("Atualizou a quantidade do Serviço id <b>{$ddAntigo->servicos_id}</b> na OS id <b>{$id}</b> para <b>{$this->put('quantidade', true)}</b>");
-
-            $data['idServicos_os'] = $idServicos_os;
-
-            $this->response([
-                'status' => true,
-                'message' => 'Serviço da OS editado com sucesso!',
-                'result' => $data,
-            ], REST_Controller::HTTP_OK);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível editar o Serviço da OS. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id, $idServicos_os) {
+            return $this->os_workflow->changeLine((int) $id, (int) $idServicos_os, $this->put('quantidade'), $this->put('preco'), false);
+        });
     }
 
     public function servicos_delete($id, $idServicos_os)
     {
-        $this->logged_user();
-        if (! $this->permission->checkPermission($this->logged_user()->level, 'eOs')) {
-            $this->response([
-                'status' => false,
-                'message' => 'Você não está autorizado a Editar OS!',
-            ], REST_Controller::HTTP_UNAUTHORIZED);
-        }
-
-        if ($this->os_model->delete('servicos_os', 'idServicos_os', $idServicos_os)) {
-            $this->log_app('Removeu Serviço de uma OS. ID (OS): ' . $id);
-            $this->CI = &get_instance();
-            $this->CI->load->database();
-            $this->db->set('desconto', 0.00);
-            $this->db->set('valor_desconto', 0.00);
-            $this->db->set('tipo_desconto', null);
-            $this->db->where('idOs', $id);
-            $this->db->update('os');
-
-            $this->response([
-                'status' => true,
-                'message' => 'Serviço da OS excluído com sucesso!',
-            ], REST_Controller::HTTP_OK);
-        }
-
-        $this->response([
-            'status' => false,
-            'message' => 'Não foi possível excluir o Serviço da OS. Avise ao Administrador.',
-        ], REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
+        $this->workflowMutation('eOs', function () use ($id, $idServicos_os) {
+            return $this->os_workflow->service((int) $id, [], (int) $idServicos_os);
+        });
     }
 
     public function anotacoes_post($id)

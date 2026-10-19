@@ -28,6 +28,9 @@ class Github_updater
      */
     public function has_update()
     {
+        if (! $this->ci->config->item('web_updates_enabled')) {
+            return false;
+        }
         return $this->getCurrentCommitHash() !== $this->ci->config->item('current_commit');
     }
 
@@ -63,6 +66,9 @@ class Github_updater
      */
     public function update()
     {
+        if (! $this->ci->config->item('web_updates_enabled')) {
+            return false;
+        }
         $hash = $this->getCurrentCommitHash();
         $currentVersion = $this->getCurrentVersion();
 

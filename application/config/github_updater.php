@@ -7,7 +7,7 @@ if (! defined('BASEPATH')) {
 /**
  * The user name of the git hub user who owns the repo
  */
-$config['github_user'] = 'RamonSilva20';
+$config['github_user'] = 'wesscd';
 
 /**
  * The repo on GitHub we will be updating from
@@ -17,7 +17,10 @@ $config['github_repo'] = 'mapos';
 /**
  * The branch to update from
  */
-$config['github_branch'] = 'master';
+$config['github_branch'] = 'codex/deployment-development';
+
+// Deployments use Git, locked dependencies, migrations and a verified backup.
+$config['web_updates_enabled'] = false;
 
 /**
  * The current commit the files are on.
