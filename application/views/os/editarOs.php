@@ -169,7 +169,7 @@ foreach ($produtos as $p) {
                         <?php $totals = 0;
 foreach ($servicos as $s) {
     $preco = $s->preco ?? $s->precoVenda;
-    $subtotals = $preco * ($s->quantidade ?: 1);
+    $subtotals = round($preco * ($s->quantidade ?: 1), 2);
     $totals = $totals + $subtotals;
 }?>
                         <div class="tab-pane" id="tab2">
@@ -332,7 +332,7 @@ foreach ($produtos as $p) {
 $totals = 0;
 foreach ($servicos as $s) {
     $preco = $s->preco ?? $s->precoVenda;
-    $subtotals = $preco * ($s->quantidade ?: 1);
+    $subtotals = round($preco * ($s->quantidade ?: 1), 2);
     $totals = $totals + $subtotals;
     echo '<tr>';
     echo '<td>' . $s->nome . '</td>';

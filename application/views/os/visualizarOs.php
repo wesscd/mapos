@@ -296,7 +296,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                     <?php setlocale(LC_MONETARY, 'en_US');
                             foreach ($servicos as $s) {
                                 $preco = $s->preco ?? $s->precoVenda;
-                                $subtotal = $preco * ($s->quantidade ?: 1);
+                                $subtotal = round($preco * ($s->quantidade ?: 1), 2);
                                 echo '<tr>';
                                 echo '<td>' . $s->nome . '</td>';
                                 echo '<td>' . ($s->quantidade ?: 1) . '</td>';

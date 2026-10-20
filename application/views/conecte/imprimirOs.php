@@ -178,7 +178,7 @@ $totalProdutos = 0;
                                     setlocale(LC_MONETARY, 'en_US');
                     foreach ($servicos as $s) :
                         $preco = $s->preco ?? $s->precoVenda;
-                        $subtotal = $preco * ($s->quantidade ?: 1);
+                        $subtotal = round($preco * ($s->quantidade ?: 1), 2);
                         $totalServico = $totalServico + $subtotal;
                         echo '<tr>';
                         echo '  <td>' . $s->nome . '</td>';

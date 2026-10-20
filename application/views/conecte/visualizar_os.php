@@ -197,7 +197,7 @@ $totalProdutos = 0; ?>
                             foreach ($servicos as $s) {
                                 $totalServico = $totalServico + $s->subTotal;
                                 $preco = $s->preco ?? $s->precoVenda;
-                                $subtotal = $preco * ($s->quantidade ?: 1);
+                                $subtotal = round($preco * ($s->quantidade ?: 1), 2);
                                 echo '<tr>';
                                 echo '<td>' . $s->nome . '</td>';
                                 echo '<td>' . ($s->quantidade ?: 1) . '</td>';

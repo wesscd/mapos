@@ -257,7 +257,7 @@ $totalProdutos = 0; ?>
 
                 <?php foreach ($servicos as $s) {
                     $preco = $s->preco ?? $s->precoVenda;
-                    $subtotal = $preco * ($s->quantidade ?: 1);
+                    $subtotal = round($preco * ($s->quantidade ?: 1), 2);
                     $totalServico = $totalServico + $subtotal;
                     echo '<tr class="item">';
                     echo '<td>' . $s->nome . '</td>';

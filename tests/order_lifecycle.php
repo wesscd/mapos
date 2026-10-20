@@ -52,3 +52,8 @@ $legacyJson = json_encode($legacySnapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_O
 $db->where('id', $legacyApproval->id)->update('os_aprovacoes', ['snapshot' => $legacyJson, 'fingerprint' => hash('sha256', $legacyJson)]);
 $workflow->answerApproval($legacyOrder, $legacyApproval->id, $customer, 'aprovado');
 $assert($db->get_where('os_aprovacoes', ['id' => $legacyApproval->id])->row()->status === 'aprovado', 'Existing unchanged budgets remain answerable after diagnosis snapshots are introduced');
+
+$fractionOrder = $workflow->createOrder($newOrderData);
+$workflow->service($fractionOrder, ['servicos_id' => $service, 'quantidade' => 0.3333, 'preco' => 10]);
+$workflow->service($fractionOrder, ['servicos_id' => $service, 'quantidade' => 0.3333, 'preco' => 10]);
+$assert(round($ci->os_model->valorTotalOS($fractionOrder)['totalServico'], 2) === 6.66, 'Service total sums rounded item subtotals instead of introducing a fractional-cent difference');
