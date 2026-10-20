@@ -12,6 +12,7 @@ class Os extends MY_Controller
         $this->load->helper('form');
         $this->load->model('os_model');
         $this->load->library('os_workflow');
+        $this->load->library('vistoria_service');
         $this->data['menuOs'] = 'OS';
     }
 
@@ -147,7 +148,13 @@ class Os extends MY_Controller
                 show_error('Você não tem permissão para consultar equipamentos.', 403);
             }
             try {
-                $id = $this->os_workflow->createOrder($data, $equipmentIds);
+                $this->load->library('vistoria_service');
+                $photos = $this->vistoria_service->uploads();
+                $inspection = $this->vistoria_service->requested($this->input->post(), $photos) ? ['dados' => $this->input->post(), 'fotos' => $photos] : null;
+                if ($inspection && ! $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) {
+                    show_error('Você não tem permissão para registrar vistoria.', 403);
+                }
+                $id = $this->os_workflow->createOrder($data, $equipmentIds, $inspection);
             } catch (DomainException $error) {
                 $id = null;
                 $this->data['order_error'] = $error->getMessage();

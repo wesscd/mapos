@@ -90,9 +90,9 @@ class Os_workflow
         }
     }
 
-    public function createOrder(array $data, array $equipmentIds = [])
+    public function createOrder(array $data, array $equipmentIds = [], ?array $inspection = null)
     {
-        return $this->transaction(function () use ($data, $equipmentIds) {
+        return $this->transaction(function () use ($data, $equipmentIds, $inspection) {
             if (count($equipmentIds) > 20) {
                 throw new DomainException('Vincule até 20 equipamentos por vez.');
             }
@@ -105,7 +105,18 @@ class Os_workflow
                     if (filter_var($equipmentId, FILTER_VALIDATE_INT) === false || $equipmentId <= 0) {
                         throw new DomainException('Selecione um equipamento válido para este cliente.');
                     }
-                    $this->ci->equipamento_service->link($id, (int) $equipmentId);
+                    $linkId = $this->ci->equipamento_service->link($id, (int) $equipmentId);
+                }
+            }
+            if ($inspection !== null) {
+                if (count(array_unique($equipmentIds, SORT_REGULAR)) !== 1) {
+                    throw new DomainException('Selecione um equipamento do cliente para registrar sua vistoria.');
+                }
+                $this->ci->load->library('vistoria_service');
+                $this->ci->vistoria_service->register($id, $linkId, $inspection['dados'], $inspection['fotos']);
+                if (($inspection['dados']['vistoria_receber'] ?? '') === '1') {
+                    $this->ci->equipamento_service->intake($id, $linkId, ['entregue_por' => $inspection['dados']['vistoria_entregue_por'] ?? '',
+                        'acessorios' => $inspection['dados']['vistoria_acessorios'] ?? '', 'condicoes' => $inspection['dados']['vistoria_condicoes'] ?? '']);
                 }
             }
             return $id;
@@ -287,6 +298,23 @@ class Os_workflow
         });
     }
 
+    public function transition($id, $status, $expected, $controlStock)
+    {
+        return $this->transaction(function () use ($id, $status, $expected, $controlStock) {
+            $order = $this->lockOrder($id);
+            if ($order->status !== $expected) {
+                throw new DomainException('Esta OS foi atualizada por outra pessoa. Confira o quadro antes de mover novamente.');
+            }
+            if (! in_array($status, ['Aberto', 'Orçamento', 'Negociação', 'Aprovado', 'Aguardando Peças', 'Em Andamento', 'Finalizado', 'Cancelado'], true)) {
+                throw new DomainException('Etapa inválida. O faturamento deve ser feito na OS.');
+            }
+            if ($order->entregue_em || $order->faturado || $order->status === 'Cancelado' || $order->status === 'Faturado') {
+                throw new DomainException('Abra os detalhes da OS para conferir este atendimento encerrado.');
+            }
+            return $this->updateOrder($id, ['status' => $status, 'usuarios_id' => $order->usuarios_id, 'dataFinal' => $order->dataFinal], $controlStock);
+        });
+    }
+
     public function updateOrder($id, array $data, $controlStock)
     {
         return $this->transaction(function () use ($id, $data, $controlStock) {
@@ -337,6 +365,9 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $controlStock) {
             $order = $this->lockOrder($id);
+            if ($this->ci->db->from('os_vistorias')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = os_vistorias.vinculo_id')->where('os_id', $id)->count_all_results()) {
+                throw new DomainException('Esta OS possui vistoria de entrada e deve ser preservada no histórico.');
+            }
             if ($this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->count_all_results()) {
                 throw new DomainException('Esta OS possui comprovante de movimentação física e deve ser preservada no histórico.');
             }

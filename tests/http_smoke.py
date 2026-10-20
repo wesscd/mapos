@@ -19,13 +19,14 @@ data = urllib.parse.urlencode({"email": credentials["email"], "senha": credentia
 response = client.open(base + "/index.php/login/verificarLogin", data, timeout=30)
 assert json.loads(response.read()).get("result") is True, "Admin login failed"
 assert response.headers.get("X-CSRF-Token"), "Responses must expose the refreshed CSRF token"
-for path in ["operacoes", "os", "os/adicionar", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0", "equipamentos", "equipamentos/salvar"]:
+for path in ["operacoes", "kanban", "os", "os/adicionar", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0", "equipamentos", "equipamentos/salvar"]:
     response = client.open(base + "/index.php/" + path, timeout=30)
     body = response.read().decode()
     assert response.status == 200 and all(error not in body for error in ["A PHP Error was encountered", "Database Error", "An uncaught Exception was encountered", "Fatal error:"]), path
     assert "login" not in response.url, path
     if path == "os/adicionar":
         assert 'id="equipamento_id"' in body and "os-equipment-picker.js" in body, "New OS must expose the equipment picker"
+        assert 'name="vistoria_estado"' in body and 'name="vistoria_foto_teclado"' in body and 'enctype="multipart/form-data"' in body, "New OS must expose intake condition and categorized photos"
 response = client.open(base + "/index.php/equipamentos/porCliente/1", timeout=30)
 equipment_data = json.loads(response.read())
 assert isinstance(equipment_data["equipamentos"], list)
@@ -43,4 +44,4 @@ try:
     raise AssertionError("POST without CSRF token was accepted")
 except urllib.error.HTTPError as error:
     assert error.code == 403
-print("HTTP checks passed: authentication, refreshed CSRF, eleven application pages, equipment picker endpoint and protected paths.")
+print("HTTP checks passed: authentication, refreshed CSRF, twelve application pages, inspection form, equipment picker endpoint and protected paths.")

@@ -29,7 +29,7 @@
                                     <div class="span12 alert alert-danger" id="divInfo" style="padding: 1%;">Dados incompletos, verifique os campos com asterisco ou se selecionou corretamente cliente, responsável e garantia.<br />Ou se tem um cliente e um termo de garantia cadastrado.</div>
                                 <?php
                                 } ?>
-                                <form action="<?php echo current_url(); ?>" method="post" id="formOs">
+                                <form action="<?php echo current_url(); ?>" method="post" id="formOs" enctype="multipart/form-data">
                                     <div class="span12" style="padding: 1%">
                                         <div class="span6">
                                             <label for="cliente">Cliente<span class="required">*</span></label>
@@ -47,7 +47,7 @@
                                         <label for="equipamento_id">Equipamento do cliente (opcional)</label>
                                         <select class="span12" name="equipamento_id" id="equipamento_id" disabled aria-describedby="os-equipment-help"><option value="">Selecione o cliente primeiro</option></select>
                                         <p id="os-equipment-help" role="status" aria-live="polite">Selecione o cliente na lista de sugestões para consultar seus equipamentos.</p>
-                                        <p>O vínculo não confirma recebimento físico. Após salvar, use a seção Equipamentos para registrar a entrada ou vincular outros itens.</p>
+                                        <p>O vínculo, sozinho, não confirma recebimento físico. Na vistoria abaixo, você pode registrar a entrada agora ou deixar para depois.</p>
                                         <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'aCliente')) { ?><a id="os-equipment-new" class="btn" href="<?= site_url('equipamentos/salvar') ?>" target="_blank" rel="noopener" hidden>Cadastrar equipamento deste cliente</a><?php } ?>
                                         <button id="os-equipment-refresh" class="btn" type="button" hidden>Atualizar equipamentos</button>
                                     </div>
@@ -85,6 +85,12 @@
                                             <input id="garantias_id" class="span12" type="hidden" name="garantias_id" value="<?= set_value('garantias_id') ?>" />
                                         </div>
                                     </div>
+                                    <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) { ?>
+                                    <div class="span12" style="padding:1%;margin-left:0"><details class="mapos-card" open><summary>Registrar estado e fotos do equipamento na entrada</summary>
+                                        <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaCreation' => true]); ?>
+                                        <p>Se houver erro ao salvar, selecione os arquivos novamente; os navegadores não restauram fotos automaticamente.</p>
+                                    </details></div>
+                                    <?php } ?>
                                     <div class="span6" style="padding: 1%; margin-left: 0">
                                         <label for="descricaoProduto">
                                             <h4>Descrição Produto/Serviço</h4>

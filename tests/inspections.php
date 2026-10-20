@@ -1,0 +1,46 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+$ci->load->library('vistoria_service');
+$inspections = $ci->vistoria_service;
+$inspectionData = ['vistoria_estado' => 'marcas', 'vistoria_condicoes' => 'Risco na tampa <script>alert(1)</script>', 'vistoria_acessorios' => 'Carregador'];
+$frontPhoto = ['perspectiva' => 'frente', 'bytes' => $bytes, 'observacao' => 'Risco no canto esquerdo'];
+$inspectionOrder = $workflow->createOrder($newOrderData, [$equipmentId], ['dados' => $inspectionData, 'fotos' => [$frontPhoto]]);
+$inspectionLink = $db->get_where('equipamentos_os', ['os_id' => $inspectionOrder])->row()->idEquipamentos_os;
+$inspection = $inspections->get($inspectionLink);
+$assert($inspection['estado'] === 'marcas' && $inspection['fotos'][0]['perspectiva'] === 'frente', 'OS creation stores inspection condition and categorized photos in its own service history');
+$assert(! $db->get_where('equipamento_recibos', ['vinculo_id' => $inspectionLink])->row(), 'Recording inspection does not silently confirm physical receipt');
+$reject(fn () => $inspections->register($inspectionOrder, $inspectionLink, $inspectionData), 'Existing inspection conditions cannot be overwritten');
+$reject(fn () => $inspections->append($other, $inspectionLink, [$frontPhoto]), 'Inspection photos cannot be attached through an unrelated OS');
+$reject(fn () => $workflow->deleteOrder($inspectionOrder, false), 'Inspection records prevent deletion of the service history even before intake confirmation');
+$inspections->append($inspectionOrder, $inspectionLink, [$frontPhoto, $frontPhoto]);
+$reject(fn () => $inspections->append($inspectionOrder, $inspectionLink, [$frontPhoto]), 'A perspective accepts at most three photographs without replacing earlier images');
+$assert(count($inspections->get($inspectionLink)['fotos']) === 3, 'Rejected photo additions preserve the original inspection images');
+$entryId = $equipmentService->intake($inspectionOrder, $inspectionLink, ['entregue_por' => 'Cliente', 'acessorios' => 'Carregador', 'condicoes' => 'Risco na tampa']);
+$entryData = $db->get_where('equipamento_recibos', ['id' => $entryId])->row();
+$receiptSnapshot = json_decode($entryData->dados, true);
+$assert(count($receiptSnapshot['vistoria']['fotos']) === 3 && $receiptSnapshot['vistoria']['fotos'][0]['observacao'] === 'Risco no canto esquerdo', 'Intake receipt freezes its own categorized photo references and observations');
+$reject(fn () => $inspections->append($inspectionOrder, $inspectionLink, [array_merge($frontPhoto, ['perspectiva' => 'verso'])]), 'Physical intake locks inspection photos against later alteration');
+$html = $ci->load->view('equipamentos/comprovante', ['receipt' => $entryData, 'snapshot' => $receiptSnapshot], true);
+$assert(! str_contains($html, '<script>alert(1)</script>') && str_contains($html, '&lt;script&gt;alert(1)&lt;/script&gt;') && str_contains($html, 'vistoriaFoto/'), 'Printed receipts escape condition notes and include authenticated inspection images');
+$db->where('idOs', $inspectionOrder)->update('os', ['status' => 'Finalizado']);
+$workflow->deliver($inspectionOrder, 'Cliente');
+$beforeInspectionCreate = [$db->count_all('os'), $db->count_all('os_vistorias'), $db->count_all('os_vistoria_fotos'), $db->count_all('com_fila')];
+$badPhoto = array_merge($frontPhoto, ['bytes' => '<svg onload="alert(1)"></svg>']);
+$reject(fn () => $workflow->createOrder($newOrderData, [$equipmentId], ['dados' => $inspectionData, 'fotos' => [$frontPhoto, $badPhoto]]), 'Invalid photo content aborts OS and inspection creation');
+$assert($beforeInspectionCreate === [$db->count_all('os'), $db->count_all('os_vistorias'), $db->count_all('os_vistoria_fotos'), $db->count_all('com_fila')], 'A failed inspection rolls back images, OS, inspection and notification capture together');
+$reject(fn () => $workflow->createOrder($newOrderData, [], ['dados' => $inspectionData, 'fotos' => []]), 'An opening inspection requires an explicitly linked equipment');
+$receiveData = array_merge($inspectionData, ['vistoria_receber' => '1', 'vistoria_entregue_por' => 'Cliente']);
+$receivedOrder = $workflow->createOrder($newOrderData, [$equipmentId], ['dados' => $receiveData, 'fotos' => [$frontPhoto]]);
+$receivedLink = $db->get_where('equipamentos_os', ['os_id' => $receivedOrder])->row()->idEquipamentos_os;
+$assert((bool) $db->get_where('equipamento_recibos', ['vinculo_id' => $receivedLink, 'tipo' => 'entrada'])->row(), 'Explicit reception checkbox creates inspection and physical intake in the same OS transaction');
+$image = imagecreatetruecolor(12, 8);
+ob_start();
+imagejpeg($image);
+$jpeg = ob_get_clean();
+imagedestroy($image);
+$exif = "Exif\0\0II" . pack('vVv', 42, 8, 1) . pack('vvVv', 0x112, 3, 1, 6) . "\0\0" . pack('V', 0);
+$oriented = substr($jpeg, 0, 2) . "\xff\xe1" . pack('n', strlen($exif) + 2) . $exif . substr($jpeg, 2);
+$dimensions = getimagesizefromstring($equipmentService->encodePhoto($oriented));
+$assert($dimensions[0] === 8 && $dimensions[1] === 12, 'Smartphone EXIF orientation is applied before image metadata is removed');

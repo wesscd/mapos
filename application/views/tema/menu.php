@@ -40,6 +40,7 @@
             <ul class="menu-links" style="position: relative;">
                 <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) { ?>
                 <li class="<?= isset($menuOperacoes) ? 'active' : '' ?>"><a href="<?= site_url('operacoes') ?>"><i class="bx bx-bar-chart-alt-2 iconX"></i><span class="title">Operações</span><span class="title-tooltip">Operações</span></a></li>
+                <li class="<?= isset($menuKanban) ? 'active' : '' ?>"><a href="<?= site_url('kanban') ?>"><i class="bx bx-columns iconX"></i><span class="title">Kanban de OS</span><span class="title-tooltip">Kanban de OS</span></a></li>
                 <?php } ?>
                 <li class="<?php if (isset($menuPainel)) {
                     echo 'active';

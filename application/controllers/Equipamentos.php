@@ -149,6 +149,34 @@ class Equipamentos extends MY_Controller
         $this->orderAction((int) $orderId, fn () => $this->equipamento_service->intake((int) $orderId, (int) $this->input->post('vinculo_id'), $this->input->post()));
     }
 
+    public function vistoria($orderId = null)
+    {
+        $this->permission('eOs');
+        $this->permission('vCliente');
+        $this->load->library('vistoria_service');
+        $this->orderAction((int) $orderId, function () use ($orderId) {
+            $linkId = (int) $this->input->post('vinculo_id');
+            $photos = $this->vistoria_service->uploads();
+            if ($this->input->post('complementar') === '1') {
+                $this->vistoria_service->append((int) $orderId, $linkId, $photos);
+            } else {
+                $this->vistoria_service->register((int) $orderId, $linkId, $this->input->post(), $photos);
+            }
+        });
+    }
+
+    public function vistoriaFoto($id = null)
+    {
+        $this->permission('vOs');
+        $this->permission('vCliente');
+        $photo = $this->db->get_where('os_vistoria_fotos', ['id' => (int) $id])->row();
+        if (! $photo) {
+            show_404();
+        }
+        $this->output->set_header('Cache-Control: private, no-store')->set_header('X-Content-Type-Options: nosniff')
+            ->set_content_type('image/jpeg')->set_output($photo->imagem);
+    }
+
     private function orderAction($id, callable $work)
     {
         if ($this->input->method() !== 'post') {

@@ -1,4 +1,5 @@
 <main class="mapos-operations">
+    <p><a class="btn" href="<?= site_url('kanban') ?>">Abrir Kanban de OS</a></p>
     <div class="mapos-section-heading"><div><span class="mapos-eyebrow">VISÃO DA OPERAÇÃO</span><h1>Atendimentos e resultados</h1><p>Priorize os prazos e acompanhe a entrega da equipe.</p></div>
         <form method="get"><label for="periodo-operacoes">Conclusões no período</label><select id="periodo-operacoes" name="dias"><option value="7" <?= $operations['days'] === 7 ? 'selected' : '' ?>>Últimos 7 dias</option><option value="30" <?= $operations['days'] === 30 ? 'selected' : '' ?>>Últimos 30 dias</option><option value="90" <?= $operations['days'] === 90 ? 'selected' : '' ?>>Últimos 90 dias</option></select> <button class="btn" type="submit">Aplicar</button></form>
     </div>

@@ -138,6 +138,8 @@ class Equipamento_service
                 'condicoes' => $this->text($input['condicoes'] ?? '', 2000, true),
                 'entregue_por' => $this->text($input['entregue_por'] ?? '', 150, true),
                 'fotos' => array_map('intval', array_column($this->photos($equipment->idEquipamentos), 'id'))];
+            $this->ci->load->library('vistoria_service');
+            $snapshot['vistoria'] = $this->ci->vistoria_service->get($linkId);
             $id = $this->receipt($linkId, 'entrada', $snapshot);
             $this->ci->os_workflow->event($orderId, 'recebimento', 'Recebimento físico do equipamento #' . (int) $equipment->idEquipamentos . ' registrado. Comprovante #' . $id . '.');
             return $id;
@@ -178,26 +180,53 @@ class Equipamento_service
         return $this->ci->db->select('id, created_at')->order_by('id')->get_where('equipamento_fotos', ['equipamento_id' => (int) $id])->result_array();
     }
 
-    public function photo($id, $bytes)
+    public function encodePhoto($bytes, $maxBytes = 2097152, $maxPixels = 12000000)
     {
-        if (strlen($bytes) > 2 * 1024 * 1024) {
-            throw new DomainException('Envie uma foto JPEG ou PNG de até 2 MB.');
+        if (! is_string($bytes) || strlen($bytes) > $maxBytes) {
+            throw new DomainException('Envie uma foto JPEG ou PNG dentro do limite indicado.');
         }
         $info = @getimagesizefromstring($bytes);
-        if (! $info || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true) || $info[0] * $info[1] > 12000000) {
-            throw new DomainException('Use JPEG ou PNG com até 12 megapixels.');
+        if (! $info || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true) || $info[0] * $info[1] > $maxPixels) {
+            throw new DomainException('Use JPEG ou PNG dentro do limite de resolução indicado.');
         }
         $image = @imagecreatefromstring($bytes);
         if (! $image) {
             throw new DomainException('Não foi possível ler a foto.');
         }
-        $scale = min(1, 1600 / max($info[0], $info[1]));
-        $resized = imagescale($image, max(1, (int) ($info[0] * $scale)), max(1, (int) ($info[1] * $scale)));
+        if ($info[2] === IMAGETYPE_JPEG && function_exists('exif_read_data')) {
+            $stream = tmpfile();
+            if ($stream) {
+                fwrite($stream, $bytes);
+                rewind($stream);
+                $exif = @exif_read_data($stream);
+                fclose($stream);
+                $orientation = (int) ($exif['Orientation'] ?? 1);
+                $rotation = [3 => 180, 4 => 180, 5 => 90, 6 => -90, 7 => -90, 8 => 90][$orientation] ?? 0;
+                if ($rotation) {
+                    $rotated = imagerotate($image, $rotation, 0);
+                    imagedestroy($image);
+                    $image = $rotated;
+                }
+                if (in_array($orientation, [2, 4, 5, 7], true)) {
+                    imageflip($image, IMG_FLIP_HORIZONTAL);
+                }
+            }
+        }
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = min(1, 1600 / max($width, $height));
+        $resized = imagescale($image, max(1, (int) ($width * $scale)), max(1, (int) ($height * $scale)));
         ob_start();
         imagejpeg($resized, null, 82);
         $jpeg = ob_get_clean();
         imagedestroy($image);
         imagedestroy($resized);
+        return $jpeg;
+    }
+
+    public function photo($id, $bytes)
+    {
+        $jpeg = $this->encodePhoto($bytes);
         return $this->transaction(function () use ($id, $jpeg) {
             $row = $this->ci->db->query('SELECT idEquipamentos FROM equipamentos WHERE idEquipamentos = ? FOR UPDATE', [(int) $id])->row();
             if (! $row || count($this->photos($id)) >= 12) {
