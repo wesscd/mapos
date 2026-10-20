@@ -125,20 +125,18 @@ class OsController extends REST_Controller
         $termoGarantiaId = $this->post('termoGarantia', true);
 
         try {
-            $dataInicial = explode('/', $dataInicial);
-            $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
+            $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
 
             if ($dataFinal) {
-                $dataFinal = explode('/', $dataFinal);
-                $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
+                $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
             } else {
-                $dataFinal = date('Y/m/d');
+                $dataFinal = date('Y-m-d');
             }
 
             $termoGarantiaId = (! $termoGarantiaId == null || ! $termoGarantiaId == '') ? $this->post('garantias_id', true) : null;
         } catch (Exception $e) {
-            $dataInicial = date('Y/m/d');
-            $dataFinal = date('Y/m/d');
+            $dataInicial = date('Y-m-d');
+            $dataFinal = date('Y-m-d');
         }
 
         $data = [
@@ -156,7 +154,13 @@ class OsController extends REST_Controller
             'faturado' => 0,
         ];
 
-        if (is_numeric($id = $this->os_workflow->createOrder($data))) {
+        try {
+            $id = $this->os_workflow->createOrder($data);
+        } catch (DomainException $error) {
+            $this->response(['status' => false, 'message' => $error->getMessage()], REST_Controller::HTTP_BAD_REQUEST);
+            return;
+        }
+        if (is_numeric($id)) {
             $this->load->model('mapos_model');
             $this->load->model('usuarios_model');
 
@@ -221,20 +225,18 @@ class OsController extends REST_Controller
         $termoGarantiaId = $this->put('termoGarantia', true);
 
         try {
-            $dataInicial = explode('/', $dataInicial);
-            $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
+            $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
 
             if ($dataFinal) {
-                $dataFinal = explode('/', $dataFinal);
-                $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
+                $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
             } else {
-                $dataFinal = date('Y/m/d');
+                $dataFinal = date('Y-m-d');
             }
 
             $termoGarantiaId = (! $termoGarantiaId == null || ! $termoGarantiaId == '') ? $this->put('garantias_id') : null;
         } catch (Exception $e) {
-            $dataInicial = date('Y/m/d');
-            $dataFinal = date('Y/m/d');
+            $dataInicial = date('Y-m-d');
+            $dataFinal = date('Y-m-d');
         }
 
         $data = [

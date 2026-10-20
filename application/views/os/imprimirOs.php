@@ -156,7 +156,7 @@ $totalProdutos = 0;
                                     echo '<tr>';
                                     echo '  <td>' . $p->descricao . '</td>';
                                     echo '  <td class="text-center">' . $p->quantidade . '</td>';
-                                    echo '  <td class="text-center">' . number_format($p->preco ?: $p->precoVenda, 2, ',', '.') . '</td>';
+                                    echo '  <td class="text-center">' . number_format($p->preco ?? $p->precoVenda, 2, ',', '.') . '</td>';
                                     echo '  <td class="text-end">R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                     echo '</tr>';
                                 endforeach; ?>
@@ -184,7 +184,7 @@ $totalProdutos = 0;
                                 <?php
                                     setlocale(LC_MONETARY, 'en_US');
                     foreach ($servicos as $s) :
-                        $preco = $s->preco ?: $s->precoVenda;
+                        $preco = $s->preco ?? $s->precoVenda;
                         $subtotal = $preco * ($s->quantidade ?: 1);
                         $totalServico = $totalServico + $subtotal;
                         echo '<tr>';
@@ -411,7 +411,7 @@ $totalProdutos = 0; ?>
                                         echo '<tr>';
                                         echo '  <td>' . $p->descricao . '</td>';
                                         echo '  <td class="text-center">' . $p->quantidade . '</td>';
-                                        echo '  <td class="text-center">' . number_format($p->preco ?: $p->precoVenda, 2, ',', '.') . '</td>';
+                                        echo '  <td class="text-center">' . number_format($p->preco ?? $p->precoVenda, 2, ',', '.') . '</td>';
                                         echo '  <td class="text-end">R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                         echo '</tr>';
                                     endforeach; ?>
@@ -439,7 +439,7 @@ $totalProdutos = 0; ?>
                                     <?php
                                         setlocale(LC_MONETARY, 'en_US');
                         foreach ($servicos as $s) :
-                            $preco = $s->preco ?: $s->precoVenda;
+                            $preco = $s->preco ?? $s->precoVenda;
                             $subtotal = $preco * ($s->quantidade ?: 1);
                             $totalServico = $totalServico + $subtotal;
                             echo '<tr>';

@@ -2,6 +2,7 @@
 import binascii
 import datetime
 import http.cookiejar
+import urllib.error
 import json
 import re
 import struct
@@ -15,7 +16,8 @@ from pathlib import Path
 base = sys.argv[1].rstrip('/') + '/index.php/'
 assert urllib.parse.urlsplit(base).hostname in ('localhost', '127.0.0.1'), 'Use a loopback application only'
 credentials = json.loads(Path(sys.argv[2]).read_text())
-customer = json.loads(Path(sys.argv[3]).read_text(encoding='utf-8-sig'))['customer']
+fixture = json.loads(Path(sys.argv[3]).read_text(encoding='utf-8-sig'))
+customer = fixture['customer']
 jar = http.cookiejar.CookieJar()
 client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 
@@ -71,6 +73,19 @@ assert 'login' in private.url
 receipt = re.search(r'equipamentos/comprovante/(\d+)', body).group(1)
 printed = get('equipamentos/comprovante/' + receipt).read().decode()
 assert all('Imagem de teste - ' + angle in printed for angle in angles)
+assert json.loads(post('os/adicionarServico', {'idOsServico': order, 'idServico': fixture['service'], 'quantidade': '0.5', 'preco': '50'}).read())['result']
+assert json.loads(post('os/adicionarProduto', {'idOsProduto': order, 'idProduto': fixture['product'], 'quantidade': '1', 'preco': '25'}).read())['result']
+response = post('acompanhamento/salvar/' + order, {'acao': 'orcamento'})
+assert 'Pendente' in response.read().decode()
+assert json.loads(post('os/adicionarServico', {'idOsServico': order, 'idServico': fixture['service'], 'quantidade': '1', 'preco': '0'}).read())['result']
+body = get('os/editar/' + order).read().decode()
+assert 'Substituido' in body and 'os-budget' in body
+assert re.search(r'TOTAL SERVIÇOS:</b></td>\s*<td[^>]*><b>R\$ 25,00', get('os/imprimir/' + order).read().decode()), 'Printing preserves the negotiated labor amount including free services'
+try:
+    post('os/adicionarServico', {'idOsServico': order, 'idServico': '999999999', 'quantidade': '1', 'preco': '50'})
+    raise AssertionError('Unknown catalog item was accepted')
+except urllib.error.HTTPError as error:
+    assert error.code == 400 and 'Selecione um serviço válido' in json.loads(error.read())
 response = post('kanban/mover/' + order, {'status_anterior': 'Aberto', 'status': 'Em Andamento'})
 board = response.read().decode()
 active = board.split('data-kanban-target="Em Andamento"', 1)[1].split('</section>', 1)[0]
@@ -101,4 +116,13 @@ assert all(text in printed for text in ['Vistoria de entrada', 'Vistoria de saí
 assert all('Foto de saída - ' + angle in printed for angle in angles)
 response = post('equipamentos/vistoria/' + order, dict(vinculo_id=link, tipo='saida', complementar='1'), {'vistoria_foto_frente': png})
 assert 'Este atendimento não permite registrar vistoria.' in response.read().decode()
+try:
+    post('os/adicionarServico', {'idOsServico': order, 'idServico': fixture['service'], 'quantidade': '1', 'preco': '1'})
+    raise AssertionError('Delivered work was modified')
+except urllib.error.HTTPError as error:
+    assert error.code == 400 and 'entrega já foi registrada' in json.loads(error.read())
+response = post('os/faturar', {'os_id': order, 'descricao': 'Fatura demonstracao HTTP', 'valor': '1', 'vencimento': datetime.date.today().strftime('%d/%m/%Y'), 'cliente': 'Demonstracao HTTP', 'tipo': 'receita'})
+assert json.loads(response.read())['result'], 'Delivered order can still be invoiced using its persisted item totals'
+body = get('os/visualizar/' + order).read().decode()
+assert 'Faturado' in body and 'Entrega registrada em' in body
 print(json.dumps({'result': 'HTTP intake and exit uploads, comparison, acceptance guards, immutable delivery receipt and Kanban verified', 'equipment': equipment, 'order': order, 'receipt': receipt}))

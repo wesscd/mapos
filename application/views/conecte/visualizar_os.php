@@ -168,7 +168,7 @@ $totalProdutos = 0; ?>
                                         echo '<tr>';
                                         echo '<td>' . $p->descricao . '</td>';
                                         echo '<td>' . $p->quantidade . '</td>';
-                                        echo '<td>R$ ' . $p->preco ?: $p->precoVenda . '</td>';
+                                        echo '<td>R$ ' . html_escape($p->preco ?? $p->precoVenda) . '</td>';
                                         echo '<td>R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                         echo '</tr>';
                                     } ?>
@@ -196,7 +196,7 @@ $totalProdutos = 0; ?>
                                     <?php setlocale(LC_MONETARY, 'en_US');
                             foreach ($servicos as $s) {
                                 $totalServico = $totalServico + $s->subTotal;
-                                $preco = $s->preco ?: $s->precoVenda;
+                                $preco = $s->preco ?? $s->precoVenda;
                                 $subtotal = $preco * ($s->quantidade ?: 1);
                                 echo '<tr>';
                                 echo '<td>' . $s->nome . '</td>';

@@ -23,7 +23,11 @@ try {
     $phone = '000';
     $query->bind_param('sssss', $name, $document, $email, $phone, $password);
     $query->execute();
-    echo json_encode(['customer' => $db->insert_id]);
+    $customer = $db->insert_id;
+    $db->query("INSERT INTO produtos (codDeBarra, descricao, precoCompra, precoVenda, estoque) VALUES ('DEMO-FLOW', 'Peça demonstracao HTTP', 10, 25, 10)");
+    $product = $db->insert_id;
+    $db->query("INSERT INTO servicos (nome, preco) VALUES ('Servico demonstracao HTTP', 50)");
+    echo json_encode(['customer' => $customer, 'product' => $product, 'service' => $db->insert_id]);
 } catch (Throwable $error) {
     fwrite(STDERR, "Unable to prepare local HTTP fixture.\n");
     exit(1);

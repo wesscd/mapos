@@ -107,4 +107,4 @@ $throttled = $db->order_by('id', 'desc')->get_where('com_fila', ['evento' => 'te
 $assert($throttled->status === 'pendente' && (int) $throttled->tentativas === 0, 'Rate limiting postpones messages without exhausting their retry budget');
 $communication->manageJob($throttled->id, 'cancelar');
 $communication->saveConfig(array_merge($settings, ['whatsapp' => 0, 'email' => 0]));
-$workflow->deleteOrder($id, true);
+$reject(fn () => $workflow->deleteOrder($id, true), 'Delivered orders preserve their communication and service history');

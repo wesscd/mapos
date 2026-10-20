@@ -1,5 +1,5 @@
 <?php if (isset($workflow) && $result) {
-    $canWorkflow = $editavel && ! (int) $result->faturado && ! in_array($result->status, ['Cancelado', 'Faturado'], true); ?>
+    $canWorkflow = $editavel && ! $result->entregue_em && ! (int) $result->faturado && ! in_array($result->status, ['Cancelado', 'Faturado'], true); ?>
 <section class="mapos-workflow" id="acompanhamento" aria-labelledby="workflow-title">
     <div class="mapos-section-heading">
         <div><span class="mapos-eyebrow">ATENDIMENTO</span><h2 id="workflow-title">Acompanhamento da OS #<?= (int) $result->idOs ?></h2></div>
@@ -36,8 +36,9 @@
                 </form>
             <?php } ?>
         </section>
-        <section class="mapos-card"><h3>Aprovação do orçamento</h3>
+        <section class="mapos-card" id="os-budget"><h3>Aprovação do orçamento</h3>
             <p>O cliente responde pela própria área do cliente. Alterações nos itens ou valores exigem uma nova aprovação.</p>
+            <p>O status “Aprovado” selecionado pela equipe é separado da resposta do cliente registrada abaixo.</p>
             <?php foreach (array_slice($workflow['aprovacoes'], 0, 3) as $approval) { ?>
                 <p><span class="mapos-pill"><?= html_escape(ucfirst($approval->status)) ?></span>
                 R$ <?= html_escape(number_format($approval->valor, 2, ',', '.')) ?> · <?= html_escape(date('d/m/Y H:i', strtotime($approval->created_at))) ?></p>
@@ -50,7 +51,7 @@
             <?php } ?>
         </section>
     </div>
-    <details class="mapos-card mapos-history"><summary>Histórico do atendimento <span class="mapos-muted">— últimos 100 eventos</span></summary>
+    <details class="mapos-card mapos-history" id="os-timeline"><summary>Histórico do atendimento <span class="mapos-muted">— últimos 100 eventos</span></summary>
         <?php if (! $workflow['eventos']) { ?><p>O histórico começa a registrar eventos a partir desta atualização.</p><?php } ?>
         <ol><?php foreach ($workflow['eventos'] as $event) { ?>
             <li><time><?= html_escape(date('d/m/Y H:i', strtotime($event->created_at))) ?></time> <?= html_escape($event->descricao) ?></li>

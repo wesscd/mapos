@@ -235,7 +235,7 @@ $totalProdutos = 0; ?>
                     echo '<tr class="item">';
                     echo '<td>' . $p->descricao . '</td>';
                     echo '<td>' . $p->quantidade . '</td>';
-                    echo '<td>' . $p->preco ?: $p->precoVenda . '</td>';
+                    echo '<td>' . html_escape($p->preco ?? $p->precoVenda) . '</td>';
                     echo '<td style="text-align: center">R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                     echo '</tr>';
                 } ?>
@@ -256,7 +256,7 @@ $totalProdutos = 0; ?>
                 </tr>
 
                 <?php foreach ($servicos as $s) {
-                    $preco = $s->preco ?: $s->precoVenda;
+                    $preco = $s->preco ?? $s->precoVenda;
                     $subtotal = $preco * ($s->quantidade ?: 1);
                     $totalServico = $totalServico + $subtotal;
                     echo '<tr class="item">';

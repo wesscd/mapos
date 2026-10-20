@@ -1,5 +1,16 @@
 # Cadastro e movimentação de equipamentos
 
+## Fluxo da ordem de serviço revisado
+
+1. **Abertura:** selecionar cliente e responsável nas sugestões, registrar equipamento, problema e condições iniciais. A criação pelo portal não confirma recebimento físico. Cliente, responsável, etapa, datas e garantia são validados antes do salvamento.
+2. **Análise:** registrar o diagnóstico em Laudo Técnico e as verificações no checklist. Salvar os detalhes antes de solicitar aprovação. Alterações na descrição, problema ou diagnóstico aparecem no histórico e invalidam a aprovação anterior.
+3. **Orçamento:** incluir serviços e produtos pelas sugestões do catálogo, com quantidades e preços negociados. Serviço aceita quantidade fracionada e preço zero; produtos exigem quantidade inteira. Alterar itens/valores cancela a validade da aprovação anterior e remove o desconto para recálculo. A tela atualiza orçamento e histórico após salvar cada item; erros de validação são exibidos sem deixar a lista presa no carregamento.
+4. **Aprovação e execução:** a área do cliente apresenta os itens, valor e análise preservados no orçamento. A resposta pertence àquele registro. O status operacional “Aprovado”, selecionado pela equipe, é independente dessa resposta. Orçamentos antigos sem análise preservada continuam respondíveis quando os itens e valores não mudaram. A equipe acompanha o trabalho pelas etapas e pelo checklist.
+5. **Conclusão e entrega:** finalizar o serviço não confirma retirada. Registrar vistoria de saída e conferência para todos os equipamentos recebidos, identificar quem retirou e confirmar o aceite informado pela equipe. Depois da entrega, itens, desconto, diagnóstico e checklist ficam preservados; um retorno exige nova OS.
+6. **Faturamento:** usar a ação Faturar, que cria o lançamento e atualiza a OS na mesma transação. A etapa Faturado não pode ser atribuída manualmente. É possível faturar depois da retirada usando os valores já registrados, preservando a data de entrega. Serviços gratuitos permanecem com valor zero na edição, consulta, portal, e-mail e impressão.
+
+Validação adicional: `tests/order_lifecycle.php` cobre abertura inválida, atualização do diagnóstico, orçamento substituído, preços/quantidades, preservação após entrega e faturamento posterior. O teste HTTP local cobre inclusão de produtos e serviços, preço zero, orçamento invalidado, entrega e faturamento sem operar sobre dados de produção. Não são adicionadas regras de SLA, prioridade ou novos campos de prazo.
+
 O menu **Equipamentos** identifica o bem do cliente por nome, marca, modelo, série e cor. A busca aceita cliente, equipamento, modelo e série. Equipamentos existentes nas tabelas originais permanecem disponíveis quando possuem um cliente válido; nenhuma descrição antiga da OS é convertida automaticamente em equipamento ou recebimento.
 
 O cadastro utiliza as permissões de clientes: `vCliente` para consulta, fotos e etiquetas; `aCliente` para criar; `eCliente` para editar e adicionar fotos. O histórico de OS exige também `vOs`. Vincular e receber equipamentos exige `eOs` e `vCliente`. Comprovantes exigem `vOs` e `vCliente`. Não são links públicos e o QR exige login autorizado.

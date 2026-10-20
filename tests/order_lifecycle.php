@@ -1,0 +1,54 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+$reviewOrder = $workflow->createOrder($newOrderData);
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['status' => 'Faturado'])), 'Opening an OS cannot simulate invoicing through its status');
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['status' => 'inventado'])), 'Opening validates the workflow stage');
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['dataInicial' => '2026-02-31'])), 'Impossible calendar dates are rejected before database writes');
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['clientes_id' => 999999999])), 'Opening validates the selected customer');
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['usuarios_id' => 999999999])), 'Opening validates the selected technician');
+$reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['laudoTecnico' => ['invalid']])), 'Analysis fields reject malformed input before database writes');
+$reject(fn () => $workflow->updateOrder($reviewOrder, ['status' => 'Faturado'], false), 'Editing cannot skip the financial posting transaction');
+$reject(fn () => $workflow->service($reviewOrder, ['servicos_id' => 999999999, 'quantidade' => 1, 'preco' => 50]), 'Adding a service requires a valid catalog selection');
+$reject(fn () => $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => INF, 'preco' => 50]), 'Infinite quantities are rejected without database errors');
+$reject(fn () => $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 999999999]), 'Values beyond storage limits produce validation errors');
+$reviewLine = $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 0.5, 'preco' => 50]);
+$freeLine = $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 0]);
+$assert((float) $ci->os_model->valorTotalOS($reviewOrder)['totalServico'] === 25.0, 'Fractional labor and free services retain their actual negotiated prices');
+$workflow->updateOrder($reviewOrder, ['laudoTecnico' => '<p>Diagnóstico inicial</p>'], false);
+$workflow->requestApproval($reviewOrder);
+$reviewApproval = $db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $reviewOrder])->row();
+$assert(json_decode($reviewApproval->snapshot, true)['analise']['diagnostico'] === '<p>Diagnóstico inicial</p>', 'Budget freezes the diagnosis presented with its items and total');
+$workflow->answerApproval($reviewOrder, $reviewApproval->id, $customer, 'aprovado');
+$workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 30]);
+$assert($db->get_where('os_aprovacoes', ['id' => $reviewApproval->id])->row()->status === 'substituido', 'An additional service invalidates the previously accepted budget');
+$workflow->requestApproval($reviewOrder);
+$reviewApproval = $db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $reviewOrder])->row();
+$workflow->updateOrder($reviewOrder, ['laudoTecnico' => '<p>Diagnóstico revisado</p>'], false);
+$reject(fn () => $workflow->answerApproval($reviewOrder, $reviewApproval->id, $customer, 'aprovado'), 'A changed diagnosis requires a new budget approval');
+$assert($db->where('os_id', $reviewOrder)->where('tipo', 'analise')->count_all_results('os_eventos') === 2, 'Analysis changes are recorded in the service timeline');
+$workflow->updateOrder($reviewOrder, ['status' => 'Finalizado'], false);
+$workflow->deliver($reviewOrder);
+$reject(fn () => $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 10]), 'A delivered OS cannot receive additional work');
+$reject(fn () => $workflow->changeLine($reviewOrder, $reviewLine->idServicos_os, 1, 50, false), 'Delivered quantities and prices cannot change');
+$reject(fn () => $workflow->discount($reviewOrder, 'real', 1), 'Delivered discounts cannot change');
+$reject(fn () => $workflow->updateOrder($reviewOrder, ['laudoTecnico' => 'Alteração posterior'], false), 'A delivered diagnosis is preserved even without equipment receipts');
+$reject(fn () => $workflow->requestApproval($reviewOrder), 'A delivered OS cannot request another budget approval');
+$reject(fn () => $workflow->checklist($reviewOrder, 'Alteração posterior'), 'A delivered technical checklist cannot change');
+$reject(fn () => $workflow->deleteOrder($reviewOrder, false), 'A delivered service history cannot be deleted even without linked equipment');
+$reject(fn () => $workflow->invoice($reviewOrder, ['data_vencimento' => '2026-02-31']), 'Invalid invoice dates are rejected before posting');
+$reviewInvoice = $workflow->invoice($reviewOrder, ['descricao' => 'Faturamento após retirada', 'data_vencimento' => date('Y-m-d'), 'usuarios_id' => 1, 'baixado' => 0]);
+$assert((float) $db->get_where('lancamentos', ['idLancamentos' => $reviewInvoice])->row()->valor === 55.0, 'An unchanged delivered OS can still be invoiced for its saved amount');
+$assert($db->get_where('os', ['idOs' => $reviewOrder])->row()->entregue_em !== null, 'Invoicing after pickup preserves the physical delivery timestamp');
+
+$legacyOrder = $workflow->createOrder($newOrderData);
+$workflow->service($legacyOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 50]);
+$workflow->requestApproval($legacyOrder);
+$legacyApproval = $db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $legacyOrder])->row();
+$legacySnapshot = json_decode($legacyApproval->snapshot, true);
+unset($legacySnapshot['analise']);
+$legacyJson = json_encode($legacySnapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+$db->where('id', $legacyApproval->id)->update('os_aprovacoes', ['snapshot' => $legacyJson, 'fingerprint' => hash('sha256', $legacyJson)]);
+$workflow->answerApproval($legacyOrder, $legacyApproval->id, $customer, 'aprovado');
+$assert($db->get_where('os_aprovacoes', ['id' => $legacyApproval->id])->row()->status === 'aprovado', 'Existing unchanged budgets remain answerable after diagnosis snapshots are introduced');

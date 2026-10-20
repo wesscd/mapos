@@ -112,9 +112,7 @@
                                                 <option <?php if ($result->status == 'Finalizado') {
                                                     echo 'selected';
                                                 } ?> value="Finalizado">Finalizado</option>
-                                                <option <?php if ($result->status == 'Faturado') {
-                                                    echo 'selected';
-                                                } ?> value="Faturado">Faturado</option>
+                                                <?php if ($result->status === 'Faturado') { ?><option value="Faturado" selected>Faturado</option><?php } ?>
                                                 <option <?php if ($result->status == 'Cancelado') {
                                                     echo 'selected';
                                                 } ?> value="Cancelado">Cancelado</option>                                                          
@@ -170,7 +168,7 @@ foreach ($produtos as $p) {
 }?>
                         <?php $totals = 0;
 foreach ($servicos as $s) {
-    $preco = $s->preco ?: $s->precoVenda;
+    $preco = $s->preco ?? $s->precoVenda;
     $subtotals = $preco * ($s->quantidade ?: 1);
     $totals = $totals + $subtotals;
 }?>
@@ -261,7 +259,7 @@ foreach ($produtos as $p) {
     echo '<tr>';
     echo '<td>' . $p->descricao . '</td>';
     echo '<td><div align="center">' . $p->quantidade . '</td>';
-    echo '<td><div align="center">R$: ' . ($p->preco ?: $p->precoVenda) . '</td>';
+    echo '<td><div align="center">R$: ' . ($p->preco ?? $p->precoVenda) . '</td>';
     echo (strtolower($result->status) != "cancelado") ? '<td><div align="center"><a href="" idAcao="' . $p->idProdutos_os . '" prodAcao="' . $p->idProdutos . '" quantAcao="' . $p->quantidade . '" title="Excluir Produto" class="btn-nwe4"><i class="bx bx-trash-alt"></i></a></td>' : '<td></td>';
     echo '<td><div align="center">R$: ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
     echo '</tr>';
@@ -333,7 +331,7 @@ foreach ($produtos as $p) {
                                             <?php
 $totals = 0;
 foreach ($servicos as $s) {
-    $preco = $s->preco ?: $s->precoVenda;
+    $preco = $s->preco ?? $s->precoVenda;
     $subtotals = $preco * ($s->quantidade ?: 1);
     $totals = $totals + $subtotals;
     echo '<tr>';
@@ -663,7 +661,7 @@ if (!$anotacoes) {
     });
     $(document).ready(function () {
 
-        $(".money").maskMoney();
+        $(".money").maskMoney({allowZero: true});
 
         $('#recebido').click(function (event) {
             var flag = $(this).is(':checked');
@@ -846,6 +844,33 @@ if (!$anotacoes) {
             }
         });
 
+        // Keep catalog selection and captured budget feedback consistent with saved items.
+        $('#produto').on('input', function () { $('#idProduto, #estoque').val(''); });
+        $('#servico').on('input', function () { $('#idServico').val(''); });
+        $('#cliente').on('input', function () { $('#clientes_id').val(''); });
+        $('#tecnico').on('input', function () { $('#usuarios_id').val(''); });
+        $.ajaxPrefilter(function (options) {
+            if (options.crossDomain || !/\/os\/(adicionarProduto|adicionarServico|excluirProduto|excluirServico)(?:\?|$)/.test(options.url)) return;
+            var success = options.success;
+            options.success = function (data) {
+                if (success) success.apply(this, arguments);
+                if (data.result) {
+                    $('#os-budget').load(window.location.href + ' #os-budget > *');
+                    $('#os-timeline').load(window.location.href + ' #os-timeline > *');
+                    if (/adicionarProduto/.test(options.url)) $('#idProduto, #estoque').val('');
+                    if (/adicionarServico/.test(options.url)) $('#idServico').val('');
+                }
+            };
+            options.error = function (xhr) {
+                $('#divProdutos').load(window.location.href + ' #divProdutos > *');
+                $('#divServicos').load(window.location.href + ' #divServicos > *');
+                var response = xhr.responseJSON;
+                var message = typeof response === 'string' ? response : response && (response.message || response.messages);
+                if (typeof message !== 'string') message = xhr.status === 403 ? 'A sessão expirou. Atualize a página antes de continuar.' : 'Não foi possível confirmar o salvamento. Confira os itens antes de tentar novamente.';
+                Swal.fire({type: 'error', title: 'Confira os dados', text: message.replace(/<[^>]*>/g, '')});
+            };
+        });
+
         $("#produto").autocomplete({
             source: "<?php echo base_url(); ?>index.php/os/autoCompleteProduto",
             minLength: 2,
@@ -982,12 +1007,12 @@ if (!$anotacoes) {
                         dataType: 'json',
                         success: function (data) {
                             if (data.result == true) {
-                                $("#divProdutos").load("<?php echo current_url(); ?> #divProdutos");
+                                $("#divProdutos").load("<?php echo current_url(); ?> #divProdutos > *");
                                 $("#quantidade").val('');
                                 $("#preco").val('');
                                 $("#resultado").val('');
                                 $("#desconto").val('');
-                                $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal");
+                                $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal > *");
                                 $("#produto").val('').focus();
                             } else {
                                 Swal.fire({
@@ -1037,12 +1062,12 @@ if (!$anotacoes) {
                     dataType: 'json',
                     success: function (data) {
                         if (data.result == true) {
-                            $("#divServicos").load("<?php echo current_url(); ?> #divServicos");
+                            $("#divServicos").load("<?php echo current_url(); ?> #divServicos > *");
                             $("#quantidade_servico").val('');
                             $("#preco_servico").val('');
                             $("#resultado").val('');
                             $("#desconto").val('');
-                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal");
+                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal > *");
                             $("#servico").val('').focus();
                         } else {
                             Swal.fire({
@@ -1143,8 +1168,8 @@ if (!$anotacoes) {
                     dataType: 'json',
                     success: function (data) {
                         if (data.result == true) {
-                            $("#divProdutos").load("<?php echo current_url(); ?> #divProdutos");
-                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal");
+                            $("#divProdutos").load("<?php echo current_url(); ?> #divProdutos > *");
+                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal > *");
                             $("#resultado").val('');
                             $("#desconto").val('');
 
@@ -1174,8 +1199,8 @@ if (!$anotacoes) {
                     dataType: 'json',
                     success: function (data) {
                         if (data.result == true) {
-                            $("#divServicos").load("<?php echo current_url(); ?> #divServicos");
-                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal");
+                            $("#divServicos").load("<?php echo current_url(); ?> #divServicos > *");
+                            $("#divValorTotal").load("<?php echo current_url(); ?> #divValorTotal > *");
                             $("#resultado").val('');
                             $("#desconto").val('');
 

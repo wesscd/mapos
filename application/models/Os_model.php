@@ -340,6 +340,9 @@ class Os_model extends CI_Model
             return false;
         }
         if ($os = $this->getById($id)) {
+            if ($os->entregue_em) {
+                return false;
+            }
             $osT = (int) ($os->status === 'Faturado' || $os->status === 'Cancelado' || $os->faturado == 1);
             if ($osT) {
                 return $this->data['configuration']['control_editos'] == '1';

@@ -109,22 +109,20 @@ class Os extends MY_Controller
             $termoGarantiaId = $this->input->post('termoGarantia');
 
             try {
-                $dataInicial = explode('/', $dataInicial);
-                $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
+                $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
 
                 if ($dataFinal) {
-                    $dataFinal = explode('/', $dataFinal);
-                    $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
+                    $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
                 } else {
-                    $dataFinal = date('Y/m/d');
+                    $dataFinal = date('Y-m-d');
                 }
 
                 $termoGarantiaId = (! $termoGarantiaId == null || ! $termoGarantiaId == '')
                     ? $this->input->post('garantias_id')
                     : null;
             } catch (Exception $e) {
-                $dataInicial = date('Y/m/d');
-                $dataFinal = date('Y/m/d');
+                $dataInicial = date('Y-m-d');
+                $dataFinal = date('Y-m-d');
             }
 
             $data = [
@@ -202,9 +200,9 @@ class Os extends MY_Controller
 
         $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
         if (! $this->data['editavel']) {
-            $this->session->set_flashdata('error', 'Esta OS já e seu status não pode ser alterado e nem suas informações atualizadas. Por favor abrir uma nova OS.');
+            $this->session->set_flashdata('error', 'Esta OS está encerrada para edição. Consulte o histórico; para um retorno após a entrega, abra uma nova OS.');
 
-            redirect(site_url('os'));
+            redirect(site_url('os/visualizar/' . (int) $this->uri->segment(3)));
         }
 
         if ($this->form_validation->run('os') == false) {
@@ -215,13 +213,11 @@ class Os extends MY_Controller
             $termoGarantiaId = $this->input->post('garantias_id') ?: null;
 
             try {
-                $dataInicial = explode('/', $dataInicial);
-                $dataInicial = $dataInicial[2] . '-' . $dataInicial[1] . '-' . $dataInicial[0];
+                $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
 
-                $dataFinal = explode('/', $dataFinal);
-                $dataFinal = $dataFinal[2] . '-' . $dataFinal[1] . '-' . $dataFinal[0];
+                $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
             } catch (Exception $e) {
-                $dataInicial = date('Y/m/d');
+                $dataInicial = date('Y-m-d');
             }
 
             $data = [
@@ -238,7 +234,10 @@ class Os extends MY_Controller
                 'clientes_id' => $this->input->post('clientes_id'),
             ];
             try {
-                $saved = $this->os_workflow->updateOrder($this->input->post('idOs'), $data, ! empty($this->data['configuration']['control_estoque']));
+                if ((string) $this->input->post('idOs') !== (string) $this->uri->segment(3)) {
+                    throw new DomainException('Confira a OS aberta antes de salvar.');
+                }
+                $saved = $this->os_workflow->updateOrder((int) $this->uri->segment(3), $data, ! empty($this->data['configuration']['control_estoque']));
             } catch (DomainException $error) {
                 $saved = false;
                 $this->data['custom_error'] = '<div class="alert alert-error">' . html_escape($error->getMessage()) . '</div>';
@@ -647,7 +646,7 @@ class Os extends MY_Controller
         }
         $this->load->library('form_validation');
         if (! $this->form_validation->run('adicionar_produto_os')) {
-            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(validation_errors()));
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode('Selecione um produto nas sugestões e informe quantidade inteira positiva e preço válido. O preço pode ser zero.'));
         }
         try {
             $this->os_workflow->addProduct([
@@ -682,7 +681,7 @@ class Os extends MY_Controller
         }
         $this->load->library('form_validation');
         if (! $this->form_validation->run('adicionar_servico_os')) {
-            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(validation_errors()));
+            return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode('Selecione um serviço nas sugestões e informe quantidade positiva e preço válido. O preço pode ser zero.'));
         }
         try {
             $this->os_workflow->service((int) $this->input->post('idOsServico'), ['servicos_id' => (int) $this->input->post('idServico'), 'quantidade' => $this->input->post('quantidade'), 'preco' => $this->input->post('preco')]);
@@ -889,14 +888,8 @@ class Os extends MY_Controller
             $vencimento = $this->input->post('vencimento');
             $recebimento = $this->input->post('recebimento');
 
-            try {
-                $vencimento = DateTime::createFromFormat('d/m/Y', $vencimento)->format('Y-m-d');
-                if ($recebimento != null) {
-                    $recebimento = DateTime::createFromFormat('d/m/Y', $recebimento)->format('Y-m-d');
-                }
-            } catch (Exception $e) {
-                $vencimento = date('Y-m-d');
-            }
+            $vencimento = $this->os_workflow->dateFromForm($vencimento);
+            $recebimento = $recebimento ? $this->os_workflow->dateFromForm($recebimento) : null;
 
             $os_id = $this->input->post('os_id');
             $valorTotalData = $this->os_model->valorTotalOS($os_id);

@@ -64,7 +64,6 @@
                                                 <option value="Aguardando Peças" <?= set_select('status', 'Aguardando Peças') ?>>Aguardando Peças</option>
                                                 <option value="Em Andamento" <?= set_select('status', 'Em Andamento') ?>>Em Andamento</option>
                                                 <option value="Finalizado" <?= set_select('status', 'Finalizado') ?>>Finalizado</option>
-                                                <option value="Faturado" <?= set_select('status', 'Faturado') ?>>Faturado</option>
                                                 <option value="Cancelado" <?= set_select('status', 'Cancelado') ?>>Cancelado</option>
                                             </select>
                                         </div>
@@ -142,6 +141,7 @@
                 $("#clientes_id").val(ui.item.id).trigger('change');
             }
         });
+        $('#tecnico').on('input', function () { $('#usuarios_id').val(''); });
         $("#tecnico").autocomplete({
             source: "<?php echo base_url(); ?>index.php/os/autoCompleteUsuario",
             minLength: 1,

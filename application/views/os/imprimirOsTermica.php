@@ -205,7 +205,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                     echo '<tr>';
                                     echo '<td>' . $p->quantidade . '</td>';
                                     echo '<td>' . $p->descricao . '</td>';
-                                    echo '<td>R$ ' . $p->preco ?: $p->precoVenda . '</td>';
+                                    echo '<td>R$ ' . html_escape($p->preco ?? $p->precoVenda) . '</td>';
                                     echo '<td>R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                     echo '</tr>';
                                 } ?>
@@ -230,7 +230,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                             <tbody>
                                 <?php setlocale(LC_MONETARY, 'en_US');
                         foreach ($servicos as $s) {
-                            $preco = $s->preco ?: $s->precoVenda;
+                            $preco = $s->preco ?? $s->precoVenda;
                             $subtotal = $preco * ($s->quantidade ?: 1);
                             $totalServico = $totalServico + $subtotal;
                             echo '<tr>';
@@ -428,7 +428,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                         echo '<tr>';
                                         echo '<td>' . $p->quantidade . '</td>';
                                         echo '<td>' . $p->descricao . '</td>';
-                                        echo '<td>R$ ' . $p->preco ?: $p->precoVenda . '</td>';
+                                        echo '<td>R$ ' . html_escape($p->preco ?? $p->precoVenda) . '</td>';
                                         echo '<td>R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                         echo '</tr>';
                                     } ?>
@@ -454,7 +454,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                 <tbody>
                                     <?php setlocale(LC_MONETARY, 'en_US');
                             foreach ($servicos as $s) {
-                                $preco = $s->preco ?: $s->precoVenda;
+                                $preco = $s->preco ?? $s->precoVenda;
                                 $subtotal = $preco * ($s->quantidade ?: 1);
                                 $totalServico = $totalServico + $subtotal;
                                 echo '<tr>';

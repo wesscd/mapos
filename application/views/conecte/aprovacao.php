@@ -2,6 +2,9 @@
 <section class="alert alert-info" aria-label="Aprovação do orçamento">
     <h3>Orçamento #<?= (int) $approval->id ?> — <?= html_escape(ucfirst($approval->status)) ?></h3>
     <?php $snapshot = json_decode($approval->snapshot, true); ?>
+    <?php foreach (['descricao' => 'Equipamento / serviço solicitado', 'problema' => 'Problema relatado', 'diagnostico' => 'Diagnóstico técnico'] as $field => $label) {
+        if (! empty($snapshot['analise'][$field])) { ?><h4><?= html_escape($label) ?></h4><div><?= printSafeHtml($snapshot['analise'][$field]) ?></div><?php }
+        } ?>
     <ul><?php foreach (array_merge($snapshot['produtos'] ?? [], $snapshot['servicos'] ?? []) as $item) { ?>
         <li><?= html_escape($item['descricao'] ?? $item['nome']) ?> · <?= html_escape($item['quantidade']) ?> × R$ <?= html_escape(number_format($item['preco'], 2, ',', '.')) ?></li>
     <?php } ?></ul>

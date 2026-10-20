@@ -4,6 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /** Coordinates OS changes, stock and the customer approval snapshot. */
 class Os_workflow
 {
+    public const STATUSES = ['Aberto', 'Orçamento', 'Negociação', 'Aprovado', 'Aguardando Peças', 'Em Andamento', 'Finalizado', 'Cancelado'];
     private $ci;
     private $actor;
 
@@ -59,11 +60,65 @@ class Os_workflow
         return $order;
     }
 
-    private function editable($order)
+    private function editable($order, $allowDelivered = false)
     {
+        if ($order->entregue_em && ! $allowDelivered) {
+            throw new DomainException('A entrega já foi registrada. Preserve esta OS e abra uma nova para o retorno do equipamento.');
+        }
         if ((int) $order->faturado || in_array($order->status, ['Cancelado', 'Faturado'], true)) {
             throw new DomainException('Reabra a OS antes de alterar seus itens. OS faturadas não permitem alterações de valores.');
         }
+    }
+
+    public function dateFromForm($value)
+    {
+        if (is_string($value) && preg_match('~^(\d{2})/(\d{2})/(\d{4})$~D', $value, $parts)) {
+            return $parts[3] . '-' . $parts[2] . '-' . $parts[1];
+        }
+        return $value;
+    }
+
+    private function validDate($value)
+    {
+        return is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value)
+            && ($date = DateTimeImmutable::createFromFormat('!Y-m-d', $value)) && $date->format('Y-m-d') === $value;
+    }
+
+    private function validateOrder(array $data)
+    {
+        foreach (['descricaoProduto', 'defeito', 'observacoes', 'laudoTecnico'] as $field) {
+            if (isset($data[$field]) && (! is_string($data[$field]) || strlen($data[$field]) > 65535)) {
+                throw new DomainException('Informe textos válidos de até 64 KB para a descrição, problema, observações e diagnóstico.');
+            }
+        }
+        foreach (['clientes_id' => ['clientes', 'idClientes'], 'usuarios_id' => ['usuarios', 'idUsuarios']] as $field => [$table, $key]) {
+            if (! filter_var($data[$field] ?? null, FILTER_VALIDATE_INT) || ! $this->ci->db->get_where($table, [$key => $data[$field]])->row()) {
+                throw new DomainException('Selecione um cliente e um responsável válidos nas sugestões.');
+            }
+        }
+        foreach (['dataInicial', 'dataFinal'] as $field) {
+            $value = $data[$field] ?? null;
+            if ($value !== null && $value !== '' && ! $this->validDate($value)) {
+                throw new DomainException('Informe datas válidas no formato dia/mês/ano.');
+            }
+        }
+        if (isset($data['garantia']) && $data['garantia'] !== '' && (filter_var($data['garantia'], FILTER_VALIDATE_INT) === false || $data['garantia'] < 0 || $data['garantia'] > 36500)) {
+            throw new DomainException('Informe a garantia em dias inteiros, entre 0 e 36500.');
+        }
+    }
+
+    private function lineValues($quantity, $price, $product)
+    {
+        if (! is_numeric($quantity) || ! is_finite((float) $quantity) || $quantity <= 0
+            || ! is_numeric($price) || ! is_finite((float) $price) || $price < 0
+            || ($product && filter_var($quantity, FILTER_VALIDATE_INT) === false)) {
+            throw new DomainException('Informe quantidade e preço válidos. Produtos exigem quantidade inteira.');
+        }
+        $price = round((float) $price, 2);
+        if ($quantity > 2147483647 || $price > 99999999.99 || $quantity * $price > 99999999.99) {
+            throw new DomainException('Quantidade ou valor excede o limite permitido para o item.');
+        }
+        return [$quantity, $price];
     }
 
     public function event($id, $type, $description, array $context = [])
@@ -93,6 +148,13 @@ class Os_workflow
     public function createOrder(array $data, array $equipmentIds = [], ?array $inspection = null)
     {
         return $this->transaction(function () use ($data, $equipmentIds, $inspection) {
+            if (! in_array($data['status'] ?? null, self::STATUSES, true) || ! empty($data['faturado'])) {
+                throw new DomainException('Selecione uma etapa válida. Utilize a ação Faturar para gerar o lançamento financeiro.');
+            }
+            $this->validateOrder($data);
+            if ($data['status'] === 'Finalizado') {
+                $data['concluida_em'] = date('Y-m-d H:i:s');
+            }
             if (count($equipmentIds) > 20) {
                 throw new DomainException('Vincule até 20 equipamentos por vez.');
             }
@@ -171,9 +233,7 @@ class Os_workflow
     {
         return $this->transaction(function () use ($item, $controlStock) {
             $this->editable($this->lockOrder($item['os_id']));
-            if (filter_var($item['quantidade'], FILTER_VALIDATE_INT) === false || $item['quantidade'] <= 0 || ! is_numeric($item['preco']) || $item['preco'] < 0) {
-                throw new DomainException('Informe quantidade e preço válidos.');
-            }
+            [$item['quantidade'], $item['preco']] = $this->lineValues($item['quantidade'] ?? null, $item['preco'] ?? null, true);
             if ($controlStock) {
                 $this->stock($item['produtos_id'], $item['quantidade'], '-');
             }
@@ -218,8 +278,9 @@ class Os_workflow
                     throw new DomainException('Serviço não encontrado nesta OS.');
                 }
             } else {
-                if (! is_numeric($data['quantidade']) || $data['quantidade'] <= 0 || ! is_numeric($data['preco']) || $data['preco'] < 0) {
-                    throw new DomainException('Informe quantidade e preço válidos.');
+                [$data['quantidade'], $data['preco']] = $this->lineValues($data['quantidade'] ?? null, $data['preco'] ?? null, false);
+                if (! $this->ci->db->get_where('servicos', ['idServicos' => (int) ($data['servicos_id'] ?? 0)])->row()) {
+                    throw new DomainException('Selecione um serviço válido nas sugestões.');
                 }
                 $data['os_id'] = (int) $id;
                 $data['subTotal'] = round($data['quantidade'] * $data['preco'], 2);
@@ -236,7 +297,7 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $type, $value) {
             $this->editable($this->lockOrder($id));
-            if (! in_array($type, ['real', 'porcento'], true) || ! is_numeric($value) || $value < 0) {
+            if (! in_array($type, ['real', 'porcento'], true) || ! is_numeric($value) || ! is_finite((float) $value) || $value < 0) {
                 throw new DomainException('Desconto inválido.');
             }
             $this->ci->load->model('os_model');
@@ -256,10 +317,7 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $itemId, $quantity, $price, $product, $controlStock) {
             $this->editable($this->lockOrder($id));
-            if (! is_numeric($quantity) || $quantity <= 0 || ! is_numeric($price) || $price < 0
-                || ($product && filter_var($quantity, FILTER_VALIDATE_INT) === false)) {
-                throw new DomainException('Informe quantidade e preço válidos.');
-            }
+            [$quantity, $price] = $this->lineValues($quantity, $price, $product);
             $table = $product ? 'produtos_os' : 'servicos_os';
             $key = $product ? 'idProdutos_os' : 'idServicos_os';
             $item = $this->ci->db->get_where($table, [$key => (int) $itemId, 'os_id' => (int) $id])->row();
@@ -281,7 +339,12 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $data) {
             $order = $this->lockOrder($id);
-            $this->editable($order);
+            $this->editable($order, true);
+            foreach (['data_vencimento', 'data_pagamento'] as $field) {
+                if (isset($data[$field]) && $data[$field] !== '' && ! $this->validDate($data[$field])) {
+                    throw new DomainException('Informe datas válidas para vencimento e pagamento.');
+                }
+            }
             $this->ci->load->model('os_model');
             $totals = $this->ci->os_model->valorTotalOS($id);
             $gross = round($totals['totalProdutos'] + $totals['totalServico'], 2);
@@ -319,13 +382,21 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $data, $controlStock) {
             $order = $this->lockOrder($id);
+            if ($order->entregue_em) {
+                throw new DomainException('A entrega já foi registrada. Preserve esta OS e abra uma nova para o retorno do equipamento.');
+            }
+            $status = $data['status'] ?? $order->status;
+            if (! in_array($status, self::STATUSES, true) && ! ($status === 'Faturado' && $order->status === 'Faturado')) {
+                throw new DomainException('Selecione uma etapa válida. Utilize a ação Faturar para gerar o lançamento financeiro.');
+            }
+            $data['status'] = $status;
+            $this->validateOrder(array_merge((array) $order, $data));
             if (isset($data['clientes_id']) && (int) $data['clientes_id'] !== (int) $order->clientes_id
                 && $this->ci->db->where('os_id', $id)->count_all_results('equipamentos_os')) {
                 throw new DomainException('Uma OS com equipamentos vinculados não pode mudar de cliente.');
             }
-            if ($order->entregue_em && isset($data['status']) && $data['status'] !== $order->status && ! in_array($data['status'], ['Finalizado', 'Faturado'], true)
-                && $this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->count_all_results()) {
-                throw new DomainException('A entrega possui comprovante. Abra uma nova OS para o retorno do equipamento.');
+            if ($order->faturado && isset($data['clientes_id']) && (int) $data['clientes_id'] !== (int) $order->clientes_id) {
+                throw new DomainException('O cliente de uma OS faturada deve ser preservado junto do lançamento financeiro.');
             }
             if ((int) $order->faturado && $data['status'] !== $order->status) {
                 throw new DomainException('Uma OS faturada não pode mudar de status.');
@@ -348,14 +419,21 @@ class Os_workflow
             if ($data['status'] !== $order->status) {
                 $this->event($id, 'status', $order->status . ' → ' . $data['status']);
             }
-            if ($data['usuarios_id'] != $order->usuarios_id || $data['dataFinal'] !== $order->dataFinal) {
-                $this->event($id, 'planejamento', 'Responsável ou prazo atualizado. Prazo: ' . $data['dataFinal']);
+            if (($data['usuarios_id'] ?? $order->usuarios_id) != $order->usuarios_id || ($data['dataFinal'] ?? $order->dataFinal) !== $order->dataFinal) {
+                $this->event($id, 'planejamento', 'Responsável ou prazo atualizado. Prazo: ' . ($data['dataFinal'] ?? $order->dataFinal));
             }
-            if ($data['dataFinal'] !== $order->dataFinal) {
+            if (array_key_exists('dataFinal', $data) && $data['dataFinal'] !== $order->dataFinal) {
                 $this->event($id, 'prazo', 'Prazo atualizado para: ' . $data['dataFinal']);
             }
             if ($after || (isset($data['clientes_id']) && $data['clientes_id'] != $order->clientes_id)) {
                 $this->invalidateBudget($id);
+            }
+            foreach (['descricaoProduto', 'defeito', 'laudoTecnico'] as $field) {
+                if (array_key_exists($field, $data) && (string) $data[$field] !== (string) $order->$field) {
+                    $this->invalidateBudget($id);
+                    $this->event($id, 'analise', 'Descrição, problema relatado ou diagnóstico atualizado. Confira o orçamento antes de solicitar nova aprovação.');
+                    break;
+                }
             }
             return true;
         });
@@ -365,6 +443,9 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $controlStock) {
             $order = $this->lockOrder($id);
+            if ($order->entregue_em) {
+                throw new DomainException('A entrega já foi registrada. Preserve o histórico desta OS.');
+            }
             if ($this->ci->db->from('os_vistorias')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = os_vistorias.vinculo_id')->where('os_id', $id)->count_all_results()) {
                 throw new DomainException('Esta OS possui vistoria de entrada e deve ser preservada no histórico.');
             }
@@ -415,7 +496,7 @@ class Os_workflow
         });
     }
 
-    private function budget($id)
+    private function budget($id, $includeAnalysis = true)
     {
         $this->ci->load->model('os_model');
         $totals = $this->ci->os_model->valorTotalOS($id);
@@ -425,6 +506,9 @@ class Os_workflow
             'servicos' => $this->ci->db->select('s.nome, i.quantidade, i.preco')->from('servicos_os i')->join('servicos s', 's.idServicos = i.servicos_id')->where('i.os_id', $id)->order_by('i.idServicos_os')->get()->result_array(),
             'valor' => round($order->tipo_desconto ? $order->valor_desconto : $totals['totalProdutos'] + $totals['totalServico'], 2),
         ];
+        if ($includeAnalysis) {
+            $snapshot['analise'] = ['descricao' => $order->descricaoProduto, 'problema' => $order->defeito, 'diagnostico' => $order->laudoTecnico];
+        }
         return json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
@@ -453,7 +537,8 @@ class Os_workflow
                 throw new DomainException('Solicitação inválida.');
             }
             $approval = $this->ci->db->get_where('os_aprovacoes', ['id' => $approvalId, 'os_id' => $id, 'status' => 'pendente'])->row();
-            if (! $approval || ! hash_equals($approval->fingerprint, hash('sha256', $this->budget($id)))) {
+            $hasAnalysis = $approval && array_key_exists('analise', json_decode($approval->snapshot, true));
+            if (! $approval || ! hash_equals($approval->fingerprint, hash('sha256', $this->budget($id, $hasAnalysis)))) {
                 throw new DomainException('O orçamento mudou. Solicite uma nova versão antes de responder.');
             }
             $this->ci->db->where('id', $approval->id)->update('os_aprovacoes', ['status' => $answer, 'cliente_id' => $customerId, 'respondido_em' => date('Y-m-d H:i:s')]);
