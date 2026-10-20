@@ -132,6 +132,15 @@ class Os_workflow
         return $value;
     }
 
+    public function validatedDateFromForm($value)
+    {
+        $date = $this->dateFromForm($value);
+        if (! $this->validDate($date)) {
+            throw new DomainException('Informe uma data válida no formato dd/mm/aaaa.');
+        }
+        return $date;
+    }
+
     private function validDate($value)
     {
         return is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $value)

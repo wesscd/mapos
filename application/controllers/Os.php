@@ -44,17 +44,17 @@ class Os extends MY_Controller
         if ($status) {
             $where_array['status'] = $status;
         }
-        if ($inputDe) {
-            $de = explode('/', $inputDe);
-            $de = $de[2] . '-' . $de[1] . '-' . $de[0];
-
-            $where_array['de'] = $de;
-        }
-        if ($inputAte) {
-            $ate = explode('/', $inputAte);
-            $ate = $ate[2] . '-' . $ate[1] . '-' . $ate[0];
-
-            $where_array['ate'] = $ate;
+        foreach (['de' => $inputDe, 'ate' => $inputAte] as $key => $value) {
+            if (! is_string($value) || $value === '') {
+                continue;
+            }
+            try {
+                $where_array[$key] = $this->os_workflow->validatedDateFromForm($value);
+            } catch (DomainException $error) {
+                $this->session->set_flashdata('error', 'Informe datas válidas para filtrar as ordens de serviço.');
+                redirect('os');
+                return;
+            }
         }
 
         $this->data['configuration']['base_url'] = site_url('os/gerenciar/');
@@ -77,8 +77,8 @@ class Os extends MY_Controller
         $this->data['results'] = $this->os_model->getOs(
             'os',
             'os.*,
-            COALESCE((SELECT SUM(produtos_os.preco * produtos_os.quantidade ) FROM produtos_os WHERE produtos_os.os_id = os.idOs), 0) totalProdutos,
-            COALESCE((SELECT SUM(servicos_os.preco * servicos_os.quantidade ) FROM servicos_os WHERE servicos_os.os_id = os.idOs), 0) totalServicos',
+            COALESCE((SELECT SUM(ROUND(produtos_os.preco * produtos_os.quantidade, 2)) FROM produtos_os WHERE produtos_os.os_id = os.idOs), 0) totalProdutos,
+            COALESCE((SELECT SUM(ROUND(servicos_os.preco * servicos_os.quantidade, 2)) FROM servicos_os WHERE servicos_os.os_id = os.idOs), 0) totalServicos',
             $where_array,
             $this->data['configuration']['per_page'],
             $this->uri->segment(3)
@@ -109,10 +109,10 @@ class Os extends MY_Controller
             $termoGarantiaId = $this->input->post('termoGarantia');
 
             try {
-                $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
+                $dataInicial = $this->os_workflow->validatedDateFromForm($dataInicial);
 
                 if ($dataFinal) {
-                    $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
+                    $dataFinal = $this->os_workflow->validatedDateFromForm($dataFinal);
                 } else {
                     $dataFinal = date('Y-m-d');
                 }
@@ -120,9 +120,8 @@ class Os extends MY_Controller
                 $termoGarantiaId = (! $termoGarantiaId == null || ! $termoGarantiaId == '')
                     ? $this->input->post('garantias_id')
                     : null;
-            } catch (Exception $e) {
-                $dataInicial = date('Y-m-d');
-                $dataFinal = date('Y-m-d');
+            } catch (DomainException $e) {
+                $dateError = $e->getMessage();
             }
 
             $data = [
@@ -146,6 +145,9 @@ class Os extends MY_Controller
                 show_error('Você não tem permissão para consultar equipamentos.', 403);
             }
             try {
+                if (isset($dateError)) {
+                    throw new DomainException($dateError);
+                }
                 $this->load->library('vistoria_service');
                 $photos = $this->vistoria_service->uploads();
                 $inspection = $this->vistoria_service->requested($this->input->post(), $photos) ? ['dados' => $this->input->post(), 'fotos' => $photos] : null;
@@ -213,11 +215,11 @@ class Os extends MY_Controller
             $termoGarantiaId = $this->input->post('garantias_id') ?: null;
 
             try {
-                $dataInicial = $this->os_workflow->dateFromForm($dataInicial);
+                $dataInicial = $this->os_workflow->validatedDateFromForm($dataInicial);
 
-                $dataFinal = $this->os_workflow->dateFromForm($dataFinal);
-            } catch (Exception $e) {
-                $dataInicial = date('Y-m-d');
+                $dataFinal = $this->os_workflow->validatedDateFromForm($dataFinal);
+            } catch (DomainException $e) {
+                $dateError = $e->getMessage();
             }
 
             $data = [
@@ -234,6 +236,9 @@ class Os extends MY_Controller
                 'clientes_id' => $this->input->post('clientes_id'),
             ];
             try {
+                if (isset($dateError)) {
+                    throw new DomainException($dateError);
+                }
                 if ((string) $this->input->post('idOs') !== (string) $this->uri->segment(3)) {
                     throw new DomainException('Confira a OS aberta antes de salvar.');
                 }
@@ -300,6 +305,10 @@ class Os extends MY_Controller
 
         $this->load->model('mapos_model');
         $this->data['result'] = $this->os_model->getById($this->uri->segment(3));
+        if (! $this->data['result']) {
+            show_404();
+            return;
+        }
         $this->data['workflow'] = $this->os_workflow->details($this->uri->segment(3));
         $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
         $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
@@ -307,19 +316,9 @@ class Os extends MY_Controller
         $this->data['anexos'] = $this->os_model->getAnexos($this->uri->segment(3));
         $this->data['anotacoes'] = $this->os_model->getAnotacoes($this->uri->segment(3));
         $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
-        $this->data['qrCode'] = $this->os_model->getQrCode(
-            $this->uri->segment(3),
-            $this->data['configuration']['pix_key'],
-            $this->data['emitente']
-        );
-        $this->data['modalGerarPagamento'] = $this->load->view(
-            'cobrancas/modalGerarPagamento',
-            [
-                'id' => $this->uri->segment(3),
-                'tipo' => 'os',
-            ],
-            true
-        );
+        $pix = $this->os_model->pixPayment($this->uri->segment(3), $this->data['configuration']['pix_key'], $this->data['emitente']);
+        $this->data['qrCode'] = $pix ? $pix->getQRCode() : null;
+        $this->data['pixCode'] = $pix ? $pix->getPixCode() : null;
         $this->data['view'] = 'os/visualizarOs';
         $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
 
@@ -445,11 +444,9 @@ class Os extends MY_Controller
         $this->data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
         $this->data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
         $this->data['emitente'] = $this->mapos_model->getEmitente();
-        $this->data['qrCode'] = $this->os_model->getQrCode(
-            $this->uri->segment(3),
-            $this->data['configuration']['pix_key'],
-            $this->data['emitente']
-        );
+        $pix = $this->os_model->pixPayment($this->uri->segment(3), $this->data['configuration']['pix_key'], $this->data['emitente']);
+        $this->data['qrCode'] = $pix ? $pix->getQRCode() : null;
+        $this->data['pixCode'] = $pix ? $pix->getPixCode() : null;
         $this->data['chaveFormatada'] = $this->formatarChave($this->data['configuration']['pix_key']);
 
         $this->load->view('os/imprimirOsTermica', $this->data);
@@ -888,8 +885,12 @@ class Os extends MY_Controller
             $vencimento = $this->input->post('vencimento');
             $recebimento = $this->input->post('recebimento');
 
-            $vencimento = $this->os_workflow->dateFromForm($vencimento);
-            $recebimento = $recebimento ? $this->os_workflow->dateFromForm($recebimento) : null;
+            try {
+                $vencimento = $this->os_workflow->validatedDateFromForm($vencimento);
+                $recebimento = $recebimento ? $this->os_workflow->validatedDateFromForm($recebimento) : null;
+            } catch (DomainException $error) {
+                return $this->output->set_status_header(400)->set_content_type('application/json')->set_output(json_encode(['result' => false, 'message' => $error->getMessage()]));
+            }
 
             $os_id = $this->input->post('os_id');
             $valorTotalData = $this->os_model->valorTotalOS($os_id);

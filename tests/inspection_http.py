@@ -47,6 +47,8 @@ def post(path, fields, files=None):
 class WorkspaceParser(HTMLParser):
     def __init__(self):
         super().__init__()
+        self.ids = set()
+        self.duplicate_ids = []
         self.tabs = []
         self.panels = []
         self.analysis_fields = set()
@@ -55,6 +57,10 @@ class WorkspaceParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if attrs.get('id'):
+            if attrs['id'] in self.ids:
+                self.duplicate_ids.append(attrs['id'])
+            self.ids.add(attrs['id'])
         if tag == 'form':
             self.nested_form |= self.form_depth > 0
             self.form_depth += 1
@@ -75,6 +81,7 @@ def check_workspace(body, editing=False):
     page.feed(body)
     expected = ['resumo', 'equipamento', 'analise', 'orcamento', 'entrega', 'historico']
     assert page.tabs == expected and page.panels == expected, 'Both OS views expose the six stage tabs exactly once'
+    assert not page.duplicate_ids, 'OS form controls must have unique IDs: ' + str(page.duplicate_ids)
     assert not page.nested_form and page.form_depth == 0, 'Independent action forms must not be nested'
     if editing:
         assert page.analysis_fields == {'laudoTecnico', 'observacoes'}, 'Analysis fields retain their owning OS form across tabs'
@@ -122,6 +129,18 @@ printed = get('equipamentos/comprovante/' + receipt).read().decode()
 assert all('Imagem de teste - ' + angle in printed for angle in angles)
 assert json.loads(post('os/adicionarServico', {'idOsServico': order, 'idServico': fixture['service'], 'quantidade': '0.5', 'preco': '50'}).read())['result']
 assert json.loads(post('os/adicionarProduto', {'idOsProduto': order, 'idProduto': fixture['product'], 'quantidade': '1', 'preco': '25'}).read())['result']
+for route in ['os/editar/', 'os/visualizar/']:
+    amount_page = get(route + order).read().decode()
+    check_workspace(amount_page, editing=route == 'os/editar/')
+    assert re.search(r'data-os-net>R\$ 50,00', amount_page), 'No-discount payable amount must use actual item totals'
+assert json.loads(post('os/adicionarDesconto', {'idOs': order, 'tipoDesconto': 'real', 'desconto': '10'}).read())['result']
+for route in ['os/editar/', 'os/visualizar/']:
+    assert re.search(r'data-os-net>R\$ 40,00', get(route + order).read().decode()), 'Read and edit pages use the persisted net amount'
+list_page = get('os?pesquisa=' + order).read().decode()
+row = re.search(r'<tr><td><strong>#' + order + r'</strong>.*?</tr>', list_page, re.S).group(0)
+assert '<strong>R$ 40,00</strong>' in row, 'List uses the same payable total as the order'
+assert json.loads(post('os/adicionarDesconto', {'idOs': order, 'tipoDesconto': 'real', 'desconto': '0'}).read())['result']
+
 response = post('acompanhamento/salvar/' + order, {'acao': 'orcamento'})
 assert 'Pendente' in response.read().decode()
 assert json.loads(post('os/adicionarServico', {'idOsServico': order, 'idServico': fixture['service'], 'quantidade': '1', 'preco': '0'}).read())['result']
@@ -169,6 +188,11 @@ try:
     raise AssertionError('Delivered work was modified')
 except urllib.error.HTTPError as error:
     assert error.code == 400 and 'entrega já foi registrada' in json.loads(error.read())
+try:
+    post('os/faturar', {'os_id': order, 'descricao': 'Teste de data inválida', 'valor': '50', 'vencimento': '31/02/2026', 'cliente': 'Demonstracao HTTP', 'tipo': 'receita'})
+    raise AssertionError('Invalid invoice date was accepted')
+except urllib.error.HTTPError as error:
+    assert error.code == 400 and not json.loads(error.read())['result'], 'Invalid invoice dates produce actionable feedback instead of a broken response'
 response = post('os/faturar', {'os_id': order, 'descricao': 'Fatura demonstracao HTTP', 'valor': '1', 'vencimento': datetime.date.today().strftime('%d/%m/%Y'), 'cliente': 'Demonstracao HTTP', 'tipo': 'receita'})
 assert json.loads(response.read())['result'], 'Delivered order can still be invoiced using its persisted item totals'
 body = get('os/visualizar/' + order).read().decode()

@@ -34,6 +34,6 @@ class Acompanhamento extends MY_Controller
             $this->session->set_flashdata('error', $error->getMessage());
         }
         $tab = is_string($action) ? (['orcamento' => 'orcamento', 'entrega' => 'entrega', 'checklist' => 'analise'][$action] ?? 'resumo') : 'resumo';
-        redirect('os/visualizar/' . (int) $id . '#os-pane-' . $tab);
+        redirect(($this->input->post('retorno') === 'editar' ? 'os/editar/' : 'os/visualizar/') . (int) $id . '#os-pane-' . $tab);
     }
 }

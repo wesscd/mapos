@@ -2,11 +2,11 @@
 
 ## Página da OS por etapas
 
-A edição e a consulta usam seis abas: **Resumo**, **Equipamento e vistoria**, **Análise técnica**, **Orçamento**, **Entrega** e **Histórico e anexos**. O cabeçalho mostra cliente, responsável, etapa, equipamento e total, com um atalho para a próxima ação. O faturamento e os meios de pagamento ficam em Orçamento; impressão e comunicação ficam em Outras ações. Serviços, Produtos e Desconto são subdivisões de Orçamento; Anotações e Anexos ficam no Histórico.
+A edição e a consulta usam seis abas: **Resumo**, **Equipamento e vistoria**, **Análise técnica**, **Orçamento**, **Entrega** e **Histórico e anexos**. O cabeçalho mostra cliente, responsável, etapa, equipamento e total, com um atalho para a próxima ação. O faturamento e os meios de pagamento ficam em Orçamento; impressão e comunicação ficam no menu “Impressão, navegação e comunicação”. Serviços, Produtos e Desconto são seções de Orçamento; Anotações e Anexos ficam no Histórico.
 
 A aba Equipamento e vistoria permanece visível e marcada como obrigatória para atendimentos com equipamento físico. A indicação de pendência é calculada pelos registros: visitar a aba não confirma recebimento. Para mudar uma OS com equipamento vinculado para **Em Andamento**, é necessário registrar a entrada física de todos os itens. A abertura em andamento com vínculo também exige recebimento na mesma transação. Entradas antigas com condições e acessórios preservados continuam válidas mesmo sem fotos categorizadas. Atendimentos sem equipamento vinculado continuam possíveis. Nenhum recebimento é criado automaticamente pela mudança de aba, abertura pelo portal ou vínculo de cadastro.
 
-Os campos da Análise técnica e do Resumo pertencem ao mesmo salvamento da OS. Trocar de aba preserva o que foi digitado; os demais formulários (checklist, fotos, itens e entrega) salvam suas próprias ações. Falhas de validação mantêm os textos enviados para correção. A aba principal escolhida é lembrada por OS na sessão do navegador; os retornos de recebimento, orçamento e entrega abrem a etapa correspondente. Links anteriores como `#equipamentos` e `#tab4` continuam funcionando. A navegação aceita teclado e os formulários permanecem acessíveis se o recurso de abas não carregar.
+Os campos da Análise técnica e do Resumo pertencem ao mesmo salvamento da OS. Trocar de aba preserva o que foi digitado. Uma faixa indica alterações pendentes e exige salvar a OS antes de executar outra ação. A saída da página avisa sobre o rascunho não salvo. Os demais formulários (checklist, fotos, itens e entrega) salvam suas próprias ações. Falhas de validação mantêm os textos enviados para correção. A aba principal escolhida é lembrada por OS na sessão do navegador; os retornos de recebimento, orçamento e entrega abrem a etapa correspondente. Links anteriores como `#equipamentos` e `#tab4` continuam funcionando. A navegação aceita teclado e os formulários permanecem acessíveis se o recurso de abas não carregar.
 
 ## Fluxo da ordem de serviço revisado
 
@@ -60,3 +60,13 @@ Fotos gerais do cadastro (separadas da vistoria da OS): JPEG/PNG até 2 MB e 12 
 Validação: `scripts/test.ps1` executa regras de propriedade, idempotência, entrada/saída, preservação de histórico, fotos e QR em banco descartável. `tests/http_smoke.py` também verifica as duas novas telas iniciais. A migração `20261020160000_equipment_intake.php` cria apenas as tabelas de fotos e comprovantes; as tabelas de marcas, equipamentos e vínculos já existiam.
 
 A migração `20261020180000_intake_inspections.php` acrescenta as tabelas de vistoria e fotos por atendimento. Elas integram o backup do banco existente. `tests/inspections.php` verifica imutabilidade, isolamento, orientação EXIF e rollback; `tests/inspection_http.py` cobre o envio multipart e o acesso privado a imagens em aplicação local de teste.
+
+### Interface reconstruída
+
+Abertura, edição, consulta e listagem compartilham os componentes de `application/views/os/`. Os seis painéis são renderizados no servidor. Nenhum bloco é transferido entre painéis por JavaScript. Desconto, faturamento, Pix, cobrança, anotações e anexos usam formulários ou seções expansíveis; as opções de impressão são links acessíveis por teclado e toque. Não há dependência de modais Bootstrap ou de submenus por hover nessas telas.
+
+`assets/js/os-workspace.js` concentra navegação, autocompletes, prévia de desconto, prevenção de perda da análise e submissões JSON. Uma ação JSON concluída recarrega o estado completo e preserva a aba, evitando controles com eventos perdidos e totais antigos após substituir fragmentos. Falhas exibem a mensagem do servidor e mantêm o preenchimento para correção. Não há repetição automática de pedidos de gravação. O salvamento de resumo/análise continua sendo nativo e único; salve essa OS antes de preencher uma ação independente, como um novo checklist.
+
+A listagem e o orçamento consideram `tipo_desconto` para distinguir ausência de desconto de desconto integral. O QR Pix e o código Copia e Cola partem do mesmo payload, com valor líquido persistido. Datas inválidas retornam mensagens de validação. Não há migração nem alteração de registros históricos nesta reconstrução.
+
+Validação visual local: busca e inclusão de serviço, desconto de R$ 10 em OS de R$ 100, salvamento e troca de aba, proteção de diagnóstico não salvo e retorno do checklist. A integração HTTP também exige IDs únicos, formulários independentes e totais coerentes na consulta, edição e listagem. Confira teclado e largura móvel ao alterar os componentes.

@@ -63,3 +63,17 @@ $fractionOrder = $workflow->createOrder($newOrderData);
 $workflow->service($fractionOrder, ['servicos_id' => $service, 'quantidade' => 0.3333, 'preco' => 10]);
 $workflow->service($fractionOrder, ['servicos_id' => $service, 'quantidade' => 0.3333, 'preco' => 10]);
 $assert(round($ci->os_model->valorTotalOS($fractionOrder)['totalServico'], 2) === 6.66, 'Service total sums rounded item subtotals instead of introducing a fractional-cent difference');
+
+$pixOrder = $workflow->createOrder($newOrderData);
+$workflow->service($pixOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 50]);
+$pixIssuer = (object) ['nome' => 'Assistencia de teste', 'cidade' => 'Sao Paulo'];
+$pix = $ci->os_model->pixPayment($pixOrder, 'teste@example.com', $pixIssuer);
+$assert(str_contains($pix->getPixCode(), '50.00'), 'Pix without a discount uses the actual service amount');
+$workflow->discount($pixOrder, 'real', 25);
+$pix = $ci->os_model->pixPayment($pixOrder, 'teste@example.com', $pixIssuer);
+$assert(str_contains($pix->getPixCode(), '25.00'), 'Pix copy-and-paste uses the same persisted discounted amount as the OS');
+$workflow->discount($pixOrder, 'porcento', 100);
+$assert($ci->os_model->pixPayment($pixOrder, 'teste@example.com', $pixIssuer) === null, 'A full discount cannot generate a Pix charge for the undiscounted amount');
+
+$reject(fn () => $workflow->validatedDateFromForm('31/02/2026'), 'Form dates reject impossible days instead of substituting the current date');
+$reject(fn () => $workflow->validatedDateFromForm(['invalid']), 'Malformed form dates produce a validation message');

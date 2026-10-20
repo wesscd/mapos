@@ -13,6 +13,7 @@ $osBadges = ['equipamento' => $osCanEquipment ? $osWorkspace['equipment'] : 'Per
         <span><strong>Total da OS:</strong> R$ <?= html_escape(number_format($result->tipo_desconto ? $result->valor_desconto : $totalProdutos + $totalServico, 2, ',', '.')) ?></span>
         <?php if ($result->entregue_em) { ?><span>Entrega registrada em <?= html_escape(date('d/m/Y H:i', strtotime($result->entregue_em))) ?></span><?php } ?>
     </div>
+<?php $this->load->view('os/actions'); ?>
 </header>
 <nav class="os-main-tabs" role="tablist" aria-label="Etapas da ordem de serviço">
     <?php foreach ($osTabs as $tabKey => $tabLabel) { ?>
@@ -22,4 +23,3 @@ $osBadges = ['equipamento' => $osCanEquipment ? $osWorkspace['equipment'] : 'Per
         </a>
     <?php } ?>
 </nav>
-<script src="<?= base_url('assets/js/os-workspace.js') ?>?v=2" defer></script>

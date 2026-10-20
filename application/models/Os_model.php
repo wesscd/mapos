@@ -354,12 +354,19 @@ class Os_model extends CI_Model
 
     public function getQrCode($id, $pixKey, $emitente)
     {
+        $pix = $this->pixPayment($id, $pixKey, $emitente);
+        return $pix ? $pix->getQRCode() : null;
+    }
+
+    public function pixPayment($id, $pixKey, $emitente)
+    {
         if (empty($id) || empty($pixKey) || empty($emitente)) {
             return;
         }
 
         $result = $this->valorTotalOS($id);
-        $amount = $result['valor_desconto'] != 0 ? round(floatval($result['valor_desconto']), 2) : round(floatval($result['totalServico'] + $result['totalProdutos']), 2);
+        $order = $this->getById($id);
+        $amount = $order && $order->tipo_desconto ? round((float) $order->valor_desconto, 2) : round($result['totalServico'] + $result['totalProdutos'], 2);
 
         if ($amount <= 0) {
             return;
@@ -373,6 +380,6 @@ class Os_model extends CI_Model
             ->setMerchantName($emitente->nome)
             ->setMerchantCity($emitente->cidade);
 
-        return $pix->getQRCode();
+        return $pix;
     }
 }

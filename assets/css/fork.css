@@ -137,3 +137,58 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 .os-workspace-ready #formOs > .span12:first-of-type > h3{display:none;}
 
 @media(min-width:768px){.os-workspace-ready .os-main-tabs{position:sticky;top:0;z-index:30;background:#f3f6fa;padding:6px 0;}}
+
+/* Rebuilt OS forms: scoped layout independent of Matrix span floats and modal plugins. */
+.os-workspace-v2 {clear:both; color:#17243a;}
+.os-workspace-v2 [hidden] {display:none!important;}
+.os-workspace-v2 .os-pane {margin:0 0 18px; padding:24px; border:1px solid #dce5ef;}
+.os-workspace-v2 h2 {font-size:21px;line-height:1.4;margin:0 0 20px;}
+.os-workspace-v2 h3 {font-size:17px;line-height:1.4;margin:16px 0;}
+.os-workspace-v2 form {margin:0;}
+.os-workspace-v2 label {display:block;font-weight:600;font-size:13px;}
+.os-workspace-v2 input:not([type=checkbox]):not([type=radio]):not([type=hidden]),.os-workspace-v2 select,.os-workspace-v2 textarea {width:100%;max-width:100%;box-sizing:border-box;min-height:38px;margin:7px 0 12px;}
+.os-workspace-v2 input[type=file] {height:auto;padding:8px 0;}
+.os-workspace-v2 input[type=checkbox] {margin:0 6px 3px 0;}
+.os-workspace-v2 textarea {min-height:95px;}
+.os-field-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;}
+.os-field-grid > input[type=hidden] {display:none;}
+.os-text-fields {margin:20px 0;}
+.os-workspace-v2 .trumbowyg-box {margin:7px 0 12px;min-height:130px;border:1px solid #dce5ef;}
+.os-workspace-v2 .trumbowyg-editor {min-height:110px;}
+.os-workspace-v2 .trumbowyg-textarea {display:none!important;}
+.os-form-actions,.os-section-heading,.os-action-links {display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.os-form-actions {margin:20px 0 6px;padding-top:16px;border-top:1px solid #edf1f6;}
+.os-section-heading {justify-content:space-between;}
+.os-action-links {margin-top:12px;}
+.os-workspace-v2 .btn,.os-action-links .btn {border-radius:6px;padding:9px 14px;line-height:20px;min-height:20px;white-space:normal;}
+.os-workspace-v2 .os-item-fields {display:grid;grid-template-columns:minmax(200px,2fr) 1fr 1fr auto;gap:14px;align-items:end;}
+.os-item-fields > button {margin-bottom:12px;}
+.os-totals {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 24px;}
+.os-totals div {background:#f2f6fc;border:1px solid #e2e8f0;padding:16px;border-radius:8px;}
+.os-totals dd {font-size:22px;font-weight:700;line-height:1.5;margin:6px 0 0;}
+.os-totals dt {font-weight:400;color:#526278;}
+.os-budget-section {padding:16px 0;border-top:1px solid #e2e8f0;}
+.os-inline-action {border:1px solid #dce5ef;border-radius:8px;padding:16px;margin:16px 0;background:#fbfcfe;}
+.os-inline-action summary {font-weight:600;color:#214b85;cursor:pointer;}
+.os-inline-action[open] summary {margin-bottom:20px;}
+.os-draft-bar,.os-feedback {border:1px solid #b7d4ff;border-radius:8px;background:#eff6ff;padding:14px 18px;margin-bottom:16px;}
+.os-draft-bar {border-color:#efd397;background:#fff8e7;}
+.os-draft-bar strong {margin-right:16px;}
+.os-draft-bar p {margin:8px 0 0;}
+.os-feedback.is-error {background:#fff0f0;border-color:#edb6b6;color:#922323;}
+.os-prose {white-space:normal;overflow-wrap:anywhere;line-height:1.7;min-height:30px;}
+.os-summary-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;}
+.os-summary-grid dd {margin:6px 0;}
+.os-help {color:#526278;font-size:12px;}
+.os-note {padding:16px 0;border-top:1px solid #edf1f6;}
+.os-note time {color:#526278;font-size:12px;}
+.os-attachments {list-style:none;margin:12px 0;}
+.os-attachments li {display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid #edf1f6;}
+.os-pix-image {max-width:240px;}
+.os-create > form > .mapos-card {margin-bottom:18px;}
+.os-create #os-equipment-picker {float:none;width:100%;box-sizing:border-box;}
+.os-workspace-v2 .mapos-card .mapos-card {box-shadow:none;}
+@media(max-width:1000px){.os-workspace-v2 .os-item-fields {grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:767px){.os-workspace-v2 .os-pane{padding:16px;}.os-field-grid,.os-summary-grid,.os-totals,.os-workspace-v2 .os-item-fields{grid-template-columns:1fr;}.os-workspace-v2 .table{min-width:520px;}.os-workspace-v2 .os-totals dd{font-size:20px;}.os-workspace-v2 .mapos-card{overflow-wrap:anywhere;}}
+
+.os-list-actions {display:flex;flex-wrap:wrap;gap:6px;min-width:160px;}

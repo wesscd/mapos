@@ -5,7 +5,7 @@
         <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?><input type="hidden" name="acao" value="entrega"><label>Nome de quem retira <input name="retirado_por" maxlength="150" <?= ! empty($workflow['equipamentos']) ? 'required' : '' ?>></label>
         <?php if (! empty($workflow['equipamentos'])) { ?><label><input type="checkbox" name="aceite_entrega" value="1" required> Quem retira conferiu o equipamento, os acessórios e as ressalvas de todos os itens e confirmou a retirada.</label><p>Marque somente após a conferência presencial. Este aceite é registrado pela equipe; a assinatura pode ser coletada no comprovante.</p><?php } ?>
         <button class="btn btn-primary">Confirmar entrega ao cliente</button></form>
-    <?php } ?>
+    <?php } else { ?><p>A confirmação da retirada fica disponível quando a OS estiver finalizada, faturada ou cancelada com equipamento recebido. Confira também sua permissão de edição e acesso aos equipamentos.</p><?php } ?>
 
 </section>
 <?php $this->load->view('equipamentos/os', ['equipmentPhase' => 'saida']); ?>
