@@ -197,6 +197,7 @@
                 $(element).parents('.control-group').addClass('success');
             }
         });
+        window.MaposInspectionPhotos.configureValidation(document.getElementById('formOs'));
         $(".datepicker").datepicker({
             dateFormat: 'dd/mm/yy'
         });
