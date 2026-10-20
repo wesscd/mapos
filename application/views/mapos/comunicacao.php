@@ -55,6 +55,7 @@
     </section>
     <details class="mapos-card"><summary>Modelos das mensagens</summary>
         <p>Campos disponíveis: {cliente}, {os}, {equipamento}, {prazo}, {status}, {link}. O link exige acesso à área do cliente.</p>
+        <p>Use uma ação principal por mensagem: consultar o atendimento, responder ao orçamento ou combinar a retirada. O campo {status} usa descrições voltadas ao cliente. Registrar uma solicitação não confirma o recebimento físico do equipamento.</p>
         <div class="mapos-grid"><?php foreach ($models as $model) { ?>
             <section><h3><?= html_escape($events[$model->evento]) ?> · <?= html_escape($model->canal) ?></h3>
                 <?= form_open('comunicacao/salvar') ?><input type="hidden" name="acao" value="modelo"><input type="hidden" name="id" value="<?= (int) $model->id ?>">

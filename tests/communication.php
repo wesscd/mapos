@@ -19,6 +19,7 @@ $assert($job->destino === '5511999999999' && str_contains($job->texto, 'mine/vis
 $communication->capture($id, 'status', 'same-source');
 $communication->capture($id, 'status', 'same-source');
 $assert($db->where('os_id', $id)->count_all_results('com_fila') === 4, 'Repeated event source cannot enqueue duplicates');
+require __DIR__ . '/customer_messages.php';
 $communication->savePreference($customer, 'nenhum', '', 'test');
 $assert(! $communication->allowed($job), 'Opt-out revokes queued messages before sending');
 $communication->savePreference($customer, 'ambos', 'Autorização de teste', 'test');

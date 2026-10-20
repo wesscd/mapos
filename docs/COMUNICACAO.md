@@ -27,6 +27,19 @@ anterior. O horário usa America/Sao_Paulo e aceita intervalos dentro do mesmo d
 
 ## Eventos e lembretes
 
+Os modelos padrão usam uma ação principal: consultar o atendimento, decidir sobre
+o orçamento ou combinar a retirada. A abertura confirma o registro da solicitação,
+sem afirmar que o equipamento foi recebido fisicamente. Avisos de retirada não
+disputam atenção com um segundo convite para abrir o portal. O campo `{status}`
+traduz as etapas internas para o cliente; por exemplo, uma OS faturada aparece
+como `Valores do atendimento registrados`, sem confirmar pagamento ou entrega.
+Se apenas o status foi alterado sem faturamento, o aviso informa que os dados do
+atendimento foram atualizados, sem afirmar que existe um lançamento financeiro.
+
+A revisão dos modelos atualiza somente textos idênticos aos padrões anteriores,
+preservando personalizações e a opção de modelo ativo/inativo. Mensagens já
+capturadas na fila e no histórico mantêm seu texto original.
+
 São registrados avisos de abertura, orçamento disponível, mudança de status,
 alteração de prazo, serviço finalizado e entrega. O orçamento exige login no
 portal e só pode ser aprovado na versão atual. Uma solicitação substituída ou já

@@ -94,6 +94,21 @@ class Comunicacao_service
         return preg_match('/^[1-9][0-9]{7,14}$/D', $number) ? $number : null;
     }
 
+    public function customerStatus($status, $invoiced = false)
+    {
+        return [
+            'Aberto' => 'Atendimento registrado',
+            'Orçamento' => 'Orçamento em preparação',
+            'Negociação' => 'Condições do serviço em análise',
+            'Aprovado' => 'Serviço autorizado',
+            'Aguardando Peças' => 'Aguardando as peças necessárias para continuar o serviço',
+            'Em Andamento' => 'Serviço em execução',
+            'Finalizado' => 'Serviço concluído',
+            'Faturado' => $invoiced ? 'Valores do atendimento registrados' : 'Informações do atendimento atualizadas',
+            'Cancelado' => 'Atendimento cancelado',
+        ][$status] ?? 'Atendimento atualizado';
+    }
+
     public function capture($id, $event, $source, array $context = [])
     {
         if (! isset(self::EVENTS[$event])) {
@@ -124,7 +139,7 @@ class Comunicacao_service
                 '{cliente}' => $customer->nomeCliente, '{os}' => (string) $id,
                 '{equipamento}' => mb_substr(trim(strip_tags((string) $order->descricaoProduto)), 0, 250),
                 '{prazo}' => $order->dataFinal ? date('d/m/Y', strtotime($order->dataFinal)) : 'a combinar',
-                '{status}' => $order->status, '{link}' => site_url('mine/visualizarOs/' . (int) $id),
+                '{status}' => $this->customerStatus($order->status, (bool) $order->faturado), '{link}' => site_url('mine/visualizarOs/' . (int) $id),
             ]);
             $this->enqueue($id, $customer->idClientes, $event, $channel, $destination, $text, $context, $source);
         }
@@ -371,7 +386,7 @@ class Comunicacao_service
             $email->set_mailtype('text');
             $email->from($this->smtpConfig()['smtp_user'], 'MapOS');
             $email->to($job->destino);
-            $email->subject($job->os_id ? 'Atualização da OS #' . $job->os_id : 'Teste de comunicação MapOS');
+            $email->subject($job->os_id ? 'Atualização do atendimento #' . $job->os_id : 'Teste de comunicação MapOS');
             $email->message($job->texto);
             return $email->send(true)
                 ? ['state' => 'enviado', 'message' => 'Aceito pelo servidor SMTP; entrega não confirmada.']
