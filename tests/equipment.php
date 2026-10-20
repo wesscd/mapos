@@ -12,6 +12,9 @@ $equipmentOrder = $create();
 $linkId = $equipmentService->link($equipmentOrder, $equipmentId);
 $assert($equipmentService->link($equipmentOrder, $equipmentId) === $linkId, 'Repeated linking is idempotent');
 $assert(! $db->get_where('equipamento_recibos', ['vinculo_id' => $linkId])->row(), 'Linking a catalog record never implies physical intake');
+$workspaceState = $workflow->workspaceState($db->get_where('os', ['idOs' => $equipmentOrder])->row(), $workflow->details($equipmentOrder));
+$assert($workspaceState['equipmentPending'] && $workspaceState['nextTab'] === 'equipamento', 'Mandatory equipment tab exposes missing physical receipt and directs the next action to intake');
+$reject(fn () => $workflow->transition($equipmentOrder, 'Em Andamento', 'Aberto', false), 'Visiting or linking equipment cannot bypass mandatory intake before execution');
 $foreignData = array_merge($equipmentData, ['clientes_id' => 1]);
 // The preinstalled client may have id=1; create an explicit second owner instead.
 $db->insert('clientes', ['nomeCliente' => 'Outro cliente', 'documento' => 'TEST-OTHER', 'telefone' => '000', 'email' => 'other@example.test']);
@@ -33,6 +36,8 @@ $photoId = $equipmentService->photo($equipmentId, $bytes);
 $storedPhoto = $db->get_where('equipamento_fotos', ['id' => $photoId])->row();
 $assert(getimagesizefromstring($storedPhoto->imagem)[2] === IMAGETYPE_JPEG, 'Photos are decoded and reencoded before private storage');
 $receiptId = $equipmentService->intake($equipmentOrder, $linkId, $intakeData);
+$workflow->transition($equipmentOrder, 'Em Andamento', 'Aberto', false);
+$assert($db->get_where('os', ['idOs' => $equipmentOrder])->row()->status === 'Em Andamento', 'A preserved intake receipt enables execution, including legacy receipts without categorized photos');
 $entry = $db->get_where('equipamento_recibos', ['id' => $receiptId])->row();
 $snapshot = json_decode($entry->dados, true);
 $assert($snapshot['serie'] === 'SN-TESTE' && $snapshot['fotos'] === [$photoId], 'Intake snapshots identity, accessories, conditions and existing photos');

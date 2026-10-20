@@ -3,6 +3,7 @@ import binascii
 import datetime
 import http.cookiejar
 import urllib.error
+from html.parser import HTMLParser
 import json
 import re
 import struct
@@ -43,6 +44,42 @@ def post(path, fields, files=None):
     return client.open(urllib.request.Request(base + path, data=data, headers=headers), timeout=90)
 
 
+class WorkspaceParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tabs = []
+        self.panels = []
+        self.analysis_fields = set()
+        self.form_depth = 0
+        self.nested_form = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'form':
+            self.nested_form |= self.form_depth > 0
+            self.form_depth += 1
+        if 'data-os-tab' in attrs:
+            self.tabs.append(attrs['data-os-tab'])
+        if 'data-os-panel' in attrs:
+            self.panels.append(attrs['data-os-panel'])
+        if tag == 'textarea' and attrs.get('form') == 'formOs':
+            self.analysis_fields.add(attrs.get('name'))
+
+    def handle_endtag(self, tag):
+        if tag == 'form':
+            self.form_depth -= 1
+
+
+def check_workspace(body, editing=False):
+    page = WorkspaceParser()
+    page.feed(body)
+    expected = ['resumo', 'equipamento', 'analise', 'orcamento', 'entrega', 'historico']
+    assert page.tabs == expected and page.panels == expected, 'Both OS views expose the six stage tabs exactly once'
+    assert not page.nested_form and page.form_depth == 0, 'Independent action forms must not be nested'
+    if editing:
+        assert page.analysis_fields == {'laudoTecnico', 'observacoes'}, 'Analysis fields retain their owning OS form across tabs'
+
+
 get('login').read()
 assert json.loads(post('login/verificarLogin', {'email': credentials['email'], 'senha': credentials['password']}).read())['result']
 response = post('equipamentos/salvar', {'clientes_id': customer, 'equipamento': 'Notebook demonstracao - vistoria', 'marca': 'Exemplo', 'modelo': 'Pro 14', 'num_serie': 'DEMO-VISTORIA', 'cor': 'Prata', 'descricao': 'Demonstracao HTTP local'})
@@ -59,9 +96,19 @@ fields = {'cliente': 'Demonstracao HTTP - vistoria', 'clientes_id': customer, 'u
 angles = ['frente', 'verso', 'aberto', 'fechado', 'teclado']
 for angle in angles:
     fields['vistoria_obs_' + angle] = 'Imagem de teste - ' + angle
+blocked_fields = {key: value for key, value in fields.items() if not key.startswith('vistoria_obs_')}
+blocked = post('os/adicionar', dict(blocked_fields, status='Em Andamento', vistoria_receber='0'))
+assert 'Antes de iniciar o reparo' in blocked.read().decode() and 'os/adicionar' in blocked.url, 'Opening directly in execution cannot bypass physical intake'
 response = post('os/adicionar', fields, {'vistoria_foto_' + angle: png for angle in angles})
 order = re.search(r'os/editar/(\d+)', response.url).group(1)
 body = response.read().decode()
+check_workspace(body, editing=True)
+edited_fields = dict(fields, idOs=order, tecnico='CI Admin', laudoTecnico='Diagnóstico HTTP preservado entre abas', observacoes='Texto de teste entre abas')
+blocked_edit = post('os/editar/' + order, dict(edited_fields, status='Faturado', laudoTecnico='Rascunho mantido após erro de validação'))
+blocked_body = blocked_edit.read().decode()
+assert 'data-os-form-errors' in blocked_body and 'Rascunho mantido após erro de validação' in blocked_body, 'Failed stage validation preserves analysis entered in another tab'
+saved = post('os/editar/' + order, edited_fields)
+assert 'Diagnóstico HTTP preservado entre abas' in saved.read().decode()
 assert all(error not in body for error in ['Database Error', 'An uncaught Exception', 'A PHP Error was encountered'])
 photos = set(re.findall(r'equipamentos/vistoriaFoto/(\d+)', body))
 assert len(photos) == 5
@@ -93,6 +140,7 @@ assert 'data-kanban-card="' + order + '"' in active
 response = post('kanban/mover/' + order, {'status_anterior': 'Em Andamento', 'status': 'Finalizado'})
 response.read()
 body = get('os/visualizar/' + order).read().decode()
+check_workspace(body)
 link = re.search(r'name="vinculo_id" value="(\d+)"', body).group(1)
 response = post('acompanhamento/salvar/' + order, {'acao': 'entrega', 'retirado_por': 'Cliente demonstracao', 'aceite_entrega': '1'})
 assert 'Registre a vistoria de saída' in response.read().decode(), 'Cannot deliver without exit evidence'

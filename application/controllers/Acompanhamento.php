@@ -33,6 +33,7 @@ class Acompanhamento extends MY_Controller
         } catch (DomainException $error) {
             $this->session->set_flashdata('error', $error->getMessage());
         }
-        redirect('os/visualizar/' . (int) $id . '#acompanhamento');
+        $tab = is_string($action) ? (['orcamento' => 'orcamento', 'entrega' => 'entrega', 'checklist' => 'analise'][$action] ?? 'resumo') : 'resumo';
+        redirect('os/visualizar/' . (int) $id . '#os-pane-' . $tab);
     }
 }

@@ -1,4 +1,11 @@
-<?php $this->load->view('os/workflow'); ?>
+<?php $this->load->view('os/workflow');
+$osInput = function ($field, $fallback) {
+    $posted = $this->input->post($field);
+    return html_escape(is_string($posted) ? $posted : $fallback);
+};
+$postedStatus = $this->input->post('status');
+$osSelectedStatus = is_string($postedStatus) ? $postedStatus : $result->status;
+?>
 <link rel="stylesheet" href="<?php echo base_url(); ?>assets/js/jquery-ui/css/smoothness/jquery-ui-1.9.2.custom.css" />
 <script type="text/javascript" src="<?php echo base_url() ?>assets/js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>
 <script type="text/javascript" src="<?php echo base_url() ?>assets/js/jquery.validate.js"></script>
@@ -11,10 +18,10 @@
 
 <div class="row-fluid" style="margin-top:0">
     <div class="span12">
-        <div class="widget-box">
-            <div class="widget-title" style="margin: -20px 0 0">
+        <div class="widget-box os-workspace-card">
+            <div class="widget-title" style="margin: 0">
                 <span class="icon"><i class="fas fa-diagnoses"></i></span>
-                <h5>Editar Ordem de Serviço</h5>
+                <h5>Ações da OS</h5>
                 <div class="buttons">
                     <?php if ($result->faturado == 0) { ?>
                         <a href="#modal-faturar" id="btn-faturar" role="button" data-toggle="modal" class="button btn btn-mini btn-danger">
@@ -58,18 +65,10 @@
                     </a>
                 </div>
             </div>
-            <div class="widget-content nopadding tab-content">
-                <div class="span12" id="divProdutosServicos" style=" margin-left: 0">
-                    <ul class="nav nav-tabs">
-                        <li class="active" id="tabDetalhes"><a href="#tab1" data-toggle="tab">Detalhes da OS</a></li>
-                        <li id="tabDesconto"><a href="#tab2" data-toggle="tab">Desconto</a></li>
-                        <li id="tabProdutos"><a href="#tab3" data-toggle="tab">Produtos</a></li>
-                        <li id="tabServicos"><a href="#tab4" data-toggle="tab">Serviços</a></li>
-                        <li id="tabAnexos"><a href="#tab5" data-toggle="tab">Anexos</a></li>
-                        <li id="tabAnotacoes"><a href="#tab6" data-toggle="tab">Anotações</a></li>
-                    </ul>
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="tab1">
+            <div class="widget-content nopadding os-workspace-body">
+                <div class="span12 os-workspace-panels" id="divProdutosServicos" style=" margin-left: 0">
+<?php if (! empty($custom_error)) { ?><div class="alert alert-error" role="alert" data-os-form-errors><?= html_escape(strip_tags((string) $custom_error)) ?></div><?php } ?>
+<section id="os-pane-resumo" class="os-pane" data-os-panel="resumo" role="tabpanel" aria-labelledby="os-tab-resumo" tabindex="0">                        <div id="tab1">
                             <div class="span12" id="divCadastrarOs">
                                 <form action="<?php echo current_url(); ?>" method="post" id="formOs">
                                     <?php echo form_hidden('idOs', $result->idOs) ?>
@@ -77,83 +76,75 @@
                                         <h3>N° OS: <?php echo $result->idOs; ?></h3>
                                         <div class="span6" style="margin-left: 0">
                                             <label for="cliente">Cliente<span class="required">*</span></label>
-                                            <input id="cliente" class="span12" type="text" name="cliente" value="<?php echo $result->nomeCliente ?>" />
-                                            <input id="clientes_id" class="span12" type="hidden" name="clientes_id" value="<?php echo $result->clientes_id ?>" />
+                                            <input id="cliente" class="span12" type="text" name="cliente" value="<?= $osInput('cliente', $result->nomeCliente) ?>" />
+                                            <input id="clientes_id" class="span12" type="hidden" name="clientes_id" value="<?= $osInput('clientes_id', $result->clientes_id) ?>" />
                                             <input id="valor" type="hidden" name="valor" value="" />
                                         </div>
                                         <div class="span6">
                                             <label for="tecnico">Técnico / Responsável<span class="required">*</span></label>
-                                            <input id="tecnico" class="span12" type="text" name="tecnico" value="<?php echo $result->nome ?>" />
-                                            <input id="usuarios_id" class="span12" type="hidden" name="usuarios_id" value="<?php echo $result->usuarios_id ?>" />
+                                            <input id="tecnico" class="span12" type="text" name="tecnico" value="<?= $osInput('tecnico', $result->nome) ?>" />
+                                            <input id="usuarios_id" class="span12" type="hidden" name="usuarios_id" value="<?= $osInput('usuarios_id', $result->usuarios_id) ?>" />
                                         </div>
                                     </div>
                                     <div class="span12" style="padding: 1%; margin-left: 0">
                                         <div class="span3">
                                             <label for="status">Status<span class="required">*</span></label>
                                             <select class="span12" name="status" id="status" value="">
-                                                <option <?php if ($result->status == 'Aberto') {
+                                                <option <?php if ($osSelectedStatus == 'Aberto') {
                                                     echo 'selected';
                                                 } ?> value="Aberto">Aberto</option>
-                                                <option <?php if ($result->status == 'Orçamento') {
+                                                <option <?php if ($osSelectedStatus == 'Orçamento') {
                                                     echo 'selected';
                                                 } ?> value="Orçamento">Orçamento</option>
-                                                <option <?php if ($result->status == 'Negociação') {
+                                                <option <?php if ($osSelectedStatus == 'Negociação') {
                                                     echo 'selected';
                                                 } ?> value="Negociação">Negociação</option>
-                                                <option <?php if ($result->status == 'Aprovado') {
+                                                <option <?php if ($osSelectedStatus == 'Aprovado') {
                                                     echo 'selected';
                                                 } ?> value="Aprovado">Aprovado</option>
-                                                <option <?php if ($result->status == 'Aguardando Peças') {
+                                                <option <?php if ($osSelectedStatus == 'Aguardando Peças') {
                                                     echo 'selected';
                                                 } ?> value="Aguardando Peças">Aguardando Peças</option>
-                                                <option <?php if ($result->status == 'Em Andamento') {
+                                                <option <?php if ($osSelectedStatus == 'Em Andamento') {
                                                     echo 'selected';
                                                 } ?> value="Em Andamento">Em Andamento</option>
-                                                <option <?php if ($result->status == 'Finalizado') {
+                                                <option <?php if ($osSelectedStatus == 'Finalizado') {
                                                     echo 'selected';
                                                 } ?> value="Finalizado">Finalizado</option>
-                                                <?php if ($result->status === 'Faturado') { ?><option value="Faturado" selected>Faturado</option><?php } ?>
-                                                <option <?php if ($result->status == 'Cancelado') {
+                                                <?php if ($osSelectedStatus === 'Faturado') { ?><option value="Faturado" selected>Faturado</option><?php } ?>
+                                                <option <?php if ($osSelectedStatus == 'Cancelado') {
                                                     echo 'selected';
                                                 } ?> value="Cancelado">Cancelado</option>                                                          
                                             </select>
                                         </div>
                                         <div class="span3">
                                             <label for="dataInicial">Data Inicial<span class="required">*</span></label>
-                                            <input id="dataInicial" autocomplete="off" class="span12 datepicker" type="text" name="dataInicial" value="<?php echo date('d/m/Y', strtotime($result->dataInicial)); ?>" />
+                                            <input id="dataInicial" autocomplete="off" class="span12 datepicker" type="text" name="dataInicial" value="<?= $osInput('dataInicial', date('d/m/Y', strtotime($result->dataInicial))) ?>" />
                                         </div>
                                         <div class="span3">
                                             <label for="dataFinal">Data Final<span class="required">*</span></label>
-                                            <input id="dataFinal" autocomplete="off" class="span12 datepicker" type="text" name="dataFinal" value="<?php echo date('d/m/Y', strtotime($result->dataFinal)); ?>" />
+                                            <input id="dataFinal" autocomplete="off" class="span12 datepicker" type="text" name="dataFinal" value="<?= $osInput('dataFinal', date('d/m/Y', strtotime($result->dataFinal))) ?>" />
                                         </div>
                                         <div class="span3">
                                             <label for="garantia">Garantia (dias)</label>
-                                            <input id="garantia" type="number" placeholder="Status s/g inserir nº/0" min="0" max="9999" class="span12" name="garantia" value="<?php echo $result->garantia ?>" />
+                                            <input id="garantia" type="number" placeholder="Status s/g inserir nº/0" min="0" max="9999" class="span12" name="garantia" value="<?= $osInput('garantia', $result->garantia) ?>" />
                                             <?php echo form_error('garantia'); ?>
                                             <label for="termoGarantia">Termo Garantia</label>
-                                            <input id="termoGarantia" class="span12" type="text" name="termoGarantia" value="<?php echo $result->refGarantia ?>" />
-                                            <input id="garantias_id" class="span12" type="hidden" name="garantias_id" value="<?php echo $result->garantias_id ?>" />
+                                            <input id="termoGarantia" class="span12" type="text" name="termoGarantia" value="<?= $osInput('termoGarantia', $result->refGarantia) ?>" />
+                                            <input id="garantias_id" class="span12" type="hidden" name="garantias_id" value="<?= $osInput('garantias_id', $result->garantias_id) ?>" />
                                         </div>
                                     </div>
-                                    <div class="span6" style="padding: 1%; margin-left: 0">
+<details class="os-description"><summary>Descrição do equipamento e problema relatado</summary>                                    <div class="span6" style="padding: 1%; margin-left: 0">
                                         <label for="descricaoProduto"><h4>Descrição Produto/Serviço</h4></label>
-                                        <textarea class="span12 editor" name="descricaoProduto" id="descricaoProduto" cols="30" rows="5"><?php echo $result->descricaoProduto ?></textarea>
+                                        <textarea class="span12 editor" name="descricaoProduto" id="descricaoProduto" cols="30" rows="5"><?= $osInput('descricaoProduto', $result->descricaoProduto) ?></textarea>
                                     </div>
                                     <div class="span6" style="padding: 1%; margin-left: 0">
                                         <label for="defeito"><h4>Defeito</h4></label>
-                                        <textarea class="span12 editor" name="defeito" id="defeito" cols="30" rows="5"><?php echo $result->defeito ?></textarea>
+                                        <textarea class="span12 editor" name="defeito" id="defeito" cols="30" rows="5"><?= $osInput('defeito', $result->defeito) ?></textarea>
                                     </div>
-                                    <div class="span6" style="padding: 1%; margin-left: 0">
-                                        <label for="observacoes"><h4>Observações</h4></label>
-                                        <textarea class="span12 editor" name="observacoes" id="observacoes" cols="30" rows="5"><?php echo $result->observacoes ?></textarea>
-                                    </div>
-                                    <div class="span6" style="padding: 1%; margin-left: 0">
-                                        <label for="laudoTecnico"><h4>Laudo Técnico</h4></label>
-                                        <textarea class="span12 editor" name="laudoTecnico" id="laudoTecnico" cols="30" rows="5"><?php echo $result->laudoTecnico ?></textarea>
-                                    </div>
-                                    <div class="span12" style="padding: 0; margin-left: 0">
+</details>                                    <div class="span12" style="padding: 0; margin-left: 0">
                                         <div class="span12" style="display:flex; justify-content: center;">
-                                            <button class="button btn btn-primary" id="btnContinuar"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Atualizar</span></button>
+                                            <button class="button btn btn-primary" id="btnContinuar"><span class="button__icon"><i class="bx bx-sync"></i></span><span class="button__text2">Salvar resumo</span></button>
                                             <a href="<?php echo base_url() ?>index.php/os" class="button btn btn-mini btn-warning"><span class="button__icon"><i class="bx bx-undo"></i></span> <span class="button__text2">Voltar</span></a>
                                         </div>
                                     </div>
@@ -161,7 +152,18 @@
                             </div>
                         </div>
 
-                        <!--Desconto-->
+</section>
+<section id="os-pane-equipamento" class="os-pane" data-os-panel="equipamento" role="tabpanel" aria-labelledby="os-tab-equipamento" tabindex="0"><?php $this->load->view('equipamentos/os', ['equipmentPhase' => 'entrada']); ?></section>
+<section id="os-pane-analise" class="os-pane" data-os-panel="analise" role="tabpanel" aria-labelledby="os-tab-analise" tabindex="0"><div class="os-analysis-fields">                                    <div class="span6" style="padding: 1%; margin-left: 0">
+                                        <label for="laudoTecnico"><h4>Diagnóstico técnico</h4></label>
+                                        <textarea class="span12 editor" form="formOs" name="laudoTecnico" id="laudoTecnico" cols="30" rows="5"><?= $osInput('laudoTecnico', $result->laudoTecnico) ?></textarea>
+                                    </div>
+                                    <div class="span6" style="padding: 1%; margin-left: 0">
+                                        <label for="observacoes"><h4>Observações da execução</h4></label>
+                                        <textarea class="span12 editor" form="formOs" name="observacoes" id="observacoes" cols="30" rows="5"><?= $osInput('observacoes', $result->observacoes) ?></textarea>
+                                    </div>
+</div><div class="os-save-analysis"><button type="submit" form="formOs" class="btn btn-primary">Salvar análise e detalhes da OS</button><p>O salvamento preserva também os campos preenchidos na aba Resumo.</p></div><?php $this->load->view('os/workflow_checklist'); ?></section>
+<section id="os-pane-orcamento" class="os-pane" data-os-panel="orcamento" role="tabpanel" aria-labelledby="os-tab-orcamento" tabindex="0"><ul class="nav nav-tabs os-subtabs"><li class="active" id="tabServicos"><a href="#tab4" data-toggle="tab">Serviços</a></li><li id="tabProdutos"><a href="#tab3" data-toggle="tab">Produtos</a></li><li id="tabDesconto"><a href="#tab2" data-toggle="tab">Desconto</a></li></ul><div class="tab-content">                        <!--Desconto-->
                         <?php $total = 0;
 foreach ($produtos as $p) {
     $total = $total + $p->subTotal;
@@ -284,7 +286,7 @@ foreach ($produtos as $p) {
                         </div>
 
                         <!--Serviços-->
-                        <div class="tab-pane" id="tab4">
+                        <div class="tab-pane active" id="tab4">
                             <div class="span12 well" style="padding: 1%; margin-left: 0">
                                 <form id="formServicos" action="<?php echo base_url() ?>index.php/os/adicionarServico"
                                     method="post">
@@ -361,7 +363,9 @@ foreach ($servicos as $s) {
                             </div>
                         </div>
 
-                        <!--Anexos-->
+</div><?php $this->load->view('os/workflow_budget'); ?></section>
+<section id="os-pane-entrega" class="os-pane" data-os-panel="entrega" role="tabpanel" aria-labelledby="os-tab-entrega" tabindex="0"><?php $this->load->view('os/workflow_delivery'); ?></section>
+<section id="os-pane-historico" class="os-pane" data-os-panel="historico" role="tabpanel" aria-labelledby="os-tab-historico" tabindex="0"><?php $this->load->view('os/workflow_history'); ?><ul class="nav nav-tabs os-subtabs"><li class="active" id="tabAnotacoes"><a href="#tab6" data-toggle="tab">Anotações</a></li><li id="tabAnexos"><a href="#tab5" data-toggle="tab">Anexos</a></li></ul><div class="tab-content">                        <!--Anexos-->
                         <div class="tab-pane" id="tab5">
                             <div class="span12" style="padding: 1%; margin-left: 0">
                                 <div class="span12 well" style="padding: 1%; margin-left: 0" id="form-anexos">
@@ -404,7 +408,7 @@ foreach ($servicos as $s) {
                         </div>
 
                         <!--Anotações-->
-                        <div class="tab-pane" id="tab6">
+                        <div class="tab-pane active" id="tab6">
                             <div class="span12" style="padding: 1%; margin-left: 0">
 
                                 <div class="span12" id="divAnotacoes" style="margin-left: 0">
@@ -442,8 +446,7 @@ if (!$anotacoes) {
 
                             </div>
                         </div>
-                        <!-- Fim tab anotações -->
-                    </div>
+                        <!-- Fim tab anotações --></div></section>
                 </div>
                 &nbsp
             </div>
@@ -515,8 +518,8 @@ if (!$anotacoes) {
                 <div class="span12" style="margin-left: 0">
                     <label for="cliente">Cliente*</label>
                     <input class="span12" id="cliente" type="text" name="cliente"
-                        value="<?php echo $result->nomeCliente ?>" />
-                    <input type="hidden" name="clientes_id" id="clientes_id" value="<?php echo $result->clientes_id ?>">
+                        value="<?= $osInput('cliente', $result->nomeCliente) ?>" />
+                    <input type="hidden" name="clientes_id" id="clientes_id" value="<?= $osInput('clientes_id', $result->clientes_id) ?>">
                     <input type="hidden" name="os_id" id="os_id" value="<?php echo $result->idOs; ?>">
                     <input type="hidden" name="tipoDesconto" id="tipoDesconto"
                         value="<?php echo $result->tipo_desconto; ?>">

@@ -72,7 +72,7 @@
     shortcut.add("F12", function() {});
     window.BaseUrl = "<?= base_url() ?>";
   </script>
-<link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=3">
+<link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=5">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
 </head>
 

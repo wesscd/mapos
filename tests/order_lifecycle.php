@@ -3,6 +3,8 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 $reviewOrder = $workflow->createOrder($newOrderData);
+$workspaceState = $workflow->workspaceState($db->get_where('os', ['idOs' => $reviewOrder])->row(), $workflow->details($reviewOrder));
+$assert($workspaceState['equipment'] === 'Sem vínculo' && $workspaceState['received'] === 0, 'Workspace never represents an unlinked or portal-created OS as physical receipt');
 $reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['status' => 'Faturado'])), 'Opening an OS cannot simulate invoicing through its status');
 $reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['status' => 'inventado'])), 'Opening validates the workflow stage');
 $reject(fn () => $workflow->createOrder(array_merge($newOrderData, ['dataInicial' => '2026-02-31'])), 'Impossible calendar dates are rejected before database writes');
@@ -19,6 +21,8 @@ $assert((float) $ci->os_model->valorTotalOS($reviewOrder)['totalServico'] === 25
 $workflow->updateOrder($reviewOrder, ['laudoTecnico' => '<p>Diagnóstico inicial</p>'], false);
 $workflow->requestApproval($reviewOrder);
 $reviewApproval = $db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $reviewOrder])->row();
+$workspaceState = $workflow->workspaceState($db->get_where('os', ['idOs' => $reviewOrder])->row(), $workflow->details($reviewOrder));
+$assert($workspaceState['nextTab'] === 'orcamento' && $workspaceState['nextLabel'] === 'Acompanhar aprovação', 'Workspace directs pending approval to the budget instead of suggesting execution');
 $assert(json_decode($reviewApproval->snapshot, true)['analise']['diagnostico'] === '<p>Diagnóstico inicial</p>', 'Budget freezes the diagnosis presented with its items and total');
 $workflow->answerApproval($reviewOrder, $reviewApproval->id, $customer, 'aprovado');
 $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 30]);
@@ -30,6 +34,8 @@ $reject(fn () => $workflow->answerApproval($reviewOrder, $reviewApproval->id, $c
 $assert($db->where('os_id', $reviewOrder)->where('tipo', 'analise')->count_all_results('os_eventos') === 2, 'Analysis changes are recorded in the service timeline');
 $workflow->updateOrder($reviewOrder, ['status' => 'Finalizado'], false);
 $workflow->deliver($reviewOrder);
+$workspaceState = $workflow->workspaceState($db->get_where('os', ['idOs' => $reviewOrder])->row(), $workflow->details($reviewOrder));
+$assert($workspaceState['delivery'] === 'Entregue' && $workspaceState['nextLabel'] === 'Consultar entrega', 'Delivered workspace presents preserved history instead of another pickup action');
 $reject(fn () => $workflow->service($reviewOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 10]), 'A delivered OS cannot receive additional work');
 $reject(fn () => $workflow->changeLine($reviewOrder, $reviewLine->idServicos_os, 1, 50, false), 'Delivered quantities and prices cannot change');
 $reject(fn () => $workflow->discount($reviewOrder, 'real', 1), 'Delivered discounts cannot change');

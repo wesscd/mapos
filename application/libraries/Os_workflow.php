@@ -30,6 +30,47 @@ class Os_workflow
         ];
     }
 
+    public function workspaceState($order, array $details)
+    {
+        $links = array_map(fn ($equipment) => (int) $equipment->idEquipamentos_os, $details['equipamentos']);
+        $received = array_unique(array_map(fn ($receipt) => (int) $receipt->vinculo_id, array_filter($details['recibos'], fn ($receipt) => $receipt->tipo === 'entrada')));
+        $inspections = $links ? $this->ci->db->select('vinculo_id, tipo')->where_in('vinculo_id', $links)->get('os_vistorias')->result() : [];
+        $entry = count(array_filter($inspections, fn ($inspection) => $inspection->tipo === 'entrada'));
+        $exit = count(array_filter($inspections, fn ($inspection) => $inspection->tipo === 'saida'));
+        $equipmentLabel = ! $links ? 'Sem vínculo' : (count($received) < count($links) ? 'Recebimento pendente' : ($entry < count($links) ? 'Entrada registrada' : 'Conferido'));
+        $analysisReady = trim(strip_tags((string) $order->laudoTecnico)) !== '';
+        $latest = $details['aprovacoes'][0]->status ?? null;
+        $budgetLabels = ['pendente' => 'Aguardando cliente', 'aprovado' => 'Aprovado pelo cliente', 'rejeitado' => 'Recusado', 'substituido' => 'Revisar orçamento'];
+        // Older intake receipts already preserve conditions and accessories, even without categorized photos.
+        $equipmentPending = $links && count($received) < count($links);
+        if ($order->entregue_em) {
+            $next = ['entrega', 'Consultar entrega'];
+        } elseif ($order->status === 'Cancelado' && ! $received) {
+            $next = ['historico', 'Consultar histórico'];
+        } elseif ($equipmentPending) {
+            $next = ['equipamento', 'Conferir entrada'];
+        } elseif (in_array($order->status, ['Finalizado', 'Faturado', 'Cancelado'], true)) {
+            $next = ['entrega', 'Conferir retirada'];
+        } elseif (! $analysisReady) {
+            $next = ['analise', 'Registrar diagnóstico'];
+        } elseif ($latest === 'pendente') {
+            $next = ['orcamento', 'Acompanhar aprovação'];
+        } elseif (in_array($latest, ['rejeitado', 'substituido'], true)) {
+            $next = ['orcamento', 'Revisar orçamento'];
+        } else {
+            $next = $latest ? ['analise', 'Acompanhar execução'] : ['orcamento', 'Preparar orçamento'];
+        }
+        return [
+            'received' => count($received), 'equipmentCount' => count($links), 'entryInspections' => $entry, 'exitInspections' => $exit,
+            'equipment' => $order->entregue_em ? 'Histórico preservado' : $equipmentLabel,
+            'equipmentPending' => ! $order->entregue_em && $equipmentPending,
+            'analysis' => $analysisReady ? 'Registrada' : ($order->entregue_em ? 'Não registrado' : 'Diagnóstico pendente'),
+            'budget' => $order->faturado ? 'Faturado' : ($budgetLabels[$latest] ?? 'Preparar'),
+            'delivery' => $order->entregue_em ? 'Entregue' : ($exit < count($links) ? 'Vistoria de saída pendente' : 'Conferir retirada'),
+            'nextTab' => $next[0], 'nextLabel' => $next[1],
+        ];
+    }
+
     private function transaction(callable $work)
     {
         $db = $this->ci->db;
@@ -58,6 +99,19 @@ class Os_workflow
             throw new DomainException('Ordem de serviço não encontrada.');
         }
         return $order;
+    }
+
+    private function requireIntakeForExecution($id, $status, $previous = null)
+    {
+        if ($status !== 'Em Andamento' || $previous === 'Em Andamento') {
+            return;
+        }
+        $linked = $this->ci->db->where('os_id', $id)->count_all_results('equipamentos_os');
+        $received = $this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')
+            ->where('os_id', $id)->where('tipo', 'entrada')->count_all_results();
+        if ($received < $linked) {
+            throw new DomainException('Antes de iniciar o reparo, registre a entrada física de todos os equipamentos na aba Equipamento e vistoria. Vincular o cadastro ou visitar a aba não confirma recebimento.');
+        }
     }
 
     private function editable($order, $allowDelivered = false)
@@ -181,6 +235,7 @@ class Os_workflow
                         'acessorios' => $inspection['dados']['vistoria_acessorios'] ?? '', 'condicoes' => $inspection['dados']['vistoria_condicoes'] ?? '']);
                 }
             }
+            $this->requireIntakeForExecution($id, $data['status']);
             return $id;
         });
     }
@@ -391,6 +446,7 @@ class Os_workflow
             }
             $data['status'] = $status;
             $this->validateOrder(array_merge((array) $order, $data));
+            $this->requireIntakeForExecution($id, $status, $order->status);
             if (isset($data['clientes_id']) && (int) $data['clientes_id'] !== (int) $order->clientes_id
                 && $this->ci->db->where('os_id', $id)->count_all_results('equipamentos_os')) {
                 throw new DomainException('Uma OS com equipamentos vinculados não pode mudar de cliente.');

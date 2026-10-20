@@ -1,61 +1,25 @@
-<?php if (isset($workflow) && $result) {
-    $canWorkflow = $editavel && ! $result->entregue_em && ! (int) $result->faturado && ! in_array($result->status, ['Cancelado', 'Faturado'], true); ?>
-<section class="mapos-workflow" id="acompanhamento" aria-labelledby="workflow-title">
-    <div class="mapos-section-heading">
-        <div><span class="mapos-eyebrow">ATENDIMENTO</span><h2 id="workflow-title">Acompanhamento da OS #<?= (int) $result->idOs ?></h2></div>
-        <span class="mapos-pill"><?= html_escape($result->status) ?></span>
+<?php
+$osWorkspace = $this->os_workflow->workspaceState($result, $workflow);
+$osCanEquipment = $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente');
+$osTabs = ['resumo' => 'Resumo', 'equipamento' => 'Equipamento e vistoria', 'analise' => 'Análise técnica', 'orcamento' => 'Orçamento', 'entrega' => 'Entrega', 'historico' => 'Histórico e anexos'];
+$osBadges = ['equipamento' => $osCanEquipment ? $osWorkspace['equipment'] : 'Permissão necessária', 'analise' => $osWorkspace['analysis'], 'orcamento' => $osWorkspace['budget'], 'entrega' => $osWorkspace['delivery']];
+?>
+<header class="os-summary" id="acompanhamento" data-os-workspace="<?= (int) $result->idOs ?>">
+    <div class="os-summary-top"><div><span class="mapos-eyebrow">ORDEM DE SERVIÇO</span><h1>OS #<?= (int) $result->idOs ?> <span class="mapos-pill"><?= html_escape($result->status) ?></span></h1><p><?= html_escape($result->nomeCliente) ?> <span class="os-summary-separator">·</span> Responsável: <?= html_escape($result->nome) ?></p></div>
+        <a class="os-next-action" href="#os-pane-<?= html_escape($osWorkspace['nextTab']) ?>" data-os-open="<?= html_escape($osWorkspace['nextTab']) ?>"><?= html_escape($osWorkspace['nextLabel']) ?> <span aria-hidden="true">→</span></a>
     </div>
-    <p>Responsável: <strong><?= html_escape($result->nome) ?></strong> · Prazo: <strong><?= $result->dataFinal ? html_escape(date('d/m/Y', strtotime($result->dataFinal))) : 'Não definido' ?></strong></p>
-    <?php if (! empty($result->entregue_em)) { ?><p>Entrega registrada em <?= html_escape(date('d/m/Y H:i', strtotime($result->entregue_em))) ?>.</p>
-    <?php } elseif ((in_array($result->status, ['Finalizado', 'Faturado'], true) || ($result->status === 'Cancelado' && ! empty($workflow['recibos']))) && $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs') && (empty($workflow['equipamentos']) || $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente'))) { ?>
-        <?php if (! empty($workflow['equipamentos'])) { ?><p>Antes de confirmar, registre a vistoria de saída de cada equipamento na seção abaixo. O comprovante preservará as fotos, os acessórios e as ressalvas.</p><?php } ?>
-        <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?><input type="hidden" name="acao" value="entrega"><label>Nome de quem retira <input name="retirado_por" maxlength="150" <?= ! empty($workflow['equipamentos']) ? 'required' : '' ?>></label>
-        <?php if (! empty($workflow['equipamentos'])) { ?><label><input type="checkbox" name="aceite_entrega" value="1" required> Quem retira conferiu o equipamento, os acessórios e as ressalvas de todos os itens e confirmou a retirada.</label><p>Marque somente após a conferência presencial. Este aceite é registrado pela equipe; a assinatura pode ser coletada no comprovante.</p><?php } ?>
-        <button class="btn btn-primary">Confirmar entrega ao cliente</button></form>
+    <div class="os-summary-facts" data-os-indicators>
+        <span><strong>Equipamento:</strong> <?= $osCanEquipment && $workflow['equipamentos'] ? html_escape(implode(' · ', array_map(fn ($equipment) => $equipment->equipamento, $workflow['equipamentos']))) : 'Confira a aba Equipamento e vistoria' ?></span>
+        <span><strong>Total da OS:</strong> R$ <?= html_escape(number_format($result->tipo_desconto ? $result->valor_desconto : $totalProdutos + $totalServico, 2, ',', '.')) ?></span>
+        <?php if ($result->entregue_em) { ?><span>Entrega registrada em <?= html_escape(date('d/m/Y H:i', strtotime($result->entregue_em))) ?></span><?php } ?>
+    </div>
+</header>
+<nav class="os-main-tabs" role="tablist" aria-label="Etapas da ordem de serviço">
+    <?php foreach ($osTabs as $tabKey => $tabLabel) { ?>
+        <a id="os-tab-<?= html_escape($tabKey) ?>" href="#os-pane-<?= html_escape($tabKey) ?>" role="tab" aria-controls="os-pane-<?= html_escape($tabKey) ?>" data-os-tab="<?= html_escape($tabKey) ?>" aria-selected="<?= $tabKey === 'resumo' ? 'true' : 'false' ?>" tabindex="<?= $tabKey === 'resumo' ? '0' : '-1' ?>">
+            <span><?= html_escape($tabLabel) ?><?php if ($tabKey === 'equipamento') { ?><small class="os-required">Obrigatória</small><?php } ?></span>
+            <?php if (isset($osBadges[$tabKey])) { ?><small data-os-badge="<?= html_escape($tabKey) ?>" class="os-tab-state <?= $tabKey === 'equipamento' && $osWorkspace['equipmentPending'] ? 'is-pending' : '' ?>"><?= html_escape($osBadges[$tabKey]) ?></small><?php } ?>
+        </a>
     <?php } ?>
-    <?php $this->load->view('equipamentos/os'); ?>
-    <div class="mapos-grid">
-        <section class="mapos-card"><h3>Checklist técnico</h3>
-            <?php foreach ($workflow['checklist'] as $item) { ?>
-                <div class="mapos-check">
-                    <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?>
-                    <input type="hidden" name="acao" value="checklist"><input type="hidden" name="item_id" value="<?= (int) $item->id ?>">
-                    <input type="hidden" name="concluido" value="<?= $item->concluido ? '0' : '1' ?>">
-                    <span><?= $item->concluido ? '✓' : '○' ?> <?= html_escape($item->descricao) ?></span>
-                    <?php if ($canWorkflow) { ?><button class="btn btn-small" type="submit"><?= $item->concluido ? 'Reabrir' : 'Concluir' ?></button><?php } ?>
-                    </form>
-                </div>
-            <?php } ?>
-            <?php if (! $workflow['checklist']) { ?><p class="mapos-muted">Registre as verificações necessárias para este atendimento.</p><?php } ?>
-            <?php if ($canWorkflow) { ?>
-                <?= form_open('acompanhamento/salvar/' . (int) $result->idOs, ['class' => 'mapos-inline-form']) ?>
-                    <input type="hidden" name="acao" value="checklist">
-                    <label for="checklist-description">Nova verificação</label>
-                    <input id="checklist-description" name="descricao" maxlength="180" required placeholder="Ex.: testar carregamento">
-                    <button class="btn btn-primary" type="submit">Adicionar</button>
-                </form>
-            <?php } ?>
-        </section>
-        <section class="mapos-card" id="os-budget"><h3>Aprovação do orçamento</h3>
-            <p>O cliente responde pela própria área do cliente. Alterações nos itens ou valores exigem uma nova aprovação.</p>
-            <p>O status “Aprovado” selecionado pela equipe é separado da resposta do cliente registrada abaixo.</p>
-            <?php foreach (array_slice($workflow['aprovacoes'], 0, 3) as $approval) { ?>
-                <p><span class="mapos-pill"><?= html_escape(ucfirst($approval->status)) ?></span>
-                R$ <?= html_escape(number_format($approval->valor, 2, ',', '.')) ?> · <?= html_escape(date('d/m/Y H:i', strtotime($approval->created_at))) ?></p>
-            <?php } ?>
-            <?php if ($canWorkflow) { ?>
-                <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?>
-                    <input type="hidden" name="acao" value="orcamento">
-                    <button class="btn btn-primary" type="submit">Solicitar aprovação do orçamento atual</button>
-                </form>
-            <?php } ?>
-        </section>
-    </div>
-    <details class="mapos-card mapos-history" id="os-timeline"><summary>Histórico do atendimento <span class="mapos-muted">— últimos 100 eventos</span></summary>
-        <?php if (! $workflow['eventos']) { ?><p>O histórico começa a registrar eventos a partir desta atualização.</p><?php } ?>
-        <ol><?php foreach ($workflow['eventos'] as $event) { ?>
-            <li><time><?= html_escape(date('d/m/Y H:i', strtotime($event->created_at))) ?></time> <?= html_escape($event->descricao) ?></li>
-        <?php } ?></ol>
-    </details>
-</section>
-<?php } ?>
+</nav>
+<script src="<?= base_url('assets/js/os-workspace.js') ?>?v=2" defer></script>

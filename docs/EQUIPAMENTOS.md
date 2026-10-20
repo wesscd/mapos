@@ -1,5 +1,13 @@
 # Cadastro e movimentação de equipamentos
 
+## Página da OS por etapas
+
+A edição e a consulta usam seis abas: **Resumo**, **Equipamento e vistoria**, **Análise técnica**, **Orçamento**, **Entrega** e **Histórico e anexos**. O cabeçalho mostra cliente, responsável, etapa, equipamento e total, com um atalho para a próxima ação. O faturamento e os meios de pagamento ficam em Orçamento; impressão e comunicação ficam em Outras ações. Serviços, Produtos e Desconto são subdivisões de Orçamento; Anotações e Anexos ficam no Histórico.
+
+A aba Equipamento e vistoria permanece visível e marcada como obrigatória para atendimentos com equipamento físico. A indicação de pendência é calculada pelos registros: visitar a aba não confirma recebimento. Para mudar uma OS com equipamento vinculado para **Em Andamento**, é necessário registrar a entrada física de todos os itens. A abertura em andamento com vínculo também exige recebimento na mesma transação. Entradas antigas com condições e acessórios preservados continuam válidas mesmo sem fotos categorizadas. Atendimentos sem equipamento vinculado continuam possíveis. Nenhum recebimento é criado automaticamente pela mudança de aba, abertura pelo portal ou vínculo de cadastro.
+
+Os campos da Análise técnica e do Resumo pertencem ao mesmo salvamento da OS. Trocar de aba preserva o que foi digitado; os demais formulários (checklist, fotos, itens e entrega) salvam suas próprias ações. Falhas de validação mantêm os textos enviados para correção. A aba principal escolhida é lembrada por OS na sessão do navegador; os retornos de recebimento, orçamento e entrega abrem a etapa correspondente. Links anteriores como `#equipamentos` e `#tab4` continuam funcionando. A navegação aceita teclado e os formulários permanecem acessíveis se o recurso de abas não carregar.
+
 ## Fluxo da ordem de serviço revisado
 
 1. **Abertura:** selecionar cliente e responsável nas sugestões, registrar equipamento, problema e condições iniciais. A criação pelo portal não confirma recebimento físico. Cliente, responsável, etapa, datas e garantia são validados antes do salvamento.

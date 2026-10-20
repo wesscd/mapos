@@ -1,8 +1,8 @@
 <?php $this->load->view('os/workflow'); ?>
 <link href="<?= base_url('assets/css/custom.css'); ?>" rel="stylesheet">
-<div class="row-fluid" style="margin-top: 0">
+<div class="os-workspace-panels os-read-workspace"><section id="os-pane-resumo" class="os-pane" data-os-panel="resumo" role="tabpanel" aria-labelledby="os-tab-resumo" tabindex="0"><div class="row-fluid" style="margin-top: 0">
     <div class="span12">
-        <div class="widget-box">
+        <div class="widget-box os-workspace-card">
             <div class="widget-title" style="margin: 10px 0 0">
                 <div class="buttons">
                     <?php if ($editavel) {
@@ -179,7 +179,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                 <?php } ?>
 
                                 <?php if ($result->observacoes != null) { ?>
-                                    <tr>
+                                    <tr data-os-read-analysis>
                                         <td colspan="5">
                                             <b>OBSERVAÇÕES: </b>
                                             <?php echo printSafeHtml($result->observacoes) ?>
@@ -188,7 +188,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                 <?php } ?>
 
                                 <?php if ($result->laudoTecnico != null) { ?>
-                                    <tr>
+                                    <tr data-os-read-analysis>
                                         <td colspan="5">
                                             <b>LAUDO TÉCNICO: </b>
                                             <?php echo printSafeHtml($result->laudoTecnico) ?>
@@ -207,7 +207,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                             </tbody>
                         </table>
 
-                        <?php if ($anotacoes != null) { ?>
+<div data-os-read-history>                        <?php if ($anotacoes != null) { ?>
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
@@ -222,9 +222,9 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                         echo '<td>' . date('d/m/Y H:i:s', strtotime($a->data_hora)) . '</td>';
                                         echo '</tr>';
                                     }
-                            if (!$anotacoes) {
-                                echo '<tr><td colspan="2">Nenhuma anotação cadastrada</td></tr>';
-                            } ?>
+    if (!$anotacoes) {
+        echo '<tr><td colspan="2">Nenhuma anotação cadastrada</td></tr>';
+    } ?>
                                 </tbody>
                             </table>
                         <?php } ?>
@@ -253,7 +253,7 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                             </table>
                         <?php } ?>
 
-                        <?php if ($produtos != null) { ?>
+</div><div data-os-read-budget>                        <?php if ($produtos != null) { ?>
                             <br />
                             <table class="table table-bordered table-condensed" id="tblProdutos">
                                 <thead>
@@ -326,14 +326,20 @@ if (!empty($result->cidade) || !empty($result->estado) || !empty($result->cep)) 
                                     echo "</td>";
                                 }
                             } ?>
-                        </table>
+                        </table></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
+</section>
+<section id="os-pane-equipamento" class="os-pane" data-os-panel="equipamento" role="tabpanel" aria-labelledby="os-tab-equipamento" tabindex="0"><?php $this->load->view('equipamentos/os', ['equipmentPhase' => 'entrada']); ?></section>
+<section id="os-pane-analise" class="os-pane" data-os-panel="analise" role="tabpanel" aria-labelledby="os-tab-analise" tabindex="0"><section class="mapos-card"><h3>Análise técnica</h3><table class="table os-read-analysis"><tbody data-os-read-analysis-target></tbody></table><p data-os-empty-analysis>O diagnóstico pode ser registrado na edição da OS.</p></section><?php $this->load->view('os/workflow_checklist'); ?></section>
+<section id="os-pane-orcamento" class="os-pane" data-os-panel="orcamento" role="tabpanel" aria-labelledby="os-tab-orcamento" tabindex="0"><div data-os-read-budget-target></div><?php $this->load->view('os/workflow_budget'); ?></section>
+<section id="os-pane-entrega" class="os-pane" data-os-panel="entrega" role="tabpanel" aria-labelledby="os-tab-entrega" tabindex="0"><?php $this->load->view('os/workflow_delivery'); ?></section>
+<section id="os-pane-historico" class="os-pane" data-os-panel="historico" role="tabpanel" aria-labelledby="os-tab-historico" tabindex="0"><?php $this->load->view('os/workflow_history'); ?><div data-os-read-history-target></div></section>
+</div>
 <?= $modalGerarPagamento ?>
 
 <!-- Modal visualizar anexo -->

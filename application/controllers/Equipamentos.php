@@ -189,7 +189,7 @@ class Equipamentos extends MY_Controller
         } catch (DomainException $error) {
             $this->session->set_flashdata('error', $error->getMessage());
         }
-        redirect('os/visualizar/' . $id . '#equipamentos');
+        redirect('os/visualizar/' . $id . ($this->input->post('tipo') === 'saida' ? '#os-pane-entrega' : '#os-pane-equipamento'));
     }
 
     public function comprovante($id = null)
