@@ -123,16 +123,16 @@ class Os_workflow
         });
     }
 
-    public function deliver($id, $recipient = '')
+    public function deliver($id, $recipient = '', $accepted = false)
     {
-        return $this->transaction(function () use ($id, $recipient) {
+        return $this->transaction(function () use ($id, $recipient, $accepted) {
             $order = $this->lockOrder($id);
             $cancelledReturn = $order->status === 'Cancelado' && $this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->where('tipo', 'entrada')->count_all_results();
             if ((! in_array($order->status, ['Finalizado', 'Faturado'], true) && ! $cancelledReturn) || $order->entregue_em) {
                 throw new DomainException('Finalize a OS antes da entrega. Em atendimentos cancelados, a devolução exige recebimento registrado. Não é possível repetir uma entrega.');
             }
             $this->ci->load->library('equipamento_service');
-            $this->ci->equipamento_service->deliveryReceipts($id, $recipient);
+            $this->ci->equipamento_service->deliveryReceipts($id, $recipient, $accepted);
             $this->ci->db->where('idOs', $id)->update('os', ['entregue_em' => date('Y-m-d H:i:s')]);
             $this->event($id, 'entrega', 'Entrega do equipamento ao cliente registrada.');
         });

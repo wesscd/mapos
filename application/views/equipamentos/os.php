@@ -16,7 +16,7 @@
                     <?= form_open_multipart('equipamentos/vistoria/' . (int) $result->idOs) ?>
                         <input type="hidden" name="vinculo_id" value="<?= (int) $equipment->idEquipamentos_os ?>">
                         <?php if ($inspection) { ?><input type="hidden" name="complementar" value="1"><?php } ?>
-                        <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaPrefix' => 'vistoria-' . (int) $equipment->idEquipamentos_os, 'vistoriaCreation' => false, 'vistoriaOnlyPhotos' => (bool) $inspection]); ?>
+                        <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaPrefix' => 'vistoria-' . (int) $equipment->idEquipamentos_os, 'vistoriaCreation' => false, 'vistoriaOnlyPhotos' => (bool) $inspection, 'vistoriaSaida' => false]); ?>
                         <button class="btn btn-primary"><?= $inspection ? 'Acrescentar fotos' : 'Registrar vistoria' ?></button>
                     </form>
                 </details>
@@ -33,6 +33,30 @@
                         <button class="btn btn-primary">Confirmar recebimento e gerar comprovante</button>
                     </form>
                 </details><?php } ?>
+            <?php } ?>
+            <?php
+            $entryReceipt = current(array_filter($receipts, fn ($receipt) => $receipt->tipo === 'entrada'));
+        if ($entryReceipt) {
+            $entryData = $this->db->select('dados')->get_where('equipamento_recibos', ['id' => $entryReceipt->id])->row();
+            $entrySnapshot = json_decode($entryData->dados, true);
+            $exitInspection = $this->vistoria_service->get($equipment->idEquipamentos_os, 'saida'); ?>
+                <section class="mapos-delivery-review"><h4>Conferência para entrega</h4>
+                    <p>Entrada: <?= html_escape($entrySnapshot['condicoes']) ?><br>Acessórios recebidos: <?= html_escape($entrySnapshot['acessorios']) ?></p>
+                    <?php if ($exitInspection) {
+                        $this->load->view('equipamentos/vistoria_resumo', ['inspection' => $exitInspection, 'inspectionPrint' => false]);
+                        $this->load->view('equipamentos/comparacao', ['entryInspection' => $entrySnapshot['vistoria'] ?? null, 'exitInspection' => $exitInspection, 'entryPhotos' => $entrySnapshot['fotos'] ?? []]);
+                    } elseif ($result->entregue_em) { ?><p>Entrega já registrada; não há vistoria de saída neste histórico.</p><?php } else { ?><p><strong>Vistoria de saída ainda não registrada.</strong> Confira as condições e os acessórios antes da retirada.</p><?php } ?>
+                    <?php if ($canEquipment && ! $result->entregue_em) { ?>
+                        <details><summary><?= $exitInspection ? 'Acrescentar fotos de saída' : 'Registrar vistoria de saída' ?></summary>
+                            <?= form_open_multipart('equipamentos/vistoria/' . (int) $result->idOs) ?>
+                                <input type="hidden" name="vinculo_id" value="<?= (int) $equipment->idEquipamentos_os ?>"><input type="hidden" name="tipo" value="saida">
+                                <?php if ($exitInspection) { ?><input type="hidden" name="complementar" value="1"><?php } ?>
+                                <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaPrefix' => 'saida-' . (int) $equipment->idEquipamentos_os, 'vistoriaCreation' => false, 'vistoriaOnlyPhotos' => (bool) $exitInspection, 'vistoriaSaida' => true]); ?>
+                                <button class="btn btn-primary"><?= $exitInspection ? 'Acrescentar fotos de saída' : 'Salvar vistoria de saída' ?></button>
+                            </form>
+                        </details>
+                    <?php } ?>
+                </section>
             <?php } ?>
         </article>
     <?php } ?>

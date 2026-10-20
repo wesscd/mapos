@@ -87,7 +87,7 @@
                                     </div>
                                     <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) { ?>
                                     <div class="span12" style="padding:1%;margin-left:0"><details class="mapos-card" open><summary>Registrar estado e fotos do equipamento na entrada</summary>
-                                        <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaCreation' => true]); ?>
+                                        <?php $this->load->view('equipamentos/vistoria_campos', ['vistoriaCreation' => true, 'vistoriaSaida' => false]); ?>
                                         <p>Se houver erro ao salvar, selecione os arquivos novamente; os navegadores não restauram fotos automaticamente.</p>
                                     </details></div>
                                     <?php } ?>

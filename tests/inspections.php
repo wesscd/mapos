@@ -25,7 +25,9 @@ $reject(fn () => $inspections->append($inspectionOrder, $inspectionLink, [array_
 $html = $ci->load->view('equipamentos/comprovante', ['receipt' => $entryData, 'snapshot' => $receiptSnapshot], true);
 $assert(! str_contains($html, '<script>alert(1)</script>') && str_contains($html, '&lt;script&gt;alert(1)&lt;/script&gt;') && str_contains($html, 'vistoriaFoto/'), 'Printed receipts escape condition notes and include authenticated inspection images');
 $db->where('idOs', $inspectionOrder)->update('os', ['status' => 'Finalizado']);
-$workflow->deliver($inspectionOrder, 'Cliente');
+$inspections->register($inspectionOrder, $inspectionLink, $exitData, [$frontPhoto], 'saida');
+$assert($inspections->get($inspectionLink)['tipo'] === 'entrada' && $inspections->get($inspectionLink, 'saida')['tipo'] === 'saida', 'Entry and exit inspections coexist on the same equipment link');
+$workflow->deliver($inspectionOrder, 'Cliente', true);
 $beforeInspectionCreate = [$db->count_all('os'), $db->count_all('os_vistorias'), $db->count_all('os_vistoria_fotos'), $db->count_all('com_fila')];
 $badPhoto = array_merge($frontPhoto, ['bytes' => '<svg onload="alert(1)"></svg>']);
 $reject(fn () => $workflow->createOrder($newOrderData, [$equipmentId], ['dados' => $inspectionData, 'fotos' => [$frontPhoto, $badPhoto]]), 'Invalid photo content aborts OS and inspection creation');

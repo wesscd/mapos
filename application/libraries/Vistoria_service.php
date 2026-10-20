@@ -77,34 +77,40 @@ class Vistoria_service
         }
     }
 
-    private function lock($orderId, $linkId)
+    private function lock($orderId, $linkId, $type)
     {
         $order = $this->ci->db->query('SELECT * FROM os WHERE idOs = ? FOR UPDATE', [(int) $orderId])->row();
         $link = $this->ci->db->get_where('equipamentos_os', ['idEquipamentos_os' => (int) $linkId, 'os_id' => (int) $orderId])->row();
-        if (! $order || ! $link || $order->entregue_em || $order->status === 'Cancelado') {
+        if (! $order || ! $link || $order->entregue_em || ($type === 'entrada' && $order->status === 'Cancelado')) {
             throw new DomainException('Este atendimento não permite registrar vistoria.');
         }
-        if ($this->ci->db->get_where('equipamento_recibos', ['vinculo_id' => $linkId, 'tipo' => 'entrada'])->row()) {
+        $entry = $this->ci->db->get_where('equipamento_recibos', ['vinculo_id' => $linkId, 'tipo' => 'entrada'])->row();
+        if ($type === 'saida') {
+            if (! $entry) {
+                throw new DomainException('Registre o recebimento físico antes de conferir a saída.');
+            }
+        } elseif ($entry) {
             throw new DomainException('A vistoria de entrada foi encerrada pelo recebimento. Preserve o registro original.');
         }
         return $link;
     }
 
-    public function get($linkId)
+    public function get($linkId, $type = 'entrada')
     {
-        $row = $this->ci->db->get_where('os_vistorias', ['vinculo_id' => (int) $linkId])->row_array();
+        $row = $this->ci->db->get_where('os_vistorias', ['vinculo_id' => (int) $linkId, 'tipo' => $type])->row_array();
         if ($row) {
             $row['fotos'] = $this->ci->db->select('id, perspectiva, observacao, created_at')->order_by('id')->get_where('os_vistoria_fotos', ['vistoria_id' => $row['id']])->result_array();
         }
         return $row;
     }
 
-    public function register($orderId, $linkId, array $input, array $photos = [])
+    public function register($orderId, $linkId, array $input, array $photos = [], $type = 'entrada')
     {
-        return $this->transaction(function () use ($orderId, $linkId, $input, $photos) {
-            $this->lock($orderId, $linkId);
-            if ($this->get($linkId)) {
-                throw new DomainException('A vistoria já está registrada. É possível acrescentar fotos antes de confirmar o recebimento.');
+        $this->validateType($type);
+        return $this->transaction(function () use ($orderId, $linkId, $input, $photos, $type) {
+            $this->lock($orderId, $linkId, $type);
+            if ($this->get($linkId, $type)) {
+                throw new DomainException('A vistoria já está registrada. Acrescente fotos antes de confirmar a movimentação física.');
             }
             $state = $this->text($input['vistoria_estado'] ?? '', 30);
             if (! isset(self::STATES[$state])) {
@@ -112,13 +118,23 @@ class Vistoria_service
             }
             $actor = $this->ci->session->userdata('id_admin') ?: null;
             $person = $actor ? $this->ci->db->select('nome')->get_where('usuarios', ['idUsuarios' => $actor])->row() : null;
-            $this->ci->db->insert('os_vistorias', ['vinculo_id' => (int) $linkId, 'estado' => $state,
+            $conference = null;
+            $notes = null;
+            if ($type === 'saida') {
+                $conference = $this->text($input['vistoria_conferencia'] ?? '', 20);
+                if (! in_array($conference, ['conferidos', 'divergencia'], true)) {
+                    throw new DomainException('Informe o resultado da conferência dos acessórios.');
+                }
+                $notes = $this->text($input['vistoria_ressalvas'] ?? '', 2000, $conference === 'divergencia');
+            }
+            $this->ci->db->insert('os_vistorias', ['vinculo_id' => (int) $linkId, 'tipo' => $type, 'estado' => $state,
+                'conferencia' => $conference, 'ressalvas' => $notes,
                 'condicoes' => $this->text($input['vistoria_condicoes'] ?? '', 2000),
                 'acessorios' => $this->text($input['vistoria_acessorios'] ?? '', 2000),
                 'responsavel' => $person ? $person->nome : 'Registro do sistema', 'usuario_id' => $actor, 'created_at' => date('Y-m-d H:i:s')]);
             $id = (int) $this->ci->db->insert_id();
             $this->savePhotos($id, $photos);
-            $this->ci->os_workflow->event($orderId, 'vistoria', 'Vistoria de entrada #' . $id . ' registrada. Estado: ' . self::STATES[$state]);
+            $this->ci->os_workflow->event($orderId, 'vistoria', 'Vistoria de ' . ($type === 'saida' ? 'saída' : 'entrada') . ' #' . $id . ' registrada. Estado: ' . self::STATES[$state]);
             return $id;
         });
     }
@@ -142,11 +158,19 @@ class Vistoria_service
         }
     }
 
-    public function append($orderId, $linkId, array $photos)
+    private function validateType($type)
     {
-        return $this->transaction(function () use ($orderId, $linkId, $photos) {
-            $this->lock($orderId, $linkId);
-            $inspection = $this->get($linkId);
+        if (! in_array($type, ['entrada', 'saida'], true)) {
+            throw new DomainException('Tipo de vistoria inválido.');
+        }
+    }
+
+    public function append($orderId, $linkId, array $photos, $type = 'entrada')
+    {
+        $this->validateType($type);
+        return $this->transaction(function () use ($orderId, $linkId, $photos, $type) {
+            $this->lock($orderId, $linkId, $type);
+            $inspection = $this->get($linkId, $type);
             if (! $inspection || ! $photos) {
                 throw new DomainException('Selecione pelo menos uma foto para uma vistoria existente.');
             }

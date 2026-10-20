@@ -117,6 +117,17 @@ require __DIR__ . '/communication.php';
 require __DIR__ . '/equipment.php';
 require __DIR__ . '/inspections.php';
 require __DIR__ . '/kanban.php';
+try {
+    $ci->migration->version(20261020180000);
+    $assert(false, 'Migration rollback must preserve existing exit evidence');
+} catch (RuntimeException $expected) {
+    $assert($db->where('tipo', 'saida')->count_all_results('os_vistorias') > 0, 'Migration refuses to discard existing delivery inspections');
+}
+// This suite only runs against the named disposable test database.
+foreach ($db->where('tipo', 'saida')->get('os_vistorias')->result() as $exitInspection) {
+    $db->where('vistoria_id', $exitInspection->id)->delete('os_vistoria_fotos');
+}
+$db->where('tipo', 'saida')->delete('os_vistorias');
 $assert($ci->migration->version(20240503170400) && ! $db->table_exists('os_eventos') && ! $db->table_exists('com_fila'), 'Workflow and communication migrations roll back in the disposable database');
 $assert($ci->migration->latest() && $db->table_exists('os_eventos'), 'Workflow migration can be reapplied');
 echo "Completed: $passed integration assertions.\n";

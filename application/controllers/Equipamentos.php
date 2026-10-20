@@ -156,11 +156,12 @@ class Equipamentos extends MY_Controller
         $this->load->library('vistoria_service');
         $this->orderAction((int) $orderId, function () use ($orderId) {
             $linkId = (int) $this->input->post('vinculo_id');
+            $type = $this->input->post('tipo') ?? 'entrada';
             $photos = $this->vistoria_service->uploads();
             if ($this->input->post('complementar') === '1') {
-                $this->vistoria_service->append((int) $orderId, $linkId, $photos);
+                $this->vistoria_service->append((int) $orderId, $linkId, $photos, $type);
             } else {
-                $this->vistoria_service->register((int) $orderId, $linkId, $this->input->post(), $photos);
+                $this->vistoria_service->register((int) $orderId, $linkId, $this->input->post(), $photos, $type);
             }
         });
     }
@@ -195,6 +196,7 @@ class Equipamentos extends MY_Controller
     {
         $this->permission('vOs');
         $this->permission('vCliente');
+        $this->load->library('vistoria_service');
         $receipt = $this->db->get_where('equipamento_recibos', ['id' => (int) $id])->row();
         if (! $receipt) {
             show_404();

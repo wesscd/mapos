@@ -2,8 +2,9 @@
 $this->load->library('vistoria_service');
 $prefix = $vistoriaPrefix ?? 'entrada';
 $creation = ! empty($vistoriaCreation);
+$exitInspection = ! empty($vistoriaSaida);
 ?>
-<section class="mapos-inspection"><h3>Estado do equipamento e fotos de entrada</h3>
+<section class="mapos-inspection"><h3>Estado do equipamento e fotos de <?= $exitInspection ? 'saída' : 'entrada' ?></h3>
     <p>Registre riscos, trincas, peças ausentes e condições aparentes. Os ângulos são opcionais; use apenas os que se aplicam ao equipamento.</p>
     <?php if (empty($vistoriaOnlyPhotos)) { ?>
         <label for="<?= html_escape($prefix) ?>-estado">Estado do equipamento</label>
@@ -12,6 +13,12 @@ $creation = ! empty($vistoriaCreation);
         <textarea id="<?= html_escape($prefix) ?>-condicoes" name="vistoria_condicoes" rows="3" maxlength="2000" placeholder="Ex.: risco na tampa, canto esquerdo trincado, duas teclas ausentes."><?= $creation ? set_value('vistoria_condicoes') : '' ?></textarea>
         <label for="<?= html_escape($prefix) ?>-acessorios">Acessórios conferidos (informe “Nenhum” se for o caso)</label>
         <textarea id="<?= html_escape($prefix) ?>-acessorios" name="vistoria_acessorios" rows="2" maxlength="2000"><?= $creation ? set_value('vistoria_acessorios') : '' ?></textarea>
+        <?php if ($exitInspection) { ?>
+            <label for="<?= html_escape($prefix) ?>-conferencia">Conferência dos acessórios em relação à entrada</label>
+            <select id="<?= html_escape($prefix) ?>-conferencia" name="vistoria_conferencia" required><option value="">Selecione o resultado</option><option value="conferidos">Acessórios conferidos, sem divergência</option><option value="divergencia">Há divergência — detalhar nas ressalvas</option></select>
+            <label for="<?= html_escape($prefix) ?>-ressalvas">Ressalvas da entrega (obrigatório quando houver divergência)</label>
+            <textarea id="<?= html_escape($prefix) ?>-ressalvas" name="vistoria_ressalvas" maxlength="2000" rows="3" placeholder="Descreva acessórios ausentes, substituições ou outras diferenças apresentadas a quem retira."></textarea>
+        <?php } ?>
     <?php } ?>
     <p>JPEG ou PNG, até 8 MB e 24 megapixels por foto. Use “Usar câmera” para fotografar no celular ou escolha um arquivo da galeria. As imagens são reduzidas para armazenamento.</p>
     <div class="mapos-photo-fields"><?php foreach (Vistoria_service::ANGLES as $angle => $label) { ?>
@@ -29,5 +36,5 @@ $creation = ! empty($vistoriaCreation);
         <label for="vistoria-entregue-por">Nome de quem entregou à assistência (obrigatório para confirmar recebimento)</label>
         <input id="vistoria-entregue-por" name="vistoria_entregue_por" maxlength="150" value="<?= set_value('vistoria_entregue_por') ?>">
         <p>A vistoria exige um equipamento selecionado. Para registrá-la, preencha estado, condições e acessórios. Sem a confirmação acima, a OS ficará sem recebimento físico confirmado.</p>
-    <?php } else { ?><p>O registro preserva o estado e as observações. Antes de confirmar o recebimento, você ainda poderá acrescentar fotos, sem substituir as anteriores.</p><?php } ?>
+    <?php } else { ?><p>O registro preserva o estado e as observações. Antes de confirmar <?= $exitInspection ? 'a entrega' : 'o recebimento' ?>, você ainda poderá acrescentar fotos, sem substituir as anteriores.</p><?php } ?>
 </section>

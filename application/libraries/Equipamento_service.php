@@ -155,7 +155,7 @@ class Equipamento_service
     }
 
     // Called only inside Os_workflow::deliver(), with the OS row locked.
-    public function deliveryReceipts($orderId, $recipient)
+    public function deliveryReceipts($orderId, $recipient, $accepted = false)
     {
         $entries = $this->ci->db->select('equipamento_recibos.*')->from('equipamento_recibos')
             ->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')
@@ -166,11 +166,25 @@ class Equipamento_service
         }
         if ($entries) {
             $recipient = $this->text($recipient, 150, true);
+            if ($accepted !== true) {
+                throw new DomainException('Confirme a conferência e o aceite de quem retira antes de registrar a entrega.');
+            }
         }
+        $this->ci->load->library('vistoria_service');
+        $actor = $this->ci->session->userdata('id_admin') ?: null;
+        $person = $actor ? $this->ci->db->select('nome')->get_where('usuarios', ['idUsuarios' => $actor])->row() : null;
         foreach ($entries as $entry) {
+            $exit = $this->ci->vistoria_service->get($entry->vinculo_id, 'saida');
+            if (! $exit) {
+                throw new DomainException('Registre a vistoria de saída de todos os equipamentos antes de confirmar a entrega.');
+            }
             $snapshot = json_decode($entry->dados, true, 512, JSON_THROW_ON_ERROR);
             $snapshot['retirado_por'] = $recipient;
             $snapshot['comprovante_entrada'] = (int) $entry->id;
+            $snapshot['vistoria_saida'] = $exit;
+            $snapshot['aceite'] = ['confirmado' => true, 'registrado_em' => date('Y-m-d H:i:s'),
+                'registrado_por' => $person ? $person->nome : 'Registro do sistema', 'usuario_id' => $actor,
+                'declaracao' => 'A equipe registrou que a pessoa identificada conferiu o equipamento, os acessórios e as ressalvas e confirmou a retirada.'];
             $this->receipt($entry->vinculo_id, 'saida', $snapshot);
         }
     }

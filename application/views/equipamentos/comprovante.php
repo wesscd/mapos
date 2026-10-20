@@ -12,11 +12,18 @@
         <?php if ($receipt->tipo === 'entrada') { ?><dt>Equipamento entregue à assistência por</dt><dd><?= html_escape($snapshot['entregue_por']) ?></dd>
         <?php } else { ?><dt>Equipamento retirado por</dt><dd><?= html_escape($snapshot['retirado_por']) ?></dd><dt>Comprovante de entrada</dt><dd>#<?= (int) $snapshot['comprovante_entrada'] ?></dd><?php } ?>
     </dl>
-    <?php if ($receipt->tipo === 'entrada' && ! empty($snapshot['fotos'])) { ?><h2>Fotos disponíveis no recebimento</h2><div class="photos"><?php foreach ($snapshot['fotos'] as $photo) { ?><img src="<?= site_url('equipamentos/foto/' . (int) $photo) ?>" alt="Foto de entrada #<?= (int) $photo ?>"><?php } ?></div><?php } ?>
+    <?php if (! empty($snapshot['fotos'])) { ?><h2>Fotos disponíveis no recebimento</h2><div class="photos"><?php foreach ($snapshot['fotos'] as $photo) { ?><img src="<?= site_url('equipamentos/foto/' . (int) $photo) ?>" alt="Foto de entrada #<?= (int) $photo ?>"><?php } ?></div><?php } ?>
     <?php if (! empty($snapshot['vistoria'])) {
         $this->load->library('vistoria_service');
         $this->load->view('equipamentos/vistoria_resumo', ['inspection' => $snapshot['vistoria'], 'inspectionPrint' => true]);
     } ?>
+    <?php if ($receipt->tipo === 'saida' && ! empty($snapshot['vistoria_saida'])) {
+        $this->load->view('equipamentos/vistoria_resumo', ['inspection' => $snapshot['vistoria_saida'], 'inspectionPrint' => true]); ?>
+        <h2>Conferência e aceite na retirada</h2>
+        <p><?= html_escape($snapshot['aceite']['declaracao']) ?></p>
+        <p>Retirado por: <?= html_escape($snapshot['retirado_por']) ?><br>Registro feito por: <?= html_escape($snapshot['aceite']['registrado_por']) ?> · <?= html_escape(date('d/m/Y H:i', strtotime($snapshot['aceite']['registrado_em']))) ?></p>
+        <p>O aceite acima foi informado pela equipe no momento da retirada. A assinatura presencial pode ser coletada abaixo.</p>
+    <?php } ?>
     <p>Este documento registra a movimentação física informada pela equipe. A assinatura abaixo deve ser coletada no momento da conferência.</p>
     <div class="signature">Assinatura de quem <?= $receipt->tipo === 'entrada' ? 'entrega à assistência' : 'retira o equipamento' ?></div><div class="signature">Responsável pela assistência</div>
 </body></html>

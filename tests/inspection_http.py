@@ -75,4 +75,30 @@ response = post('kanban/mover/' + order, {'status_anterior': 'Aberto', 'status':
 board = response.read().decode()
 active = board.split('data-kanban-target="Em Andamento"', 1)[1].split('</section>', 1)[0]
 assert 'data-kanban-card="' + order + '"' in active
-print(json.dumps({'result': 'HTTP upload, five angles, physical receipt, private photos and Kanban movement verified', 'equipment': equipment, 'order': order, 'receipt': receipt}))
+response = post('kanban/mover/' + order, {'status_anterior': 'Em Andamento', 'status': 'Finalizado'})
+response.read()
+body = get('os/visualizar/' + order).read().decode()
+link = re.search(r'name="vinculo_id" value="(\d+)"', body).group(1)
+response = post('acompanhamento/salvar/' + order, {'acao': 'entrega', 'retirado_por': 'Cliente demonstracao', 'aceite_entrega': '1'})
+assert 'Registre a vistoria de saída' in response.read().decode(), 'Cannot deliver without exit evidence'
+fields = dict(vinculo_id=link, tipo='saida', vistoria_estado='marcas', vistoria_condicoes='Marcas originais preservadas. Teste de saída.', vistoria_acessorios='Carregador substituído', vistoria_conferencia='divergencia', vistoria_ressalvas='Substituição apresentada ao cliente; imagem artificial de teste.')
+for angle in angles:
+    fields['vistoria_obs_' + angle] = 'Foto de saída - ' + angle
+response = post('equipamentos/vistoria/' + order, fields, {'vistoria_foto_' + angle: png for angle in angles})
+body = response.read().decode()
+exit_photos = set(re.findall(r'equipamentos/vistoriaFoto/(\d+)', body)) - photos
+assert len(exit_photos) == 5 and 'Comparar fotos de entrada e saída por posição' in body
+assert 'Divergência registrada' in body and 'Substituição apresentada ao cliente' in body
+response = post('acompanhamento/salvar/' + order, {'acao': 'entrega', 'retirado_por': 'Cliente demonstracao'})
+assert 'Confirme a conferência e o aceite' in response.read().decode(), 'Cannot infer acceptance from a recipient name'
+response = post('acompanhamento/salvar/' + order, {'acao': 'entrega', 'retirado_por': 'Cliente demonstracao', 'aceite_entrega': '1'})
+body = response.read().decode()
+assert 'Entrega registrada em' in body and 'Entrega ao cliente registrada.' in body
+exit_receipts = set(re.findall(r'equipamentos/comprovante/(\d+)', body)) - {receipt}
+assert len(exit_receipts) == 1
+printed = get('equipamentos/comprovante/' + exit_receipts.pop()).read().decode()
+assert all(text in printed for text in ['Vistoria de entrada', 'Vistoria de saída', 'Conferência e aceite na retirada', 'Cliente demonstracao', 'Substituição apresentada ao cliente'])
+assert all('Foto de saída - ' + angle in printed for angle in angles)
+response = post('equipamentos/vistoria/' + order, dict(vinculo_id=link, tipo='saida', complementar='1'), {'vistoria_foto_frente': png})
+assert 'Este atendimento não permite registrar vistoria.' in response.read().decode()
+print(json.dumps({'result': 'HTTP intake and exit uploads, comparison, acceptance guards, immutable delivery receipt and Kanban verified', 'equipment': equipment, 'order': order, 'receipt': receipt}))

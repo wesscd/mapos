@@ -47,9 +47,27 @@ $reject(fn () => $workflow->deleteOrder($equipmentOrder, false), 'Physical recei
 $db->where('idOs', $equipmentOrder)->update('os', ['status' => 'Finalizado']);
 $reject(fn () => $workflow->deliver($equipmentOrder), 'Documented equipment requires the pickup recipient before delivery');
 $assert(! $db->get_where('os', ['idOs' => $equipmentOrder])->row()->entregue_em, 'Rejected delivery leaves the OS undelivered');
-$workflow->deliver($equipmentOrder, 'Pessoa autorizada');
+$ci->load->library('vistoria_service');
+$exitData = ['vistoria_estado' => 'marcas', 'vistoria_condicoes' => 'Risco original preservado; funcionamento conferido', 'vistoria_acessorios' => 'Carregador', 'vistoria_conferencia' => 'conferidos'];
+$exitPhoto = ['perspectiva' => 'frente', 'bytes' => $bytes, 'observacao' => 'Foto na saída'];
+$reject(fn () => $ci->vistoria_service->register($parallelOrder, $parallelLink, $exitData, [], 'saida'), 'Exit inspection requires a physical intake');
+$reject(fn () => $workflow->deliver($equipmentOrder, 'Pessoa autorizada', true), 'Delivery requires an exit inspection for each received equipment');
+$reject(fn () => $ci->vistoria_service->register($equipmentOrder, $linkId, $exitData, [], 'invalid'), 'Inspection type is allowlisted');
+$reject(fn () => $ci->vistoria_service->register($other, $linkId, $exitData, [], 'saida'), 'Exit inspection validates the OS equipment link');
+$reject(fn () => $ci->vistoria_service->register($equipmentOrder, $linkId, array_merge($exitData, ['vistoria_conferencia' => 'divergencia']), [], 'saida'), 'Accessory differences require explicit remarks');
+$ci->vistoria_service->register($equipmentOrder, $linkId, $exitData, [$exitPhoto], 'saida');
+$reject(fn () => $workflow->deliver($equipmentOrder, 'Pessoa autorizada'), 'Pickup requires explicit staff-recorded customer acceptance');
+$ci->vistoria_service->append($equipmentOrder, $linkId, [$exitPhoto], 'saida');
+$workflow->deliver($equipmentOrder, 'Pessoa autorizada', true);
 $exit = $db->get_where('equipamento_recibos', ['vinculo_id' => $linkId, 'tipo' => 'saida'])->row();
 $assert(json_decode($exit->dados, true)['retirado_por'] === 'Pessoa autorizada' && $db->get_where('os', ['idOs' => $equipmentOrder])->row()->entregue_em, 'Pickup receipt and OS delivery commit together');
+$exitSnapshot = json_decode($exit->dados, true);
+$printedExit = $ci->load->view('equipamentos/comprovante', ['receipt' => $exit, 'snapshot' => $exitSnapshot], true);
+$assert(str_contains($printedExit, 'Vistoria de saída') && str_contains($printedExit, 'Pessoa autorizada') && str_contains($printedExit, 'Conferência e aceite na retirada'), 'Delivery receipt supports older entries without categorized intake inspections');
+$assert(count($exitSnapshot['vistoria_saida']['fotos']) === 2 && $exitSnapshot['aceite']['confirmado'] === true, 'Delivery freezes exit photos and staff-recorded acceptance in its receipt');
+$assert($exitSnapshot['acessorios'] === $snapshot['acessorios'] && $exitSnapshot['serie'] === $snapshot['serie'], 'Exit receipt preserves the original intake identity and accessories');
+$reject(fn () => $ci->vistoria_service->append($equipmentOrder, $linkId, [$exitPhoto], 'saida'), 'Exit evidence is immutable after delivery');
+$assert($db->get_where('equipamento_recibos', ['id' => $exit->id])->row()->dados === $exit->dados, 'A rejected photo append never changes the issued receipt');
 $reject(fn () => $workflow->deliver($equipmentOrder, 'Outra pessoa'), 'A second delivery cannot issue duplicate receipts');
 $reject(fn () => $workflow->updateOrder($equipmentOrder, ['status' => 'Aberto'], false), 'A documented delivery is preserved when equipment returns for a new service');
 $notReceivedOrder = $create();
@@ -60,7 +78,8 @@ $qr = new \Mpdf\QrCode\QrCode(site_url('equipamentos/visualizar/' . $equipmentId
 $assert(getimagesizefromstring((new \Mpdf\QrCode\Output\Png())->output($qr, 240))[0] === 240, 'Equipment labels render a QR pointing to the authenticated catalog');
 $cancelledReceipt = $equipmentService->intake($parallelOrder, $parallelLink, $intakeData);
 $db->where('idOs', $parallelOrder)->update('os', ['status' => 'Cancelado']);
-$workflow->deliver($parallelOrder, 'Cliente');
+$ci->vistoria_service->register($parallelOrder, $parallelLink, $exitData, [], 'saida');
+$workflow->deliver($parallelOrder, 'Cliente', true);
 $assert((bool) $db->get_where('os', ['idOs' => $parallelOrder])->row()->entregue_em, 'Cancelled services can still document the return of equipment already received');
 $newOrderData = ['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0];
 $orderWithEquipment = $workflow->createOrder($newOrderData, [$equipmentId, $equipmentId]);
@@ -70,3 +89,20 @@ $beforeCreate = [$db->count_all('os'), $db->count_all('os_eventos'), $db->count_
 $reject(fn () => $workflow->createOrder($newOrderData, [$equipmentId, $foreignEquipment]), 'New OS creation rejects equipment owned by another customer');
 $assert($beforeCreate === [$db->count_all('os'), $db->count_all('os_eventos'), $db->count_all('com_fila')], 'Invalid equipment selection rolls back the OS, timeline and notification outbox together');
 $reject(fn () => $workflow->createOrder($newOrderData, [['invalid']]), 'New OS creation rejects malformed equipment identifiers');
+
+// Multi-equipment delivery must roll back all receipts when any item is unchecked.
+$secondEquipment = $equipmentService->save(array_merge($equipmentData, ['num_serie' => 'SECOND-DELIVERY']));
+$multiOrder = $workflow->createOrder($newOrderData, [$equipmentId, $secondEquipment]);
+$multiLinks = $db->get_where('equipamentos_os', ['os_id' => $multiOrder])->result();
+foreach ($multiLinks as $multiLink) {
+    $equipmentService->intake($multiOrder, $multiLink->idEquipamentos_os, $intakeData);
+}
+$ci->vistoria_service->register($multiOrder, $multiLinks[0]->idEquipamentos_os, $exitData, [], 'saida');
+$db->where('idOs', $multiOrder)->update('os', ['status' => 'Finalizado']);
+$beforeDelivery = [$db->count_all('equipamento_recibos'), $db->count_all('os_eventos'), $db->count_all('com_fila')];
+$reject(fn () => $workflow->deliver($multiOrder, 'Cliente', true), 'Every equipment needs its own exit inspection before a combined delivery');
+$assert($beforeDelivery === [$db->count_all('equipamento_recibos'), $db->count_all('os_eventos'), $db->count_all('com_fila')]
+    && ! $db->get_where('os', ['idOs' => $multiOrder])->row()->entregue_em, 'Incomplete combined delivery rolls back receipts, delivery timestamp, timeline and outbox');
+$ci->vistoria_service->register($multiOrder, $multiLinks[1]->idEquipamentos_os, array_merge($exitData, ['vistoria_conferencia' => 'divergencia', 'vistoria_ressalvas' => 'Carregador substituído, diferença apresentada ao cliente']), [], 'saida');
+$workflow->deliver($multiOrder, 'Cliente', true);
+$assert((bool) $db->get_where('os', ['idOs' => $multiOrder])->row()->entregue_em, 'Explicit accessory differences are preserved without preventing a confirmed pickup');
