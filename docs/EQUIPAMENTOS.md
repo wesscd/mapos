@@ -1,0 +1,15 @@
+# Cadastro e movimentação de equipamentos
+
+O menu **Equipamentos** identifica o bem do cliente por nome, marca, modelo, série e cor. A busca aceita cliente, equipamento, modelo e série. Equipamentos existentes nas tabelas originais permanecem disponíveis quando possuem um cliente válido; nenhuma descrição antiga da OS é convertida automaticamente em equipamento ou recebimento.
+
+O cadastro utiliza as permissões de clientes: `vCliente` para consulta, fotos e etiquetas; `aCliente` para criar; `eCliente` para editar e adicionar fotos. O histórico de OS exige também `vOs`. Vincular e receber equipamentos exige `eOs` e `vCliente`. Comprovantes exigem `vOs` e `vCliente`. Não são links públicos e o QR exige login autorizado.
+
+Na seção **Equipamentos e recebimento físico** da OS, escolha um equipamento do mesmo cliente ou abra o cadastro de um novo. Uma OS pode possuir vários equipamentos. Vincular não confirma a entrada física. Após a conferência, informe quem entregou, acessórios (inclusive “Nenhum”) e condições aparentes. Adicione previamente as fotos no cadastro, quando necessário.
+
+O recebimento gera um comprovante com data, usuário responsável e cópia imutável dos dados do cliente, empresa, equipamento, acessórios, condições e identificadores das fotos daquele momento. Alterações posteriores do cadastro não reescrevem esse documento. A impressão permite salvar PDF e coletar assinaturas no papel; o sistema não apresenta o registro interno como assinatura do cliente. Um equipamento com entrada pendente de saída não pode ter outro recebimento registrado em paralelo. Se o serviço for cancelado depois da entrada, a confirmação da entrega continua disponível para documentar a devolução.
+
+Após finalizar a OS, a confirmação da entrega exige o nome de quem retira e gera um comprovante de saída para cada equipamento recebido. Todos os equipamentos vinculados precisam ter entrada registrada. OS antigas sem equipamento vinculado mantêm a confirmação de entrega anterior. Atendimento com comprovantes não pode ser excluído; uma entrega documentada não pode ser reaberta apagando a movimentação: registre o retorno em nova OS. Não é permitido mudar o cliente da OS ou o proprietário de um equipamento com histórico.
+
+Fotos: JPEG/PNG até 2 MB e 12 megapixels; até 12 por equipamento. São decodificadas, reduzidas para até 1600 pixels e regravadas em JPEG, removendo metadados e conteúdo adicional. Armazenadas em tabela privada, são entregues por rota autenticada com `no-store`; integram o backup MySQL existente, sem depender de arquivos públicos. O volume de fotos aumenta o banco e o tamanho dos backups. Não há exclusão ou substituição de fotos/documentos nesta etapa, para preservar referências históricas.
+
+Validação: `scripts/test.ps1` executa regras de propriedade, idempotência, entrada/saída, preservação de histórico, fotos e QR em banco descartável. `tests/http_smoke.py` também verifica as duas novas telas iniciais. A migração `20261020160000_equipment_intake.php` cria apenas as tabelas de fotos e comprovantes; as tabelas de marcas, equipamentos e vínculos já existiam.

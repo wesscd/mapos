@@ -7,9 +7,10 @@
     </div>
     <p>Responsável: <strong><?= html_escape($result->nome) ?></strong> · Prazo: <strong><?= $result->dataFinal ? html_escape(date('d/m/Y', strtotime($result->dataFinal))) : 'Não definido' ?></strong></p>
     <?php if (! empty($result->entregue_em)) { ?><p>Entrega registrada em <?= html_escape(date('d/m/Y H:i', strtotime($result->entregue_em))) ?>.</p>
-    <?php } elseif (in_array($result->status, ['Finalizado', 'Faturado'], true) && $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) { ?>
-        <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?><input type="hidden" name="acao" value="entrega"><button class="btn btn-primary">Confirmar entrega ao cliente</button></form>
+    <?php } elseif ((in_array($result->status, ['Finalizado', 'Faturado'], true) || ($result->status === 'Cancelado' && ! empty($workflow['recibos']))) && $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs')) { ?>
+        <?= form_open('acompanhamento/salvar/' . (int) $result->idOs) ?><input type="hidden" name="acao" value="entrega"><label>Nome de quem retira <input name="retirado_por" maxlength="150" <?= ! empty($workflow['recibos']) ? 'required' : '' ?>></label><button class="btn btn-primary">Confirmar entrega ao cliente</button></form>
     <?php } ?>
+    <?php $this->load->view('equipamentos/os'); ?>
     <div class="mapos-grid">
         <section class="mapos-card"><h3>Checklist técnico</h3>
             <?php foreach ($workflow['checklist'] as $item) { ?>

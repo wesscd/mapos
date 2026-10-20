@@ -61,6 +61,9 @@
                     </li>
                 <?php } ?>
 
+                <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) { ?>
+                    <li class="<?= isset($menuEquipamentos) ? 'active' : '' ?>"><a href="<?= site_url('equipamentos') ?>"><i class="bx bx-laptop iconX"></i><span class="title">Equipamentos</span><span class="title-tooltip">Equipamentos</span></a></li>
+                <?php } ?>
                 <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vProduto')) { ?>
                     <li class="<?php if (isset($menuProdutos)) {
                         echo 'active';

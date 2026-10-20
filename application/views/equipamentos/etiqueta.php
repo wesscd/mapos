@@ -1,0 +1,5 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etiqueta #<?= (int) $equipment->idEquipamentos ?></title>
+<style>body{font:14px Arial,sans-serif;padding:20px}.label{width:80mm;max-width:100%;border:1px solid #222;padding:4mm;box-sizing:border-box;overflow-wrap:anywhere}.label img{width:32mm;display:block;margin:auto}.label h1{font-size:18px}button{margin-bottom:20px;padding:10px}@media print{body{padding:0;margin:0}button,.help{display:none}@page{margin:8mm}}</style></head><body>
+    <button type="button" onclick="window.print()">Imprimir etiqueta</button><div class="label"><h1>Equipamento #<?= (int) $equipment->idEquipamentos ?></h1><p><?= html_escape($equipment->equipamento) ?></p><p><?= html_escape(trim($equipment->marca . ' ' . $equipment->modelo)) ?><br>Série: <?= html_escape($equipment->num_serie ?: 'Não informada') ?></p><img src="data:image/png;base64,<?= html_escape($qr) ?>" alt="QR Code do cadastro autenticado"></div>
+    <p class="help">Etiqueta de 80 mm. O QR abre o cadastro e exige acesso autorizado ao MapOS.</p>
+</body></html>

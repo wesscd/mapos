@@ -19,7 +19,7 @@ data = urllib.parse.urlencode({"email": credentials["email"], "senha": credentia
 response = client.open(base + "/index.php/login/verificarLogin", data, timeout=30)
 assert json.loads(response.read()).get("result") is True, "Admin login failed"
 assert response.headers.get("X-CSRF-Token"), "Responses must expose the refreshed CSRF token"
-for path in ["operacoes", "os", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0"]:
+for path in ["operacoes", "os", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0", "equipamentos", "equipamentos/salvar"]:
     response = client.open(base + "/index.php/" + path, timeout=30)
     body = response.read().decode()
     assert response.status == 200 and all(error not in body for error in ["A PHP Error was encountered", "Database Error", "An uncaught Exception was encountered", "Fatal error:"]), path
@@ -36,4 +36,4 @@ try:
     raise AssertionError("POST without CSRF token was accepted")
 except urllib.error.HTTPError as error:
     assert error.code == 403
-print("HTTP checks passed: authentication, refreshed CSRF, eight application pages and protected paths.")
+print("HTTP checks passed: authentication, refreshed CSRF, ten application pages and protected paths.")

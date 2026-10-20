@@ -114,6 +114,7 @@ $workflow->deleteOrder($order, true);
 $assert($stock() === 5 && ! $db->get_where('os', ['idOs' => $order])->row(), 'Order removal and stock refund complete together');
 $assert(! $db->get_where('lancamentos', ['idLancamentos' => $invoice])->row(), 'Deleting an invoiced order removes its linked financial entry');
 require __DIR__ . '/communication.php';
+require __DIR__ . '/equipment.php';
 $assert($ci->migration->version(20240503170400) && ! $db->table_exists('os_eventos') && ! $db->table_exists('com_fila'), 'Workflow and communication migrations roll back in the disposable database');
 $assert($ci->migration->latest() && $db->table_exists('os_eventos'), 'Workflow migration can be reapplied');
 echo "Completed: $passed integration assertions.\n";

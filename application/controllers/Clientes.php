@@ -230,6 +230,11 @@ class Clientes extends MY_Controller
             redirect(site_url('clientes/gerenciar/'));
         }
 
+        if ($this->db->where('clientes_id', (int) $id)->count_all_results('equipamentos')) {
+            $this->session->set_flashdata('error', 'Este cliente possui equipamentos cadastrados. Preserve o cadastro e seu histórico.');
+            redirect(site_url('clientes/gerenciar/'));
+        }
+
         $os = $this->clientes_model->getAllOsByClient($id);
         if ($os != null) {
             $this->clientes_model->removeClientOs($os);

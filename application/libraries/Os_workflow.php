@@ -20,6 +20,9 @@ class Os_workflow
     public function details($id)
     {
         return [
+            'equipamentos_disponiveis' => $this->ci->db->select('equipamentos.idEquipamentos, equipamento, num_serie')->from('equipamentos')->join('os', 'os.clientes_id = equipamentos.clientes_id')->where('os.idOs', (int) $id)->order_by('idEquipamentos', 'desc')->limit(200)->get()->result(),
+            'equipamentos' => $this->ci->db->select('equipamentos_os.idEquipamentos_os, equipamentos.idEquipamentos, equipamentos.equipamento, equipamentos.num_serie, equipamentos.modelo')->from('equipamentos_os')->join('equipamentos', 'equipamentos.idEquipamentos = equipamentos_os.equipamentos_id')->where('os_id', (int) $id)->get()->result(),
+            'recibos' => $this->ci->db->select('equipamento_recibos.id, vinculo_id, tipo, equipamento_recibos.created_at')->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', (int) $id)->get()->result(),
             'checklist' => $this->ci->db->order_by('id')->get_where('os_checklist', ['os_id' => $id])->result(),
             'eventos' => $this->ci->db->order_by('id', 'desc')->limit(100)->get_where('os_eventos', ['os_id' => $id])->result(),
             'aprovacoes' => $this->ci->db->order_by('id', 'desc')->get_where('os_aprovacoes', ['os_id' => $id])->result(),
@@ -97,13 +100,16 @@ class Os_workflow
         });
     }
 
-    public function deliver($id)
+    public function deliver($id, $recipient = '')
     {
-        return $this->transaction(function () use ($id) {
+        return $this->transaction(function () use ($id, $recipient) {
             $order = $this->lockOrder($id);
-            if (! in_array($order->status, ['Finalizado', 'Faturado'], true) || $order->entregue_em) {
-                throw new DomainException('A OS deve estar finalizada e ainda não ter sido entregue.');
+            $cancelledReturn = $order->status === 'Cancelado' && $this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->where('tipo', 'entrada')->count_all_results();
+            if ((! in_array($order->status, ['Finalizado', 'Faturado'], true) && ! $cancelledReturn) || $order->entregue_em) {
+                throw new DomainException('Finalize a OS antes da entrega. Em atendimentos cancelados, a devolução exige recebimento registrado. Não é possível repetir uma entrega.');
             }
+            $this->ci->load->library('equipamento_service');
+            $this->ci->equipamento_service->deliveryReceipts($id, $recipient);
             $this->ci->db->where('idOs', $id)->update('os', ['entregue_em' => date('Y-m-d H:i:s')]);
             $this->event($id, 'entrega', 'Entrega do equipamento ao cliente registrada.');
         });
@@ -273,6 +279,14 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $data, $controlStock) {
             $order = $this->lockOrder($id);
+            if (isset($data['clientes_id']) && (int) $data['clientes_id'] !== (int) $order->clientes_id
+                && $this->ci->db->where('os_id', $id)->count_all_results('equipamentos_os')) {
+                throw new DomainException('Uma OS com equipamentos vinculados não pode mudar de cliente.');
+            }
+            if ($order->entregue_em && isset($data['status']) && $data['status'] !== $order->status && ! in_array($data['status'], ['Finalizado', 'Faturado'], true)
+                && $this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->count_all_results()) {
+                throw new DomainException('A entrega possui comprovante. Abra uma nova OS para o retorno do equipamento.');
+            }
             if ((int) $order->faturado && $data['status'] !== $order->status) {
                 throw new DomainException('Uma OS faturada não pode mudar de status.');
             }
@@ -311,6 +325,9 @@ class Os_workflow
     {
         return $this->transaction(function () use ($id, $controlStock) {
             $order = $this->lockOrder($id);
+            if ($this->ci->db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $id)->count_all_results()) {
+                throw new DomainException('Esta OS possui comprovante de movimentação física e deve ser preservada no histórico.');
+            }
             $charges = $this->ci->db->get_where('cobrancas', ['os_id' => $id])->result();
             foreach ($charges as $charge) {
                 if ($charge->status !== 'canceled') {
