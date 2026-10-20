@@ -70,3 +70,5 @@ Abertura, edição, consulta e listagem compartilham os componentes de `applicat
 A listagem e o orçamento consideram `tipo_desconto` para distinguir ausência de desconto de desconto integral. O QR Pix e o código Copia e Cola partem do mesmo payload, com valor líquido persistido. Datas inválidas retornam mensagens de validação. Não há migração nem alteração de registros históricos nesta reconstrução.
 
 Validação visual local: busca e inclusão de serviço, desconto de R$ 10 em OS de R$ 100, salvamento e troca de aba, proteção de diagnóstico não salvo e retorno do checklist. A integração HTTP também exige IDs únicos, formulários independentes e totais coerentes na consulta, edição e listagem. Confira teclado e largura móvel ao alterar os componentes.
+
+A busca da listagem aceita nome/documento do cliente e número da OS (também com `#`). A paginação usa os mesmos filtros e uma busca sem correspondência mantém o resultado vazio.

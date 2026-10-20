@@ -58,7 +58,7 @@ class Os extends MY_Controller
         }
 
         $this->data['configuration']['base_url'] = site_url('os/gerenciar/');
-        $this->data['configuration']['total_rows'] = $this->os_model->count('os');
+        $this->data['configuration']['total_rows'] = $this->os_model->countOs($where_array);
         if (count($where_array) > 0) {
             // Estes valores são interpolados no href dos links de paginação.
             $query = http_build_query([
@@ -171,7 +171,7 @@ class Os extends MY_Controller
 
                 // Automatic notifications are handled by the transactional communication outbox.
 
-                $this->session->set_flashdata('success', 'OS adicionada com sucesso, você pode adicionar produtos ou serviços a essa OS nas abas de Produtos e Serviços!');
+                $this->session->set_flashdata('success', 'OS criada com sucesso. Adicione serviços e produtos na aba Orçamento.');
                 log_info('Adicionou uma OS. ID: ' . $id);
                 redirect(site_url('os/editar/') . $id);
             } else {

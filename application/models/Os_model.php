@@ -29,51 +29,12 @@ class Os_model extends CI_Model
 
     public function getOs($table, $fields, $where = [], $perpage = 0, $start = 0, $one = false, $array = 'array')
     {
-        $lista_clientes = [];
-        if ($where) {
-            if (array_key_exists('pesquisa', $where)) {
-                $this->db->select('idClientes');
-                $this->db->like('nomeCliente', $where['pesquisa']);
-                $this->db->or_like('documento', $where['pesquisa']);
-                $this->db->limit(25);
-                $clientes = $this->db->get('clientes')->result();
-
-                foreach ($clientes as $c) {
-                    array_push($lista_clientes, $c->idClientes);
-                }
-            }
-        }
-
         $this->db->select($fields . ',clientes.idClientes, clientes.nomeCliente, clientes.celular as celular_cliente, usuarios.nome, garantias.*');
         $this->db->from($table);
         $this->db->join('clientes', 'clientes.idClientes = os.clientes_id');
         $this->db->join('usuarios', 'usuarios.idUsuarios = os.usuarios_id');
         $this->db->join('garantias', 'garantias.idGarantias = os.garantias_id', 'left');
-        $this->db->join('produtos_os', 'produtos_os.os_id = os.idOs', 'left');
-        $this->db->join('servicos_os', 'servicos_os.os_id = os.idOs', 'left');
-
-        // condicionais da pesquisa
-
-        // condicional de status
-        if (array_key_exists('status', $where)) {
-            $this->db->where_in('status', $where['status']);
-        }
-
-        // condicional de clientes
-        if (array_key_exists('pesquisa', $where)) {
-            if ($lista_clientes != null) {
-                $this->db->where_in('os.clientes_id', $lista_clientes);
-            }
-        }
-
-        // condicional data inicial
-        if (array_key_exists('de', $where)) {
-            $this->db->where('dataInicial >=', $where['de']);
-        }
-        // condicional data final
-        if (array_key_exists('ate', $where)) {
-            $this->db->where('dataFinal <=', $where['ate']);
-        }
+        $this->filterOrders($where);
 
         $this->db->limit($perpage, $start);
         $this->db->order_by('os.idOs', 'desc');
@@ -84,6 +45,35 @@ class Os_model extends CI_Model
         $result = ! $one ? $query->result() : $query->row();
 
         return $result;
+    }
+
+    public function countOs(array $where = [])
+    {
+        $this->db->from('os')->join('clientes', 'clientes.idClientes = os.clientes_id');
+        $this->filterOrders($where);
+        return $this->db->count_all_results();
+    }
+
+    private function filterOrders(array $where)
+    {
+        if (! empty($where['status'])) {
+            $this->db->where_in('os.status', $where['status']);
+        }
+        if (isset($where['pesquisa']) && is_string($where['pesquisa']) && trim($where['pesquisa']) !== '') {
+            $term = trim($where['pesquisa']);
+            $this->db->group_start()->like('clientes.nomeCliente', $term)->or_like('clientes.documento', $term);
+            $number = ltrim($term, '#');
+            if (ctype_digit($number)) {
+                $this->db->or_where('os.idOs', (int) $number);
+            }
+            $this->db->group_end();
+        }
+        if (! empty($where['de'])) {
+            $this->db->where('os.dataInicial >=', $where['de']);
+        }
+        if (! empty($where['ate'])) {
+            $this->db->where('os.dataFinal <=', $where['ate']);
+        }
     }
 
     public function getById($id)

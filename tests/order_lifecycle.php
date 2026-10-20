@@ -77,3 +77,8 @@ $assert($ci->os_model->pixPayment($pixOrder, 'teste@example.com', $pixIssuer) ==
 
 $reject(fn () => $workflow->validatedDateFromForm('31/02/2026'), 'Form dates reject impossible days instead of substituting the current date');
 $reject(fn () => $workflow->validatedDateFromForm(['invalid']), 'Malformed form dates produce a validation message');
+
+$searchOrders = $ci->os_model->getOs('os', 'os.*', ['pesquisa' => '#' . $reviewOrder], 100);
+$assert(count($searchOrders) === 1 && (int) $searchOrders[0]->idOs === (int) $reviewOrder, 'OS search can find an exact order number');
+$assert($ci->os_model->countOs(['pesquisa' => '#' . $reviewOrder]) === 1, 'Pagination count uses the same order filters as the visible list');
+$assert($ci->os_model->getOs('os', 'os.*', ['pesquisa' => 'NO_MATCH_UNIQUE_FIXTURE'], 100) === [], 'A customer search with no matches cannot return unrelated orders');
