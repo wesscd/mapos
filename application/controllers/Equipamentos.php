@@ -39,6 +39,21 @@ class Equipamentos extends MY_Controller
         $this->layout();
     }
 
+    public function porCliente($id = null)
+    {
+        $this->permission('vCliente');
+        if (! $this->hasAnyPermission(['aOs', 'eOs'])) {
+            show_error('Você não tem permissão para vincular equipamentos.', 403);
+        }
+        if ($this->input->method() !== 'get' || ! ctype_digit((string) $id) || (int) $id <= 0) {
+            show_error('Informe um cliente válido.', 400);
+        }
+        $rows = $this->db->select('idEquipamentos, equipamento, modelo, num_serie')->order_by('idEquipamentos', 'desc')
+            ->limit(201)->get_where('equipamentos', ['clientes_id' => (int) $id])->result_array();
+        $this->output->set_header('Cache-Control: private, no-store')->set_content_type('application/json')
+            ->set_output(json_encode(['equipamentos' => array_slice($rows, 0, 200), 'limitado' => count($rows) > 200], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
     public function salvar($id = null)
     {
         $this->permission($id ? 'eCliente' : 'aCliente');

@@ -62,3 +62,11 @@ $cancelledReceipt = $equipmentService->intake($parallelOrder, $parallelLink, $in
 $db->where('idOs', $parallelOrder)->update('os', ['status' => 'Cancelado']);
 $workflow->deliver($parallelOrder, 'Cliente');
 $assert((bool) $db->get_where('os', ['idOs' => $parallelOrder])->row()->entregue_em, 'Cancelled services can still document the return of equipment already received');
+$newOrderData = ['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0];
+$orderWithEquipment = $workflow->createOrder($newOrderData, [$equipmentId, $equipmentId]);
+$assert($db->where('os_id', $orderWithEquipment)->count_all_results('equipamentos_os') === 1, 'New OS creation saves its selected equipment atomically without duplicate links');
+$assert(! $db->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', $orderWithEquipment)->count_all_results(), 'Selecting equipment when opening an OS does not confirm physical receipt');
+$beforeCreate = [$db->count_all('os'), $db->count_all('os_eventos'), $db->count_all('com_fila')];
+$reject(fn () => $workflow->createOrder($newOrderData, [$equipmentId, $foreignEquipment]), 'New OS creation rejects equipment owned by another customer');
+$assert($beforeCreate === [$db->count_all('os'), $db->count_all('os_eventos'), $db->count_all('com_fila')], 'Invalid equipment selection rolls back the OS, timeline and notification outbox together');
+$reject(fn () => $workflow->createOrder($newOrderData, [['invalid']]), 'New OS creation rejects malformed equipment identifiers');

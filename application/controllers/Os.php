@@ -141,7 +141,18 @@ class Os extends MY_Controller
                 'faturado' => 0,
             ];
 
-            if (is_numeric($id = $this->os_workflow->createOrder($data))) {
+            $equipmentId = $this->input->post('equipamento_id');
+            $equipmentIds = ($equipmentId !== null && $equipmentId !== '') ? [$equipmentId] : [];
+            if ($equipmentIds && ! $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) {
+                show_error('Você não tem permissão para consultar equipamentos.', 403);
+            }
+            try {
+                $id = $this->os_workflow->createOrder($data, $equipmentIds);
+            } catch (DomainException $error) {
+                $id = null;
+                $this->data['order_error'] = $error->getMessage();
+            }
+            if (is_numeric($id)) {
                 $this->load->model('mapos_model');
                 $this->load->model('usuarios_model');
 

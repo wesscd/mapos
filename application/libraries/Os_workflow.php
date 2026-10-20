@@ -90,12 +90,24 @@ class Os_workflow
         }
     }
 
-    public function createOrder(array $data)
+    public function createOrder(array $data, array $equipmentIds = [])
     {
-        return $this->transaction(function () use ($data) {
+        return $this->transaction(function () use ($data, $equipmentIds) {
+            if (count($equipmentIds) > 20) {
+                throw new DomainException('Vincule até 20 equipamentos por vez.');
+            }
             $this->ci->db->insert('os', $data);
             $id = $this->ci->db->insert_id();
             $this->event($id, 'criacao', 'OS criada. Status: ' . $data['status']);
+            if ($equipmentIds) {
+                $this->ci->load->library('equipamento_service');
+                foreach ($equipmentIds as $equipmentId) {
+                    if (filter_var($equipmentId, FILTER_VALIDATE_INT) === false || $equipmentId <= 0) {
+                        throw new DomainException('Selecione um equipamento válido para este cliente.');
+                    }
+                    $this->ci->equipamento_service->link($id, (int) $equipmentId);
+                }
+            }
             return $id;
         });
     }
