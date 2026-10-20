@@ -9,6 +9,12 @@ function compress()
     ini_set('pcre.recursion_limit', '16777');
     $CI = &get_instance();
     $buffer = $CI->output->get_output();
+    // Whitespace compaction is only safe for HTML, never binary images or JSON.
+    if ($CI->output->get_content_type() !== 'text/html') {
+        $CI->output->_display();
+
+        return;
+    }
 
     $re = '%# Collapse whitespace everywhere but in blacklisted elements.
         (?>             # Match all whitespans other than single space.
