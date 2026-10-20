@@ -85,6 +85,19 @@ https://baileys.wiki/authentication/session-management.
 
 ## Estados e reenvio
 
+O pareamento distingue leitura do QR, conclusão do vínculo e conexão pronta. O
+reinício solicitado pelo WhatsApp após a leitura (`515`) é imediato e preserva as
+credenciais, sem aplicar o atraso das falhas de rede. O QR segue as janelas da
+biblioteca (primeiro: 60 segundos; seguintes: 20 segundos) e é ocultado ao expirar
+ou ao começar a conclusão do pareamento. Uma tentativa não lida que expira para
+e aguarda o administrador gerar um novo QR, em vez de reconectar indefinidamente.
+
+O último código de desconexão, data e indicação de vínculo são armazenados no
+SQLite para diagnóstico. Não são registrados QR Codes, chaves, mensagens ou
+identificadores da conta nesses diagnósticos. O código aparece na central para
+facilitar a investigação de uma eventual nova falha. Esse indicador de conexão
+é separado do estado de entrega das mensagens abaixo.
+
 O gateway persiste uma chave e o identificador da mensagem antes de enviá-la.
 Repetir a mesma chave consulta seu resultado e não retransmite a mensagem.
 Confirmações de entrega/leitura podem chegar depois e atualizar o histórico.

@@ -3,66 +3,101 @@ import pino from 'pino';
 import QRCode from 'qrcode';
 
 export class BaileysAdapter {
-  constructor(store) {
+  constructor(store, { socketFactory = makeWASocket, schedule = setTimeout, cancel = clearTimeout, now = Date.now, logoutTimeoutMs = 10000, renderQr = qr => QRCode.toDataURL(qr, { width: 320 }) } = {}) {
     this.store = store;
+    Object.assign(this, { socketFactory, schedule, cancel, now, renderQr, logoutTimeoutMs });
     this.socket = null;
     this.state = 'disconnected';
     this.qr = null;
     this.timer = null;
     this.generation = 0;
     this.retries = 0;
+    this.qrCount = 0;
+    this.qrExpires = 0;
+    this.lastDisconnect = store.connectionDiagnostic();
     this.logger = pino({ level: 'silent' });
   }
 
   ready() { return this.state === 'connected'; }
   async status() {
+    const qr = this.qr;
+    const generation = this.generation;
+    const rendered = qr && this.qrExpires > this.now() ? await this.renderQr(qr) : null;
+    const current = rendered && qr === this.qr && generation === this.generation && this.qrExpires > this.now();
     return {
       state: this.state,
-      qr: this.qr && this.qrExpires > Date.now() ? await QRCode.toDataURL(this.qr, { width: 280 }) : null,
+      qr: current ? rendered : null,
+      qrValidForMs: current ? this.qrExpires - this.now() : 0,
+      lastDisconnect: this.lastDisconnect,
       account: this.ready() ? (this.socket?.user?.id?.split(':')[0] || '').split('@')[0] : null,
     };
   }
 
-  async connect() {
-    if (this.socket || this.timer) return;
-    if (this.state === 'needs_pairing') this.store.clearAuth();
+  async connect({ resume = false } = {}) {
+    if (this.socket || this.timer || this.state === 'disconnecting') return;
+    if (!resume) {
+      this.retries = 0;
+      if (['needs_pairing', 'qr_expired'].includes(this.state)) this.store.clearAuth();
+    }
     this.store.setEnabled(true);
     this.state = 'connecting';
     const generation = ++this.generation;
+    this.qrCount = 0;
     const auth = this.store.auth();
     auth.save();
-    const socket = makeWASocket({
+    const socket = this.socketFactory({
       logger: this.logger,
       auth: { creds: auth.state.creds, keys: makeCacheableSignalKeyStore(auth.state.keys, this.logger) },
       printQRInTerminal: false, markOnlineOnConnect: false,
       syncFullHistory: false, shouldSyncHistoryMessage: () => false,
-      connectTimeoutMs: 20000, defaultQueryTimeoutMs: 20000,
+      connectTimeoutMs: 60000, defaultQueryTimeoutMs: 60000,
       getMessage: async key => this.store.message(key.id),
     });
     this.socket = socket;
-    socket.ev.on('creds.update', () => { if (generation === this.generation) auth.save(); });
+    socket.ev.on('creds.update', update => {
+      if (generation !== this.generation) return;
+      Object.assign(auth.state.creds, update);
+      auth.save();
+    });
     socket.ev.on('connection.update', update => {
       if (generation !== this.generation) return;
       if (update.qr) {
         this.qr = update.qr;
-        this.qrExpires = Date.now() + 45000;
+        // Baileys 6 uses 60s for the first QR and 20s for subsequent references.
+        this.qrExpires = this.now() + (this.qrCount++ === 0 ? 60000 : 20000);
         this.state = 'qr';
       }
+      if (update.isNewLogin) {
+        auth.save();
+        this.state = 'pairing'; this.qr = null; this.qrExpires = 0;
+      }
       if (update.connection === 'open') {
-        this.state = 'connected'; this.qr = null; this.retries = 0;
+        this.state = 'connected'; this.qr = null; this.qrExpires = 0; this.retries = 0;
       }
       if (update.connection === 'close') {
-        this.socket = null; this.qr = null;
+        auth.save();
+        this.socket = null; this.qr = null; this.qrExpires = 0;
+        ++this.generation;
         const code = update.lastDisconnect?.error?.output?.statusCode;
+        const paired = !!auth.state.creds.me?.id;
+        this.lastDisconnect = { code: Number.isInteger(code) ? code : null, at: new Date(this.now()).toISOString(), paired };
+        this.store.connectionDiagnostic(this.lastDisconnect);
         if ([DisconnectReason.loggedOut, DisconnectReason.badSession, DisconnectReason.connectionReplaced, DisconnectReason.multideviceMismatch, DisconnectReason.forbidden].includes(code)) {
           this.state = 'needs_pairing'; this.store.setEnabled(false);
           return;
         }
-        this.state = 'reconnecting';
-        this.timer = setTimeout(() => {
+        if (code === DisconnectReason.timedOut && !paired) {
+          this.state = 'qr_expired'; this.store.setEnabled(false);
+          return;
+        }
+        // WhatsApp requires a new socket immediately after successful QR pairing.
+        // This is a protocol step, not a failed connection to back off for a minute.
+        const restart = code === DisconnectReason.restartRequired;
+        this.state = restart ? 'pairing' : 'reconnecting';
+        this.timer = this.schedule(() => {
           this.timer = null;
-          this.connect().catch(() => { this.state = 'unavailable'; });
-        }, Math.min(60000, 1000 * 2 ** Math.min(this.retries++, 6)));
+          this.connect({ resume: true }).catch(() => { this.state = 'unavailable'; });
+        }, restart ? 0 : Math.min(60000, 1000 * 2 ** Math.min(this.retries++, 6)));
       }
     });
     socket.ev.on('messages.update', updates => {
@@ -83,15 +118,31 @@ export class BaileysAdapter {
   }
 
   async disconnect() {
+    const wasConnected = this.ready();
     this.store.setEnabled(false);
-    clearTimeout(this.timer); this.timer = null;
+    this.cancel(this.timer); this.timer = null;
     ++this.generation;
     const socket = this.socket;
-    this.socket = null; this.qr = null; this.state = 'disconnected';
+    this.socket = null; this.qr = null; this.qrExpires = 0; this.state = 'disconnecting';
     if (socket) {
-      try { await socket.logout(); } catch { socket.end(new Error('Disconnected by administrator')); }
+      if (wasConnected) {
+        let timeout;
+        try {
+          await Promise.race([
+            socket.logout(),
+            new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Logout timeout')), this.logoutTimeoutMs); }),
+          ]);
+        } catch {
+          socket.end(new Error('Disconnected by administrator'));
+        } finally {
+          clearTimeout(timeout);
+        }
+      } else {
+        socket.end(new Error('Pairing cancelled by administrator'));
+      }
     }
     this.store.clearAuth();
+    this.state = 'disconnected';
   }
 
   async resolve(number) {
@@ -107,7 +158,7 @@ export class BaileysAdapter {
 
   stop() {
     ++this.generation;
-    clearTimeout(this.timer);
+    this.cancel(this.timer); this.timer = null;
     this.socket?.end(new Error('Service stopping'));
   }
 }

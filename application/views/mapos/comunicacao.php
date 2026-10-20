@@ -4,7 +4,8 @@
     <div class="mapos-grid">
         <section class="mapos-card"><h2>WhatsApp</h2>
             <p role="status" id="wa-state">Consultando conexão…</p>
-            <p id="wa-account"></p><img id="wa-qr" hidden width="280" height="280" alt="QR Code para conectar o WhatsApp" style="max-width:100%;height:auto">
+            <p id="wa-account"></p><img id="wa-qr" hidden width="320" height="320" alt="QR Code para conectar o WhatsApp" style="max-width:100%;height:auto">
+            <p id="wa-diagnostic" class="mapos-muted"></p>
             <p class="mapos-muted">No celular, abra WhatsApp → Aparelhos conectados → Conectar aparelho. O QR Code é renovado automaticamente.</p>
             <?= form_open('comunicacao/salvar', ['class' => 'mapos-inline-form']) ?>
                 <button class="btn btn-primary" name="acao" value="conectar">Conectar / gerar QR Code</button>

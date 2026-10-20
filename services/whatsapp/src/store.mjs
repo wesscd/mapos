@@ -56,6 +56,13 @@ export class Store {
   }
 
   clearAuth() { this.db.exec('DELETE FROM auth'); }
+  connectionDiagnostic(value) {
+    if (value !== undefined) {
+      this.db.prepare("INSERT OR REPLACE INTO settings VALUES ('last_disconnect',?)").run(JSON.stringify(value));
+    }
+    const row = this.db.prepare("SELECT value FROM settings WHERE key='last_disconnect'").get();
+    return row ? JSON.parse(row.value) : null;
+  }
   get(key) { return this.db.prepare('SELECT key, fingerprint, status, message_id FROM messages WHERE key=?').get(key); }
 
   begin(key, fingerprint, id, body) {
