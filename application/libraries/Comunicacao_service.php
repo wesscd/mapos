@@ -98,7 +98,7 @@ class Comunicacao_service
     {
         return [
             'Aberto' => 'Atendimento registrado',
-            'Orçamento' => 'Orçamento em preparação',
+            'Orçamento' => 'Atendimento em fase de orçamento',
             'Negociação' => 'Condições do serviço em análise',
             'Aprovado' => 'Serviço autorizado',
             'Aguardando Peças' => 'Aguardando as peças necessárias para continuar o serviço',
