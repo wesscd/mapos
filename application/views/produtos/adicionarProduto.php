@@ -1,122 +1,29 @@
-<style>
-    /* Hiding the checkbox, but allowing it to be focused */
-    .badgebox {
-        opacity: 0;
-    }
-
-    .badgebox+.badge {
-        /* Move the check mark away when unchecked */
-        text-indent: -999999px;
-        /* Makes the badge's width stay the same checked and unchecked */
-        width: 27px;
-    }
-
-    .badgebox:focus+.badge {
-        /* Set something to make the badge looks focused */
-        /* This really depends on the application, in my case it was: */
-
-        /* Adding a light border */
-        box-shadow: inset 0px 0px 5px;
-        /* Taking the difference out of the padding */
-    }
-
-    .badgebox:checked+.badge {
-        /* Move the check mark back when checked */
-        text-indent: 0;
-    }
-</style>
-<div class="row-fluid" style="margin-top:0">
-    <div class="span12">
-        <div class="widget-box">
-            <div class="widget-title" style="margin: -20px 0 0">
-                <span class="icon">
-                    <i class="fas fa-shopping-bag"></i>
-                </span>
-                <h5>Cadastro de Produto</h5>
-            </div>
-            <div class="widget-content nopadding tab-content">
-                <?php echo $custom_error; ?>
-                <form action="<?php echo current_url(); ?>" id="formProduto" method="post" class="form-horizontal">
-                    <div class="control-group">
-                        <label for="codDeBarra" class="control-label">Código de Barra<span class=""></span></label>
-                        <div class="controls">
-                            <input id="codDeBarra" type="text" name="codDeBarra" value="<?php echo set_value('codDeBarra'); ?>" />
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="descricao" class="control-label">Descrição<span class="required">*</span></label>
-                        <div class="controls">
-                            <input id="descricao" type="text" name="descricao" value="<?php echo set_value('descricao'); ?>" />
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Tipo de Movimento</label>
-                        <div class="controls">
-                            <label for="entrada" class="btn btn-default" style="margin-top: 5px;">Entrada
-                                <input type="checkbox" id="entrada" name="entrada" class="badgebox" value="1" checked>
-                                <span class="badge">&check;</span>
-                            </label>
-                            <label for="saida" class="btn btn-default" style="margin-top: 5px;">Saída
-                                <input type="checkbox" id="saida" name="saida" class="badgebox" value="1" checked>
-                                <span class="badge">&check;</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="precoCompra" class="control-label">Preço de Compra<span class="required">*</span></label>
-                        <div class="controls">
-                            <input id="precoCompra" class="money" data-affixes-stay="true" data-thousands="" data-decimal="." type="text" name="precoCompra" value="<?php echo set_value('precoCompra'); ?>" />
-                            <strong><span style="color: red" id="errorAlert"></span><strong>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="Lucro" class="control-label">Lucro</label>
-                        <div class="controls">
-                            <select id="selectLucro" name="selectLucro" style="width: 10.5em;">
-                              <option value="markup">Markup</option>
-                              <option value="margemLucro">Margem de Lucro</option>
-                            </select>
-                            <input style="width: 4em;" id="Lucro" name="Lucro" type="text" placeholder="%" maxlength="3" size="2" />
-                            <i class="icon-info-sign tip-left" title="Markup: Porcentagem aplicada ao valor de compra | Margem de Lucro: Porcentagem aplicada ao valor de venda"></i>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="precoVenda" class="control-label">Preço de Venda<span class="required">*</span></label>
-                        <div class="controls">
-                            <input id="precoVenda" class="money" data-affixes-stay="true" data-thousands="" data-decimal="." type="text" name="precoVenda" value="<?php echo set_value('precoVenda'); ?>" />
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="unidade" class="control-label">Unidade<span class="required">*</span></label>
-                        <div class="controls">
-                            <select id="unidade" name="unidade"></select>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="estoque" class="control-label">Estoque<span class="required">*</span></label>
-                        <div class="controls">
-                            <input id="estoque" type="text" name="estoque" value="<?php echo set_value('estoque'); ?>" />
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="estoqueMinimo" class="control-label">Estoque Mínimo</label>
-                        <div class="controls">
-                            <input id="estoqueMinimo" type="text" name="estoqueMinimo" value="<?php echo set_value('estoqueMinimo'); ?>" />
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <div class="span12">
-                            <div class="span6 offset3" style="display: flex;justify-content: center">
-                                <button type="submit" class="button btn btn-mini btn-success" style="max-width: 160px"><span class="button__icon"><i class='bx bx-plus-circle'></i></span><span class="button__text2">Adicionar</span></button>
-                                <a href="<?php echo base_url() ?>index.php/produtos" id="" class="button btn btn-mini btn-warning"><span class="button__icon"><i class="bx bx-undo"></i></span><span class="button__text2">Voltar</span></a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+<?php $this->load->helper('form'); ?>
+<section class="ui-page" aria-labelledby="product-title">
+    <header class="ui-page-header"><div><p class="ui-eyebrow">CATÁLOGO</p><h1 id="product-title">Cadastrar produto</h1><p>Organize a identificação, os preços e o estoque do produto.</p></div><a class="ui-button" href="<?= site_url('produtos') ?>">Voltar aos produtos</a></header>
+    <div class="ui-card">
+        <?php if ($custom_error) { ?><div class="ui-notice ui-notice-error" role="alert"><?= $custom_error ?></div><?php } ?>
+        <p class="ui-hint">Os campos com * são obrigatórios.</p>
+        <?= form_open(current_url(), ['id' => 'formProduto']) ?>
+        <fieldset class="ui-fieldset"><legend>Identificação</legend><div class="ui-form-grid">
+            <div class="control-group ui-field-wide"><label for="descricao">Descrição *</label><div class="controls"><input id="descricao" name="descricao" type="text" required value="<?= set_value('descricao') ?>" placeholder="Ex.: SSD SATA 480 GB"></div></div>
+            <div class="control-group"><label for="codDeBarra">Código de barras</label><div class="controls"><input id="codDeBarra" name="codDeBarra" type="text" value="<?= set_value('codDeBarra') ?>"></div></div>
+            <div class="control-group"><label for="unidade">Unidade *</label><div class="controls"><select id="unidade" name="unidade" required data-selected="<?= set_value('unidade') ?>"><option value="">Selecione a unidade</option></select></div></div>
+        </div></fieldset>
+        <fieldset class="ui-fieldset"><legend>Preços</legend><div class="ui-form-grid">
+            <div class="control-group"><label for="precoCompra">Preço de compra (R$) *</label><div class="controls"><input id="precoCompra" class="money" data-affixes-stay="true" data-thousands="" data-decimal="." type="text" name="precoCompra" inputmode="decimal" required value="<?= set_value('precoCompra') ?>"></div></div>
+            <div class="control-group"><label for="precoVenda">Preço de venda (R$) *</label><div class="controls"><input id="precoVenda" class="money" data-affixes-stay="true" data-thousands="" data-decimal="." type="text" name="precoVenda" inputmode="decimal" required value="<?= set_value('precoVenda') ?>"></div></div>
+            <div class="control-group"><label for="selectLucro">Tipo de cálculo do lucro</label><div class="controls"><select id="selectLucro" name="selectLucro" aria-describedby="profit-help"><option value="markup">Markup sobre a compra</option><option value="margemLucro">Margem sobre a venda</option></select></div></div>
+            <div class="control-group"><label for="Lucro">Percentual de lucro (%)</label><div class="controls"><input id="Lucro" name="Lucro" type="text" inputmode="decimal" maxlength="3" placeholder="Ex.: 30" aria-describedby="profit-help"></div></div>
+        </div><p id="profit-help" class="ui-hint">Opcional: informe o percentual para calcular o preço de venda a partir do preço de compra.</p><p id="errorAlert" class="ui-field-error" role="alert" aria-live="polite"></p></fieldset>
+        <fieldset class="ui-fieldset"><legend>Estoque e movimentação</legend><div class="ui-form-grid">
+            <div class="control-group"><label for="estoque">Estoque atual *</label><div class="controls"><input id="estoque" name="estoque" type="text" inputmode="decimal" required value="<?= set_value('estoque') ?>"></div></div>
+            <div class="control-group"><label for="estoqueMinimo">Estoque mínimo</label><div class="controls"><input id="estoqueMinimo" name="estoqueMinimo" type="text" inputmode="decimal" value="<?= set_value('estoqueMinimo') ?>"></div></div>
+        </div><p class="ui-field-label">Movimentações permitidas</p><div class="ui-checkbox-row"><label for="entrada"><input type="checkbox" id="entrada" name="entrada" value="1" <?= set_checkbox('entrada', '1', ! $this->input->post()) ?>> Entrada</label><label for="saida"><input type="checkbox" id="saida" name="saida" value="1" <?= set_checkbox('saida', '1', ! $this->input->post()) ?>> Saída</label></div></fieldset>
+        <footer class="ui-form-actions"><button type="submit" class="ui-button ui-button-primary">Salvar produto</button><a class="ui-button" href="<?= site_url('produtos') ?>">Cancelar</a></footer>
+        </form>
     </div>
-</div>
+</section>
 
 <script src="<?php echo base_url() ?>assets/js/jquery.validate.js"></script>
 <script src="<?php echo base_url(); ?>assets/js/maskmoney.js"></script>
@@ -147,7 +54,7 @@
 
     $("#precoCompra, #Lucro").on('input change', function() {
         if ($("#precoCompra").val() == '0.00' && $('#precoVenda').val() != '') {
-            $('#errorAlert').text('Você não pode preencher valor de compra e depois apagar.').css("display", "inline").fadeOut(6000);
+            $('#errorAlert').text('Você não pode preencher valor de compra e depois apagar.').show();
             $('#precoVenda').val('');
             $("#precoCompra").focus();
         } else if ($("#precoCompra").val() != '' && $("#Lucro").val() != '') {
@@ -158,7 +65,7 @@
     $("#Lucro").keyup(function() {
         this.value = this.value.replace(/[^0-9.]/g, '');
         if ($("#precoCompra").val() == null || $("#precoCompra").val() == '') {
-            $('#errorAlert').text('Preencher valor da compra primeiro.').css("display", "inline").fadeOut(5000);
+            $('#errorAlert').text('Preencher valor da compra primeiro.').show();
             $('#Lucro').val('');
             $('#precoVenda').val('');
             $("#precoCompra").focus();
@@ -166,7 +73,7 @@
         } else if (Number($("#Lucro").val()) >= 0) {
             $('#precoVenda').val(calcLucro(Number($("#precoCompra").val()), Number($("#Lucro").val())));
         } else {
-            $('#errorAlert').text('Não é permitido número negativo.').css("display", "inline").fadeOut(5000);
+            $('#errorAlert').text('Não é permitido número negativo.').show();
             $('#Lucro').val('');
             $('#precoVenda').val('');
         }
@@ -174,7 +81,7 @@
 
     $('#precoVenda').focusout(function () {
         if (Number($('#precoVenda').val()) < Number($("#precoCompra").val())) {
-            $('#errorAlert').text('Preço de venda não pode ser menor que o preço de compra.').css("display", "inline").fadeOut(6000);
+            $('#errorAlert').text('Preço de venda não pode ser menor que o preço de compra.').show();
             $('#precoVenda').val('');
         }
     });
@@ -184,6 +91,9 @@
         $.getJSON('<?php echo base_url() ?>assets/json/tabela_medidas.json', function(data) {
             for (i in data.medidas) {
                 $('#unidade').append(new Option(data.medidas[i].descricao, data.medidas[i].sigla));
+                }
+                if ($('#unidade').attr('data-selected')) {
+                    $('#unidade').val($('#unidade').attr('data-selected'));
             }
         });
         $('#formProduto').validate({

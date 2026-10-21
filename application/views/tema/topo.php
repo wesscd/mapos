@@ -38,7 +38,7 @@
   <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel='stylesheet'>
   <script type="text/javascript" src="<?= base_url(); ?>assets/js/jquery-1.12.4.min.js"></script>
   <script type="text/javascript" src="<?= base_url(); ?>assets/js/shortcut.js"></script>
-  <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
+  <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js?v=2"></script>
   <script type="text/javascript" src="<?= base_url(); ?>assets/js/datatables.min.js"></script>
   <script type="text/javascript" src="<?= base_url(); ?>assets/js/sweetalert.min.js"></script>
   <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
@@ -73,10 +73,11 @@
     window.BaseUrl = "<?= base_url() ?>";
   </script>
 <link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=7">
+<link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=1">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
 </head>
 
-<body>
+<body class="mapos-admin">
   <!--top-Header-menu-->
   <div class="navebarn">
     <div id="user-nav" class="navbar navbar-inverse">

@@ -2,18 +2,18 @@
 <!--start-top-serch-->
   <div id="content-header">
    <div></div>
-      <div id="breadcrumb">
-        <a href="<?= base_url() ?>" title="Dashboard" class="tip-bottom"> Início</a>
-        <?php if ($this->uri->segment(1) != null) { ?>
-            <a href="<?= base_url() . 'index.php/' . $this->uri->segment(1) ?>" class="tip-bottom" title="<?= ucfirst($this->uri->segment(1)); ?>">
-              <?= ucfirst($this->uri->segment(1)); ?>
-            </a>
-          <?php if ($this->uri->segment(2) != null) { ?>
-            <a href="<?= base_url() . 'index.php/' . $this->uri->segment(1) . '/' . $this->uri->segment(2) . '/' . $this->uri->segment(3) ?>" class="current tip-bottom" title="<?= ucfirst($this->uri->segment(2)); ?>">
-              <?= ucfirst($this->uri->segment(2));
-          } ?>
-            </a>
-          <?php } ?>
+      <div id="breadcrumb" role="navigation" aria-label="Localização no sistema">
+        <a href="<?= base_url() ?>" class="tip-bottom">Início</a>
+        <?php
+        $breadcrumbModule = $this->uri->segment(1);
+        $breadcrumbAction = $this->uri->segment(2);
+        $breadcrumbLabels = ['operacoes' => 'Operações', 'comunicacao' => 'Comunicação', 'os' => 'Ordens de serviço', 'permissoes' => 'Permissões', 'usuarios' => 'Usuários', 'servicos' => 'Serviços', 'relatorios' => 'Relatórios', 'adicionar' => 'Cadastrar', 'editar' => 'Editar', 'visualizar' => 'Visualizar', 'gerenciar' => 'Listagem', 'configurar' => 'Configurações', 'lancamentos' => 'Lançamentos'];
+        if ($breadcrumbModule) { ?>
+            <a href="<?= html_escape(site_url($breadcrumbModule)) ?>" <?= ! $breadcrumbAction ? 'aria-current="page"' : '' ?>><?= html_escape($breadcrumbLabels[$breadcrumbModule] ?? ucfirst($breadcrumbModule)) ?></a>
+        <?php }
+        if ($breadcrumbModule && $breadcrumbAction) { ?>
+            <a href="<?= html_escape(current_url()) ?>" class="current" aria-current="page"><?= html_escape($breadcrumbLabels[$breadcrumbAction] ?? ucfirst($breadcrumbAction)) ?></a>
+        <?php } ?>
       </div>
     </div>
     <div class="container-flu">

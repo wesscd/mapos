@@ -113,6 +113,14 @@ $assert(strpos(printSafeHtml('<p>Texto</p><script>alert(1)</script>'), '<script>
 $workflow->deleteOrder($order, true);
 $assert($stock() === 5 && ! $db->get_where('os', ['idOs' => $order])->row(), 'Order removal and stock refund complete together');
 $assert(! $db->get_where('lancamentos', ['idLancamentos' => $invoice])->row(), 'Deleting an invoiced order removes its linked financial entry');
+$ci->load->model('clientes_model');
+$searchPhone = $db->get_where('clientes', ['idClientes' => $customer])->row()->celular;
+$db->where('idClientes', $customer)->update('clientes', ['celular' => '11912345678']);
+$clientMatches = $ci->clientes_model->get('clientes', '*', '11912345678', 1, 0);
+$assert(count($clientMatches) === 1 && (int) $clientMatches[0]->idClientes === (int) $customer, 'Customer search includes the mobile number used for communication');
+$assert($ci->clientes_model->count('clientes', '11912345678') === 1, 'Customer pagination counts only rows matching the search');
+$assert($ci->clientes_model->count('clientes', 'no-such-ui-customer') === 0 && $ci->clientes_model->get('clientes', '*', 'no-such-ui-customer', 10, 0) === [], 'An empty customer search has no unrelated rows or phantom pages');
+$db->where('idClientes', $customer)->update('clientes', ['celular' => $searchPhone]);
 require __DIR__ . '/communication.php';
 require __DIR__ . '/equipment.php';
 require __DIR__ . '/inspections.php';
