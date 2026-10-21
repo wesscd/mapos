@@ -577,19 +577,87 @@ class Os_workflow
         return json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
+    private function publishBudget($id, $snapshot, $notify = true)
+    {
+        $value = json_decode($snapshot, true)['valor'];
+        if ($value <= 0) {
+            throw new DomainException('Adicione produtos ou serviços com valor antes de solicitar aprovação.');
+        }
+        $fingerprint = hash('sha256', $snapshot);
+        $latest = $this->ci->db->where('os_id', $id)->order_by('id', 'desc')->get('os_aprovacoes')->row();
+        if ($latest && $latest->status === 'pendente' && hash_equals($latest->fingerprint, $fingerprint)) {
+            return (int) $latest->id;
+        }
+        $this->invalidateBudget($id);
+        $this->ci->db->insert('os_aprovacoes', ['os_id' => $id, 'status' => 'pendente', 'valor' => $value, 'snapshot' => $snapshot, 'fingerprint' => $fingerprint, 'created_at' => date('Y-m-d H:i:s')]);
+        $approval = (int) $this->ci->db->insert_id();
+        $this->event($id, 'orcamento', 'Orçamento disponível para aprovação na área do cliente. Valor: R$ ' . number_format($value, 2, ',', '.'), $notify ? ['aprovacao' => $approval] : []);
+        return $approval;
+    }
+
     public function requestApproval($id)
     {
         return $this->transaction(function () use ($id) {
             $this->editable($this->lockOrder($id));
-            $snapshot = $this->budget($id);
-            $value = json_decode($snapshot, true)['valor'];
-            if ($value <= 0) {
-                throw new DomainException('Adicione produtos ou serviços com valor antes de solicitar aprovação.');
+            return $this->publishBudget($id, $this->budget($id));
+        });
+    }
+
+    public function budgetWhatsAppPreview($id)
+    {
+        $order = $this->ci->db->get_where('os', ['idOs' => (int) $id])->row();
+        if (! $order) {
+            throw new DomainException('OS não encontrada.');
+        }
+        $snapshot = $this->budget((int) $id);
+        $value = json_decode($snapshot, true)['valor'];
+        $latest = $this->ci->db->where('os_id', (int) $id)->order_by('id', 'desc')->get('os_aprovacoes')->row();
+        $same = $latest && hash_equals($latest->fingerprint, hash('sha256', $snapshot));
+        $approval = $same && $latest->status === 'pendente' ? $latest : null;
+        $this->ci->load->library('comunicacao_service');
+        $preview = $this->ci->comunicacao_service->budgetWhatsApp($order, $same ? $latest : null);
+        if ($order->entregue_em || $order->faturado || in_array($order->status, ['Cancelado', 'Faturado'], true)) {
+            $preview['reason'] = 'Esta OS está encerrada para envio de orçamento.';
+        } elseif ($value <= 0) {
+            $preview['reason'] = 'Adicione serviços ou produtos com valor antes de enviar o orçamento.';
+        } elseif ($same && in_array($latest->status, ['aprovado', 'rejeitado'], true)) {
+            $preview['reason'] = 'O cliente já respondeu a este orçamento. Revise o atendimento antes de solicitar outra aprovação.';
+        }
+        $preview['value'] = $value;
+        $preview['snapshot'] = json_decode($snapshot, true);
+        $preview['approval'] = $approval ? (int) $approval->id : null;
+        $preview['fingerprint'] = hash('sha256', json_encode([(int) $id, $snapshot, $preview['destination'], $preview['text'], $preview['rendered'], $preview['approval'], $preview['existing']['id'] ?? null, $preview['reason'], $preview['window']], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        unset($preview['rendered']);
+        return $preview;
+    }
+
+    public function sendBudgetWhatsApp($id, $fingerprint, $confirmed)
+    {
+        return $this->transaction(function () use ($id, $fingerprint, $confirmed) {
+            $order = $this->lockOrder($id);
+            $this->editable($order);
+            $preview = $this->budgetWhatsAppPreview($id);
+            if (! is_string($fingerprint) || ! hash_equals($preview['fingerprint'], $fingerprint)) {
+                throw new DomainException('O orçamento, o destinatário ou a mensagem mudou. Atualize a prévia e confira antes de enviar.');
             }
-            $this->invalidateBudget($id);
-            $this->ci->db->insert('os_aprovacoes', ['os_id' => $id, 'status' => 'pendente', 'valor' => $value, 'snapshot' => $snapshot, 'fingerprint' => hash('sha256', $snapshot), 'created_at' => date('Y-m-d H:i:s')]);
-            $approval = $this->ci->db->insert_id();
-            $this->event($id, 'orcamento', 'Orçamento enviado para aprovação na área do cliente. Valor: R$ ' . number_format($value, 2, ',', '.'), ['aprovacao' => (int) $approval]);
+            if ($preview['reason'] !== '') {
+                throw new DomainException($preview['reason']);
+            }
+            if (! $confirmed) {
+                throw new DomainException('Confirme o destinatário e a mensagem antes de enviar.');
+            }
+            if ($preview['existing']) {
+                if (in_array($preview['existing']['status'], ['falhou', 'cancelado'], true)) {
+                    $this->ci->comunicacao_service->retryBudgetWhatsApp($preview['existing']['id']);
+                    $this->event($id, 'comunicacao', 'Nova tentativa WhatsApp autorizada para a mensagem #' . $preview['existing']['id'] . '.');
+                    return $this->budgetWhatsAppPreview($id)['existing'];
+                }
+                return $preview['existing'];
+            }
+            $approval = $this->publishBudget($id, $this->budget($id), false);
+            $message = $this->ci->comunicacao_service->queueBudgetWhatsApp($order, $approval, $preview['destination'], $preview['text']);
+            $this->event($id, 'comunicacao', 'Orçamento incluído na fila WhatsApp. Solicitação de aprovação #' . $approval . '.');
+            return $message;
         });
     }
 

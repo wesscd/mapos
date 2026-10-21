@@ -69,7 +69,7 @@ class Comunicacao_service
             throw new DomainException('Informe um modelo válido com até 3.000 caracteres.');
         }
         preg_match_all('/\{([^{}]+)\}/u', $text, $matches);
-        if (array_diff($matches[1], ['cliente', 'os', 'equipamento', 'prazo', 'status', 'link'])) {
+        if (array_diff($matches[1], ['cliente', 'os', 'equipamento', 'prazo', 'status', 'link', 'valor'])) {
             throw new DomainException('O modelo contém campos desconhecidos.');
         }
         $this->ci->db->where('id', (int) $id)->update('com_modelos', ['texto' => $text, 'ativo' => (int) $enabled]);
@@ -135,14 +135,99 @@ class Comunicacao_service
             if (! $template || ! $destination) {
                 continue;
             }
-            $text = strtr($template->texto, [
-                '{cliente}' => $customer->nomeCliente, '{os}' => (string) $id,
-                '{equipamento}' => mb_substr(trim(strip_tags((string) $order->descricaoProduto)), 0, 250),
-                '{prazo}' => $order->dataFinal ? date('d/m/Y', strtotime($order->dataFinal)) : 'a combinar',
-                '{status}' => $this->customerStatus($order->status, (bool) $order->faturado), '{link}' => site_url('mine/visualizarOs/' . (int) $id),
-            ]);
+            $text = $this->renderMessage($template->texto, $order, $customer, $event, $context);
             $this->enqueue($id, $customer->idClientes, $event, $channel, $destination, $text, $context, $source);
         }
+    }
+
+    private function renderMessage($template, $order, $customer, $event, array $context = [])
+    {
+        $value = '';
+        if ($event === 'orcamento' || str_contains($template, '{valor}')) {
+            $approval = ! empty($context['aprovacao']) ? $this->ci->db->get_where('os_aprovacoes', ['id' => (int) $context['aprovacao'], 'os_id' => (int) $order->idOs])->row() : null;
+            if ($approval) {
+                $amount = $approval->valor;
+            } else {
+                $this->ci->load->model('os_model');
+                $totals = $this->ci->os_model->valorTotalOS($order->idOs);
+                $amount = $order->tipo_desconto ? $order->valor_desconto : $totals['totalProdutos'] + $totals['totalServico'];
+            }
+            $value = 'R$ ' . number_format($amount, 2, ',', '.');
+        }
+        // Existing customized templates remain editable and gain the budget total without a data migration.
+        if ($event === 'orcamento' && ! str_contains($template, '{valor}')) {
+            $template = str_contains($template, '{link}')
+                ? str_replace('{link}', "\n\nTotal do orçamento: {valor}.\n\n{link}", $template)
+                : $template . "\n\nTotal do orçamento: {valor}.";
+        }
+        return strtr($template, [
+            '{cliente}' => $customer->nomeCliente, '{os}' => (string) $order->idOs,
+            '{equipamento}' => mb_substr(trim(strip_tags((string) $order->descricaoProduto)), 0, 250),
+            '{prazo}' => $order->dataFinal ? date('d/m/Y', strtotime($order->dataFinal)) : 'a combinar',
+            '{status}' => $this->customerStatus($order->status, (bool) $order->faturado),
+            '{link}' => site_url('mine/visualizarOs/' . (int) $order->idOs), '{valor}' => $value,
+        ]);
+    }
+
+    public function budgetWhatsApp($order, $approval = null)
+    {
+        $db = $this->ci->db;
+        $config = $this->config();
+        $customer = $db->get_where('clientes', ['idClientes' => $order->clientes_id])->row();
+        $preference = $this->preference($order->clientes_id);
+        $template = $db->get_where('com_modelos', ['evento' => 'orcamento', 'canal' => 'whatsapp', 'ativo' => 1])->row();
+        $destination = $customer ? $this->destination('whatsapp', $customer) : null;
+        $reason = ! $config['whatsapp'] ? 'Habilite o canal WhatsApp na Central de Comunicação.' : '';
+        if (! $preference || ! in_array($preference->canal, ['whatsapp', 'ambos'], true)) {
+            $reason = 'O cliente precisa ter autorização de comunicação por WhatsApp registrada.';
+        } elseif (! $destination) {
+            $reason = 'Cadastre um telefone válido com DDD para este cliente.';
+        } elseif (! $template) {
+            $reason = 'Ative o modelo “Orçamento disponível” do WhatsApp na Central de Comunicação.';
+        }
+        $message = null;
+        if ($approval && $destination) {
+            $jobs = $db->where(['os_id' => $order->idOs, 'evento' => 'orcamento', 'canal' => 'whatsapp', 'destino' => $destination])->order_by('id', 'desc')->get('com_fila')->result();
+            foreach ($jobs as $job) {
+                if ((int) (json_decode($job->contexto, true)['aprovacao'] ?? 0) === (int) $approval->id) {
+                    $message = $job;
+                    break;
+                }
+            }
+        }
+        $text = $customer && $template ? $this->renderMessage($template->texto, $order, $customer, 'orcamento', $approval ? ['aprovacao' => $approval->id] : []) : '';
+        return ['destination' => $destination, 'text' => $message ? $message->texto : $text, 'rendered' => $text,
+            'existing' => $message ? ['id' => (int) $message->id, 'status' => $message->status, 'detail' => $message->erro, 'created_at' => $message->created_at] : null,
+            'reason' => $reason, 'window' => [(int) $config['inicio'], (int) $config['fim']], 'customer' => $customer ? $customer->nomeCliente : ''];
+    }
+
+    public function retryBudgetWhatsApp($id)
+    {
+        $db = $this->ci->db;
+        $job = $db->get_where('com_fila', ['id' => (int) $id, 'evento' => 'orcamento', 'canal' => 'whatsapp'])->row();
+        if (! $job || ! in_array($job->status, ['falhou', 'cancelado'], true) || ! $this->allowed($job)) {
+            throw new DomainException('Confira a situação da comunicação antes de tentar novamente.');
+        }
+        $db->where('id', (int) $id)->where_in('status', ['falhou', 'cancelado'])->update('com_fila', ['status' => 'pendente', 'tentativas' => 0, 'erro' => 'Nova tentativa autorizada; aguardando processamento.', 'agendado_em' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+        if (! $db->affected_rows()) {
+            throw new DomainException('A mensagem mudou durante a conferência. Atualize o acompanhamento.');
+        }
+        $db->insert('com_tentativas', ['fila_id' => (int) $id, 'status' => 'pendente', 'descricao' => 'Nova tentativa autorizada pela equipe na OS.', 'created_at' => date('Y-m-d H:i:s')]);
+    }
+
+    public function queueBudgetWhatsApp($order, $approval, $destination, $text)
+    {
+        $this->enqueue(
+            $order->idOs,
+            $order->clientes_id,
+            'orcamento',
+            'whatsapp',
+            $destination,
+            $text,
+            ['aprovacao' => (int) $approval, 'manual' => true],
+            'budget-whatsapp:' . $approval . ':' . $destination
+        );
+        return $this->budgetWhatsApp($order, $this->ci->db->get_where('os_aprovacoes', ['id' => (int) $approval])->row())['existing'];
     }
 
     private function enqueue($id, $customer, $event, $channel, $destination, $text, array $context, $source, $test = false)

@@ -192,3 +192,5 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 @media(max-width:767px){.os-workspace-v2 .os-pane{padding:16px;}.os-field-grid,.os-summary-grid,.os-totals,.os-workspace-v2 .os-item-fields{grid-template-columns:1fr;}.os-workspace-v2 .table{min-width:520px;}.os-workspace-v2 .os-totals dd{font-size:20px;}.os-workspace-v2 .mapos-card{overflow-wrap:anywhere;}}
 
 .os-list-actions {display:flex;flex-wrap:wrap;gap:6px;min-width:160px;}
+
+.os-message-preview {white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7;padding:18px;background:#f0f8f3;border:1px solid #cee4d6;border-radius:8px;}

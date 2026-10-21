@@ -16,6 +16,9 @@ class Acompanhamento extends MY_Controller
             if ($action === 'orcamento') {
                 $this->os_workflow->requestApproval((int) $id);
                 $message = 'Orçamento disponível para aprovação na área do cliente.';
+            } elseif ($action === 'orcamento_whatsapp') {
+                $job = $this->os_workflow->sendBudgetWhatsApp((int) $id, $this->input->post('previa'), $this->input->post('confirmar') === '1');
+                $message = 'Comunicação do orçamento registrada. Situação: ' . $job['status'] . '. Confira o acompanhamento na aba Orçamento.';
             } elseif ($action === 'entrega') {
                 if ($this->db->where('os_id', (int) $id)->count_all_results('equipamentos_os')
                     && ! $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente')) {
@@ -33,7 +36,7 @@ class Acompanhamento extends MY_Controller
         } catch (DomainException $error) {
             $this->session->set_flashdata('error', $error->getMessage());
         }
-        $tab = is_string($action) ? (['orcamento' => 'orcamento', 'entrega' => 'entrega', 'checklist' => 'analise'][$action] ?? 'resumo') : 'resumo';
+        $tab = is_string($action) ? (['orcamento' => 'orcamento', 'orcamento_whatsapp' => 'orcamento', 'entrega' => 'entrega', 'checklist' => 'analise'][$action] ?? 'resumo') : 'resumo';
         redirect(($this->input->post('retorno') === 'editar' ? 'os/editar/' : 'os/visualizar/') . (int) $id . '#os-pane-' . $tab);
     }
 }

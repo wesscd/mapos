@@ -81,6 +81,7 @@ def check_workspace(body, editing=False):
     page.feed(body)
     expected = ['resumo', 'equipamento', 'analise', 'orcamento', 'entrega', 'historico']
     assert page.tabs == expected and page.panels == expected, 'Both OS views expose the six stage tabs exactly once'
+    assert 'id="os-budget-whatsapp"' in body, 'Both OS views expose the budget communication panel'
     assert not page.duplicate_ids, 'OS form controls must have unique IDs: ' + str(page.duplicate_ids)
     assert not page.nested_form and page.form_depth == 0, 'Independent action forms must not be nested'
     if editing:

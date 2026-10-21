@@ -118,6 +118,7 @@ require __DIR__ . '/equipment.php';
 require __DIR__ . '/inspections.php';
 require __DIR__ . '/kanban.php';
 require __DIR__ . '/order_lifecycle.php';
+require __DIR__ . '/budget_whatsapp.php';
 try {
     $ci->migration->version(20261020180000);
     $assert(false, 'Migration rollback must preserve existing exit evidence');

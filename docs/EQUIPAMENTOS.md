@@ -72,3 +72,15 @@ A listagem e o orçamento consideram `tipo_desconto` para distinguir ausência d
 Validação visual local: busca e inclusão de serviço, desconto de R$ 10 em OS de R$ 100, salvamento e troca de aba, proteção de diagnóstico não salvo e retorno do checklist. A integração HTTP também exige IDs únicos, formulários independentes e totais coerentes na consulta, edição e listagem. Confira teclado e largura móvel ao alterar os componentes.
 
 A busca da listagem aceita nome/documento do cliente e número da OS (também com `#`). A paginação usa os mesmos filtros e uma busca sem correspondência mantém o resultado vazio.
+
+### Envio de orçamento pelo WhatsApp
+
+Na aba **Orçamento**, a seção **WhatsApp do orçamento** permite conferir destinatário, total líquido e a mensagem antes de confirmar. O envio usa a fila e o gateway Baileys existentes. Não abre o WhatsApp Web e não envia e-mail junto. O link da mensagem leva à área autenticada do cliente para consultar e aprovar ou recusar. A alternativa manual continua disponível antes de haver uma comunicação registrada.
+
+A prévia é somente leitura: não publica aprovação nem envia mensagens. A confirmação valida novamente orçamento, diagnóstico, telefone e modelo. Mudanças exigem atualizar a prévia. A primeira confirmação publica a solicitação de aprovação e grava a mensagem na mesma transação. Solicitações pendentes com o mesmo conteúdo são reutilizadas, inclusive ao clicar novamente em solicitar aprovação.
+
+Uma mensagem automática já registrada para a mesma solicitação e destinatário é exibida no acompanhamento. Pendências, envios e confirmações incertas não geram mensagens duplicadas. Em falha ou cancelamento, a equipe pode confirmar nova tentativa da mesma mensagem, preservando seu histórico. O estado é atualizado ao usar **Atualizar acompanhamento**. Aprovação respondida ou OS encerrada não é reaberta pelo envio.
+
+São respeitados a preferência/autorização do cliente, o canal/modelo habilitado e os horários da Central. O campo **{valor}** está disponível nos modelos; modelos antigos de orçamento sem esse campo recebem o total no texto renderizado, sem reescrever modelos nem mensagens já registradas. O destino é normalizado com DDI e DDD. Nenhuma credencial do gateway é exposta no navegador.
+
+`tests/budget_whatsapp.php` usa apenas transporte simulado e banco descartável para validar autorização, confirmação, prévias desatualizadas, publicação atômica, independência do e-mail, deduplicação, tentativas e invalidação de orçamento. Não realiza envios externos.

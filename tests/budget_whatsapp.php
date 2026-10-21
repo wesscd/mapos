@@ -1,0 +1,68 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+$communication->saveConfig(['whatsapp' => 1, 'email' => 1, 'inicio' => 0, 'fim' => 24, 'intervalo_dias' => 1, 'limite_lembretes' => 0]);
+$db->where('idClientes', $customer)->update('clientes', ['celular' => '11999999999']);
+$communication->savePreference($customer, 'nenhum', '', 'test');
+$waOrder = $workflow->createOrder(['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0, 'dataInicial' => date('Y-m-d'), 'dataFinal' => date('Y-m-d')]);
+$workflow->service($waOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 100]);
+$workflow->discount($waOrder, 'real', 10);
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$assert($waPreview['reason'] !== '', 'Manual budget sending requires recorded customer authorization');
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true), 'The OS button cannot bypass a revoked WhatsApp preference');
+$communication->savePreference($customer, 'ambos', 'Autorização sintética de teste', 'test');
+$waBefore = $db->where('os_id', $waOrder)->count_all_results('com_fila');
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$assert($waPreview['reason'] === '' && $waPreview['destination'] === '5511999999999', 'Budget preview uses the normalized authorized recipient');
+$assert(str_contains($waPreview['text'], 'R$ 90,00') && str_contains($waPreview['text'], 'mine/visualizarOs/' . $waOrder), 'Budget preview includes the persisted net total and authenticated customer link');
+$assert($db->where('os_id', $waOrder)->count_all_results('com_fila') === $waBefore && ! $db->where('os_id', $waOrder)->count_all_results('os_aprovacoes'), 'Opening a preview never creates approvals or queues a message');
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], false), 'A prepared preview still requires explicit operator confirmation');
+$workflow->discount($waOrder, 'real', 20);
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true), 'Changed budget values require a fresh message preview');
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$db->where('idClientes', $customer)->update('clientes', ['celular' => '11988888888']);
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true), 'A changed recipient cannot receive a message confirmed for another number');
+$db->where('idClientes', $customer)->update('clientes', ['celular' => '11999999999']);
+$waTemplate = $db->get_where('com_modelos', ['evento' => 'orcamento', 'canal' => 'whatsapp'])->row();
+$communication->saveTemplate($waTemplate->id, 'Orçamento #{os}: {valor}. Acesse {link}', true);
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true), 'A changed communication template requires confirmation of its new text');
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$waJob = $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true);
+$waApproval = $db->where('os_id', $waOrder)->order_by('id', 'desc')->get('os_aprovacoes')->row();
+$assert($waJob['status'] === 'pendente' && $waApproval->status === 'pendente' && (float) $waApproval->valor === 80.0, 'Manual sending atomically preserves the reviewed approval snapshot and pending message');
+$assert($db->where(['os_id' => $waOrder, 'evento' => 'orcamento', 'canal' => 'email'])->count_all_results('com_fila') === 0, 'The WhatsApp action does not also trigger an email');
+$waStored = $db->get_where('com_fila', ['id' => $waJob['id']])->row();
+$assert($waStored->texto === $waPreview['text'] && $waStored->destino === $waPreview['destination'], 'The queued message exactly matches the confirmed text and recipient');
+$reject(fn () => $workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true), 'Resubmitting the original form cannot queue the same budget twice');
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true);
+$workflow->requestApproval($waOrder);
+$assert($db->where(['os_id' => $waOrder, 'evento' => 'orcamento'])->count_all_results('com_fila') === 1 && $db->where('os_id', $waOrder)->count_all_results('os_aprovacoes') === 1, 'Repeated manual or approval actions reuse the current pending budget without duplicate messages');
+$db->where('id', $waJob['id'])->update('com_fila', ['status' => 'incerto']);
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$assert($workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true)['status'] === 'incerto', 'An uncertain send is displayed without automatic retransmission');
+$db->where('id', $waJob['id'])->update('com_fila', ['status' => 'falhou']);
+$waPreview = $workflow->budgetWhatsAppPreview($waOrder);
+$assert($workflow->sendBudgetWhatsApp($waOrder, $waPreview['fingerprint'], true)['status'] === 'pendente', 'A confirmed retry after failure reuses the existing message instead of enqueuing another');
+$assert($db->where(['os_id' => $waOrder, 'evento' => 'orcamento'])->count_all_results('com_fila') === 1, 'Confirmed retries retain one budget message and its attempt history');
+$fakeBudgets = [];
+$communication->process(function ($queued) use (&$fakeBudgets) {
+    $fakeBudgets[] = (int) $queued->id;
+    return ['state' => 'enviado', 'message' => 'Simulated transport only'];
+});
+$assert(in_array($waJob['id'], $fakeBudgets, true) && $workflow->budgetWhatsAppPreview($waOrder)['existing']['status'] === 'enviado', 'The existing worker sends the queued budget through a simulated transport and exposes its status');
+$workflow->answerApproval($waOrder, $waApproval->id, $customer, 'aprovado');
+$waAnswered = $workflow->budgetWhatsAppPreview($waOrder);
+$assert($waAnswered['reason'] !== '' && $waAnswered['existing']['id'] === $waJob['id'], 'An answered budget preserves its communication status without reopening approval');
+
+$waAutoOrder = $workflow->createOrder(['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0, 'dataInicial' => date('Y-m-d'), 'dataFinal' => date('Y-m-d')]);
+$workflow->service($waAutoOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 50]);
+$workflow->requestApproval($waAutoOrder);
+$waAutoPreview = $workflow->budgetWhatsAppPreview($waAutoOrder);
+$assert($waAutoPreview['existing'] && str_contains($waAutoPreview['text'], 'R$ 50,00'), 'The OS displays an automatically queued budget instead of offering another send');
+$workflow->sendBudgetWhatsApp($waAutoOrder, $waAutoPreview['fingerprint'], true);
+$assert($db->where(['os_id' => $waAutoOrder, 'evento' => 'orcamento', 'canal' => 'whatsapp'])->count_all_results('com_fila') === 1, 'The manual button cannot duplicate the automatic WhatsApp notification');
+$workflow->discount($waAutoOrder, 'real', 5);
+$assert(! $communication->allowed($db->get_where('com_fila', ['id' => $waAutoPreview['existing']['id']])->row()), 'A budget changed after confirmation cancels the old queued communication');
+$communication->saveTemplate($waTemplate->id, $waTemplate->texto, (bool) $waTemplate->ativo);
