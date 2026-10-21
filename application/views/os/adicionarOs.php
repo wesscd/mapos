@@ -1,5 +1,5 @@
 <?php $this->load->view('os/resources'); ?>
-<div class="os-workspace-v2 os-create" data-os-root data-os-base="<?= site_url('os') ?>">
+<div class="ui-page os-workspace-v2 os-create" data-os-root data-os-base="<?= site_url('os') ?>">
 <header class="os-summary"><span class="mapos-eyebrow">NOVA ORDEM DE SERVIÇO</span><h1>Abrir atendimento</h1><p>Cadastre o atendimento e registre a entrada física quando o equipamento estiver na assistência.</p></header>
 <div class="os-feedback" data-os-feedback role="status" aria-live="polite" hidden></div>
 <?php if (! empty($order_error) || ! empty($custom_error)) { ?><div class="alert alert-error" role="alert"><?= html_escape($order_error ?? 'Confira os campos obrigatórios e as seleções de cliente e responsável.') ?></div><?php } ?>

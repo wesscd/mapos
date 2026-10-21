@@ -4,9 +4,10 @@ $osPermission = $this->permission->checkPermission($this->session->userdata('per
 $osCanMutate = $osMutable && $osPermission;
 $osGross = round($totalProdutos + $totalServico, 2);
 $osNet = $result->tipo_desconto ? (float) $result->valor_desconto : $osGross;
-$this->load->view('os/workflow', compact('osEditing', 'osMutable', 'osPermission', 'osCanMutate', 'osGross', 'osNet'));
+
 ?>
-<div class="os-workspace-v2" data-os-root data-os-base="<?= site_url('os') ?>" data-os-editing="<?= $osEditing ? '1' : '0' ?>">
+<div class="ui-page os-workspace-v2" data-os-root data-os-base="<?= site_url('os') ?>" data-os-editing="<?= $osEditing ? '1' : '0' ?>">
+    <?php $this->load->view('os/workflow', compact('osEditing', 'osMutable', 'osPermission', 'osCanMutate', 'osGross', 'osNet')); ?>
     <div class="os-feedback" role="status" aria-live="polite" data-os-feedback hidden></div>
     <?php if (! empty($custom_error)) { ?><div class="alert alert-error" role="alert" data-os-form-errors><?= html_escape(strip_tags((string) $custom_error)) ?></div><?php } ?>
     <?php if ($osEditing) { ?><div class="os-draft-bar" data-os-draft hidden><strong>Há alterações não salvas no resumo ou na análise.</strong><button type="submit" class="btn btn-primary" form="formOs">Salvar alterações da OS</button><p>Salve antes de atualizar checklist, orçamento, vistoria ou anexos.</p></div><?php } ?>

@@ -11,7 +11,7 @@
     <label for="<?= $kind ?>-quantity">Quantidade<input id="<?= $kind ?>-quantity" name="quantidade" type="number" min="<?= $isService ? '0.0001' : '1' ?>" step="<?= $isService ? '0.0001' : '1' ?>" value="1" required></label>
     <button type="submit" class="btn btn-primary">Adicionar <?= $isService ? 'serviço' : 'produto' ?></button></div>
 </form><?php } ?>
-<div class="mapos-table-scroll"><table class="table table-bordered" id="<?= $isService ? 'tblServicos' : 'tblProdutos' ?>"><thead><tr><th><?= $isService ? 'Serviço' : 'Produto' ?></th><th>Quantidade</th><th>Preço unitário</th><th>Subtotal</th><?php if ($osCanMutate) { ?><th>Ações</th><?php } ?></tr></thead><tbody>
+<div class="ui-table-scroll" tabindex="0" role="region" aria-label="Dados da ordem de serviço"><table class="ui-table" id="<?= $isService ? 'tblServicos' : 'tblProdutos' ?>"><thead><tr><th><?= $isService ? 'Serviço' : 'Produto' ?></th><th>Quantidade</th><th>Preço unitário</th><th>Subtotal</th><?php if ($osCanMutate) { ?><th>Ações</th><?php } ?></tr></thead><tbody>
 <?php foreach ($group[1] as $item) {
     $price = $item->preco ?? $item->precoVenda;
     $quantity = (float) $item->quantidade; ?>
