@@ -34,7 +34,7 @@
 <label for="wa-budget-confirm"><input type="checkbox" id="wa-budget-confirm" name="confirmar" value="1" required> Conferi o destinatário, os valores salvos e a mensagem apresentada.</label>
 <button type="submit" class="btn btn-success"><?= $waRetry ? 'Tentar envio novamente por WhatsApp' : 'Enviar orçamento por WhatsApp' ?></button>
 </form>
-<p>Esta ação disponibiliza o orçamento para aprovação, se ainda não estiver disponível, e inclui somente o WhatsApp na fila.</p>
+<p>Este envio funciona mesmo com os avisos automáticos desligados. A ação disponibiliza o orçamento para aprovação, se ainda não estiver disponível, e inclui somente o WhatsApp na fila, respeitando o horário configurado.</p>
 <?php if (! $waBudget['existing'] && $waBudget['approval']) { ?><a class="btn" target="_blank" rel="noopener" href="<?= html_escape('https://wa.me/' . $waBudget['destination'] . '?text=' . rawurlencode($waBudget['text'])) ?>">Abrir mensagem manualmente no WhatsApp</a><?php } ?>
 <?php } ?>
 <?php if ($waCanConfigure) { ?><a class="btn" href="<?= site_url('comunicacao?cliente=' . (int) $result->clientes_id) . '#preferencias-cliente' ?>"><?= $waNeedsConsent ? 'Registrar autorização do cliente' : 'Abrir preferências de comunicação deste cliente' ?></a><?php } ?>

@@ -177,7 +177,8 @@ class Comunicacao_service
         $preference = $this->preference($order->clientes_id);
         $template = $db->get_where('com_modelos', ['evento' => 'orcamento', 'canal' => 'whatsapp', 'ativo' => 1])->row();
         $destination = $customer ? $this->destination('whatsapp', $customer) : null;
-        $reason = ! $config['whatsapp'] ? 'Habilite o canal WhatsApp na Central de Comunicação.' : '';
+        // The automation switch does not disable an explicitly confirmed OS send.
+        $reason = '';
         if (! $preference || ! in_array($preference->canal, ['whatsapp', 'ambos'], true)) {
             $reason = 'O cliente precisa ter autorização de comunicação por WhatsApp registrada.';
         } elseif (! $destination) {
@@ -208,7 +209,9 @@ class Comunicacao_service
         if (! $job || ! in_array($job->status, ['falhou', 'cancelado'], true) || ! $this->allowed($job)) {
             throw new DomainException('Confira a situação da comunicação antes de tentar novamente.');
         }
-        $db->where('id', (int) $id)->where_in('status', ['falhou', 'cancelado'])->update('com_fila', ['status' => 'pendente', 'tentativas' => 0, 'erro' => 'Nova tentativa autorizada; aguardando processamento.', 'agendado_em' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+        $context = json_decode($job->contexto, true);
+        $context['manual'] = true;
+        $db->where('id', (int) $id)->where_in('status', ['falhou', 'cancelado'])->update('com_fila', ['status' => 'pendente', 'tentativas' => 0, 'contexto' => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), 'erro' => 'Nova tentativa autorizada; aguardando processamento.', 'agendado_em' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
         if (! $db->affected_rows()) {
             throw new DomainException('A mensagem mudou durante a conferência. Atualize o acompanhamento.');
         }
@@ -427,7 +430,9 @@ class Comunicacao_service
                     continue;
                 }
                 $hour = (int) date('G');
-                if (! $job->teste && (! $config[$job->canal] || $hour < $config['inicio'] || $hour >= $config['fim'])) {
+                $context = json_decode($job->contexto, true);
+                $manualBudget = $job->canal === 'whatsapp' && $job->evento === 'orcamento' && ($context['manual'] ?? false) === true;
+                if (! $job->teste && ((! $manualBudget && ! $config[$job->canal]) || $hour < $config['inicio'] || $hour >= $config['fim'])) {
                     continue;
                 }
                 $db->where('id', $job->id)->where('status', 'pendente')->set('tentativas', 'tentativas + 1', false)->update('com_fila', ['status' => 'enviando', 'updated_at' => date('Y-m-d H:i:s')]);

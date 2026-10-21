@@ -25,6 +25,7 @@
             <?= form_open('comunicacao/salvar') ?><input type="hidden" name="acao" value="config">
                 <label><input type="checkbox" name="whatsapp" value="1" <?= $settings['whatsapp'] ? 'checked' : '' ?>> Habilitar avisos automáticos pelo WhatsApp</label>
                 <label><input type="checkbox" name="email" value="1" <?= $settings['email'] ? 'checked' : '' ?>> Habilitar avisos automáticos por e-mail</label>
+                <p>Estas opções controlam os avisos automáticos. O botão “Enviar orçamento por WhatsApp” na OS funciona também com as automações desligadas, desde que o cliente tenha autorizado o contato.</p>
                 <p>Horário de Brasília. Fora do horário, os avisos aguardam na fila.</p>
                 <label>Início (hora)<input type="number" name="inicio" min="0" max="23" required value="<?= (int) $settings['inicio'] ?>"></label>
                 <label>Fim (hora, exclusiva)<input type="number" name="fim" min="1" max="24" required value="<?= (int) $settings['fim'] ?>"></label>

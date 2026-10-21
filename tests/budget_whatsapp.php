@@ -66,3 +66,45 @@ $assert($db->where(['os_id' => $waAutoOrder, 'evento' => 'orcamento', 'canal' =>
 $workflow->discount($waAutoOrder, 'real', 5);
 $assert(! $communication->allowed($db->get_where('com_fila', ['id' => $waAutoPreview['existing']['id']])->row()), 'A budget changed after confirmation cancels the old queued communication');
 $communication->saveTemplate($waTemplate->id, $waTemplate->texto, (bool) $waTemplate->ativo);
+
+// Isolate dispatch scenarios from earlier pending synthetic notifications.
+$db->where('status', 'pendente')->update('com_fila', ['status' => 'cancelado']);
+$autoHeldOrder = $workflow->createOrder(['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0, 'dataInicial' => date('Y-m-d'), 'dataFinal' => date('Y-m-d')]);
+$workflow->service($autoHeldOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 60]);
+$workflow->requestApproval($autoHeldOrder);
+$autoHeldJob = $workflow->budgetWhatsAppPreview($autoHeldOrder)['existing'];
+$communication->saveConfig(['inicio' => 0, 'fim' => 24, 'intervalo_dias' => 1, 'limite_lembretes' => 0]);
+$manualOffOrder = $workflow->createOrder(['clientes_id' => $customer, 'usuarios_id' => 1, 'status' => 'Aberto', 'faturado' => 0, 'dataInicial' => date('Y-m-d'), 'dataFinal' => date('Y-m-d')]);
+$workflow->service($manualOffOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 70]);
+$workflow->requestApproval($manualOffOrder);
+$assert($db->where('os_id', $manualOffOrder)->count_all_results('com_fila') === 0, 'Disabled automations do not enqueue opening, budget or email notifications');
+$offPreview = $workflow->budgetWhatsAppPreview($manualOffOrder);
+$assert($offPreview['reason'] === '' && ! $offPreview['existing'], 'An authorized manual budget preview remains available with automations disabled');
+$reject(fn () => $workflow->sendBudgetWhatsApp($manualOffOrder, $offPreview['fingerprint'], false), 'Disabled automations never bypass explicit manual confirmation');
+$offJob = $workflow->sendBudgetWhatsApp($manualOffOrder, $offPreview['fingerprint'], true);
+$assert($offJob['status'] === 'pendente' && $db->where('os_id', $manualOffOrder)->count_all_results('com_fila') === 1, 'Manual sending queues only the confirmed WhatsApp with automations disabled');
+$futureHour = ((int) date('G') + 1) % 24;
+$communication->saveConfig(['inicio' => $futureHour, 'fim' => $futureHour + 1, 'intervalo_dias' => 1, 'limite_lembretes' => 0]);
+$offSent = [];
+$offTransport = function ($queued) use (&$offSent) {
+    $offSent[] = (int) $queued->id;
+    return ['state' => 'enviado', 'message' => 'Simulated transport only'];
+};
+$communication->process($offTransport);
+$assert(! in_array($offJob['id'], $offSent, true) && $db->get_where('com_fila', ['id' => $offJob['id']])->row()->status === 'pendente', 'Manual budgets still wait outside the configured sending window');
+$communication->saveConfig(['inicio' => 0, 'fim' => 24, 'intervalo_dias' => 1, 'limite_lembretes' => 0]);
+$communication->process($offTransport);
+$assert(in_array($offJob['id'], $offSent, true) && $db->get_where('com_fila', ['id' => $offJob['id']])->row()->status === 'enviado', 'The worker dispatches a confirmed manual budget while automations remain disabled');
+$assert(! in_array($autoHeldJob['id'], $offSent, true) && $db->get_where('com_fila', ['id' => $autoHeldJob['id']])->row()->status === 'pendente', 'Previously queued automatic budgets stay paused when automations are disabled');
+$db->where('id', $autoHeldJob['id'])->update('com_fila', ['status' => 'falhou']);
+$retryOff = $workflow->budgetWhatsAppPreview($autoHeldOrder);
+$workflow->sendBudgetWhatsApp($autoHeldOrder, $retryOff['fingerprint'], true);
+$communication->process($offTransport);
+$assert(in_array($autoHeldJob['id'], $offSent, true) && $db->where(['os_id' => $autoHeldOrder, 'evento' => 'orcamento', 'canal' => 'whatsapp'])->count_all_results('com_fila') === 1, 'An explicit OS retry authorizes an existing failed automatic budget as manual without duplication');
+$db->where('id', $offJob['id'])->update('com_fila', ['status' => 'falhou']);
+$retryOff = $workflow->budgetWhatsAppPreview($manualOffOrder);
+$workflow->sendBudgetWhatsApp($manualOffOrder, $retryOff['fingerprint'], true);
+$communication->savePreference($customer, 'nenhum', '', 'test');
+$offSent = [];
+$communication->process($offTransport);
+$assert(! in_array($offJob['id'], $offSent, true) && $db->get_where('com_fila', ['id' => $offJob['id']])->row()->status === 'cancelado', 'Revoking customer authorization cancels a manual budget before dispatch even with automations disabled');
