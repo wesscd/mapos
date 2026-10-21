@@ -53,6 +53,9 @@
 .ui-field-wide {grid-column:1/-1;}
 .ui-page .control-group {margin:0;min-width:0;}
 .ui-page .controls {margin:0;}
+.ui-page .ui-input-action {display:flex;align-items:stretch;gap:10px;}
+.ui-input-action input {min-width:0;flex:1;}
+.ui-input-action .ui-button {flex:0 0 auto;}
 .ui-hint {font-size:12px;color:var(--ui-muted);margin:12px 0;}
 .ui-checkbox-row {display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:8px;}
 .ui-checkbox-row label {display:flex;align-items:center;gap:10px;padding:10px 0;margin:0;min-height:42px;cursor:pointer;}
@@ -73,6 +76,8 @@
     .ui-page-header h1 {font-size:24px;}
     .ui-card {padding:16px;}
     .ui-form-grid {grid-template-columns:minmax(0,1fr);gap:18px;}
+    .ui-page .ui-input-action {flex-wrap:wrap;}
+    .ui-input-action input {flex-basis:100%;}
     .ui-table-hint {display:block;}
     .ui-search > div {max-width:none;flex-basis:100%;}
     .ui-search .ui-button, .ui-form-actions .ui-button {flex:1 1 auto;}

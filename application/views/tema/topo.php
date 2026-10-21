@@ -73,7 +73,7 @@
     window.BaseUrl = "<?= base_url() ?>";
   </script>
 <link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=7">
-<link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=1">
+<link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=2">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
 </head>
 
