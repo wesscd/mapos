@@ -1,15 +1,12 @@
-<section class="mapos-workflow">
-    <div class="mapos-section-heading"><div><span class="mapos-eyebrow">PATRIMÔNIO DO CLIENTE</span><h1>Equipamentos</h1></div>
-        <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'aCliente')) { ?><a class="btn btn-primary" href="<?= site_url('equipamentos/salvar') ?>">Cadastrar equipamento</a><?php } ?>
-    </div>
-    <p>Identifique cada equipamento e consulte seu histórico de atendimentos.</p>
-    <form method="get"><label>Buscar por cliente, equipamento, modelo ou série <input name="q" value="<?= html_escape($query) ?>" maxlength="100"></label><button class="btn">Buscar</button></form>
-    <div class="mapos-grid"><?php foreach (array_slice($items, 0, 30) as $item) { ?>
-        <article class="mapos-card"><h2><a href="<?= site_url('equipamentos/visualizar/' . (int) $item->idEquipamentos) ?>">#<?= (int) $item->idEquipamentos ?> · <?= html_escape($item->equipamento) ?></a></h2>
-            <p><?= html_escape($item->nomeCliente) ?></p><p><?= html_escape(trim($item->marca . ' ' . $item->modelo)) ?> · Série: <?= html_escape($item->num_serie ?: 'Não informada') ?></p>
-        </article>
-    <?php } ?></div>
-    <?php if (! $items) { ?><p>Nenhum equipamento encontrado.</p><?php } ?>
-    <?php if ($page > 0) { ?><a class="btn" href="<?= site_url('equipamentos') . '?' . html_escape(http_build_query(['q' => $query, 'pagina' => $page - 1])) ?>">Anterior</a><?php } ?>
-    <?php if (count($items) > 30) { ?><a class="btn" href="<?= site_url('equipamentos') . '?' . html_escape(http_build_query(['q' => $query, 'pagina' => $page + 1])) ?>">Próxima</a><?php } ?>
-</section>
+<?php $role = $this->session->userdata('permissao');
+$pageUrl = function ($number) use ($query, $customerFilter) {
+    return site_url('equipamentos') . '?' . html_escape(http_build_query(['q' => $query, 'cliente' => $customerFilter, 'pagina' => $number]));
+}; ?>
+<section class="ui-page" aria-labelledby="equipment-title">
+<header class="ui-page-header"><div><p class="ui-eyebrow">CADASTROS</p><h1 id="equipment-title">Equipamentos</h1><p>Identifique os equipamentos de cada cliente e consulte seus atendimentos.</p></div><?php if ($this->permission->checkPermission($role, 'aCliente')) { ?><a class="ui-button ui-button-primary" href="<?= site_url('equipamentos/salvar') . ($customerFilter ? '?cliente=' . (int) $customerFilter : '') ?>">Cadastrar equipamento</a><?php } ?></header>
+<div class="ui-card"><form class="ui-search" method="get" action="<?= site_url('equipamentos') ?>" role="search"><div><label for="equipment-search">Buscar equipamento</label><input type="search" id="equipment-search" name="q" maxlength="100" placeholder="Cliente, equipamento, modelo ou número de série" value="<?= html_escape($query) ?>"></div><?php if ($customerFilter) { ?><input type="hidden" name="cliente" value="<?= (int) $customerFilter ?>"><?php } ?><button class="ui-button ui-button-primary" type="submit">Buscar</button><?php if ($query !== '' || $customerFilter) { ?><a class="ui-button" href="<?= site_url('equipamentos') ?>">Mostrar todos</a><?php } ?></form>
+<?php if ($customerFilter) { ?><p class="ui-hint">Exibindo os equipamentos do <a href="<?= site_url('clientes/visualizar/' . (int) $customerFilter) ?>">cliente #<?= (int) $customerFilter ?></a>.</p><?php } ?>
+<p class="ui-table-hint">Deslize a tabela para consultar todos os dados e ações.</p><div class="ui-table-scroll" role="region" aria-label="Equipamentos cadastrados" tabindex="0"><table class="ui-table ui-catalog-table"><caption class="ui-sr-only">Equipamentos cadastrados</caption><thead><tr><th scope="col">Equipamento</th><th scope="col">Cliente</th><th scope="col">Marca e modelo</th><th scope="col">Número de série</th><th scope="col">Ações</th></tr></thead><tbody>
+<?php foreach (array_slice($items, 0, 30) as $item) { ?><tr><td><strong><?= html_escape($item->equipamento) ?></strong><small>#<?= (int) $item->idEquipamentos ?></small></td><td><a href="<?= site_url('clientes/visualizar/' . (int) $item->clientes_id) ?>"><?= html_escape(html_entity_decode($item->nomeCliente, ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></a></td><td><?= html_escape(trim($item->marca . ' ' . $item->modelo) ?: 'Não informado') ?></td><td><?= html_escape($item->num_serie ?: 'Não informado') ?></td><td><div class="ui-row-actions"><a class="ui-button ui-button-small" href="<?= site_url('equipamentos/visualizar/' . (int) $item->idEquipamentos) ?>" aria-label="Ver equipamento <?= html_escape($item->equipamento) ?>">Ver</a><?php if ($this->permission->checkPermission($role, 'eCliente')) { ?><a class="ui-button ui-button-small" href="<?= site_url('equipamentos/salvar/' . (int) $item->idEquipamentos) ?>" aria-label="Editar equipamento <?= html_escape($item->equipamento) ?>">Editar</a><?php } ?></div></td></tr><?php } ?>
+<?php if (! $items) { ?><tr><td colspan="5" class="ui-empty">Nenhum equipamento encontrado. Cadastre um equipamento ou ajuste a busca.</td></tr><?php } ?></tbody></table></div>
+<nav class="ui-pagination ui-row-actions" aria-label="Paginação de equipamentos"><?php if ($page > 0) { ?><a class="ui-button" href="<?= $pageUrl($page - 1) ?>">Anterior</a><?php } ?><span class="ui-hint">Página <?= (int) $page + 1 ?></span><?php if (count($items) > 30) { ?><a class="ui-button" href="<?= $pageUrl($page + 1) ?>">Próxima</a><?php } ?></nav></div></section>

@@ -25,9 +25,13 @@ class Equipamentos extends MY_Controller
         $query = $this->input->get('q');
         $query = is_string($query) ? mb_substr(trim($query), 0, 100) : '';
         $page = max(0, min(100000, (int) $this->input->get('pagina')));
+        $customerId = max(0, (int) $this->input->get('cliente'));
         $this->db->select('equipamentos.*, clientes.nomeCliente, marcas.marca')->from('equipamentos')
             ->join('clientes', 'clientes.idClientes = equipamentos.clientes_id')
             ->join('marcas', 'marcas.idMarcas = equipamentos.marcas_id', 'left');
+        if ($customerId) {
+            $this->db->where('equipamentos.clientes_id', $customerId);
+        }
         if ($query !== '') {
             $this->db->group_start()->like('equipamento', $query)->or_like('num_serie', $query)
                 ->or_like('modelo', $query)->or_like('nomeCliente', $query)->group_end();
@@ -35,6 +39,7 @@ class Equipamentos extends MY_Controller
         $this->data['items'] = $this->db->order_by('idEquipamentos', 'desc')->limit(31, $page * 30)->get()->result();
         $this->data['query'] = $query;
         $this->data['page'] = $page;
+        $this->data['customerFilter'] = $customerId;
         $this->data['view'] = 'equipamentos/lista';
         $this->layout();
     }
@@ -52,6 +57,27 @@ class Equipamentos extends MY_Controller
             ->limit(201)->get_where('equipamentos', ['clientes_id' => (int) $id])->result_array();
         $this->output->set_header('Cache-Control: private, no-store')->set_content_type('application/json')
             ->set_output(json_encode(['equipamentos' => array_slice($rows, 0, 200), 'limitado' => count($rows) > 200], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
+    public function clientes()
+    {
+        $this->permission('vCliente');
+        if ($this->input->method() !== 'get') {
+            show_error('Use a busca de clientes.', 405);
+        }
+        if (! $this->hasAnyPermission(['aCliente', 'eCliente'])) {
+            show_error('Você não tem permissão para cadastrar equipamentos.', 403);
+        }
+        $query = $this->input->get('q');
+        $query = is_string($query) ? mb_substr(trim($query), 0, 100) : '';
+        $rows = $query === '' ? [] : $this->db->select('idClientes, nomeCliente')->like('nomeCliente', $query)
+            ->order_by('nomeCliente')->limit(51)->get('clientes')->result_array();
+        foreach ($rows as &$row) {
+            $row['nomeCliente'] = html_entity_decode($row['nomeCliente'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+        unset($row);
+        $this->output->set_header('Cache-Control: private, no-store')->set_content_type('application/json')
+            ->set_output(json_encode(['clientes' => array_slice($rows, 0, 50), 'limitado' => count($rows) > 50], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
     public function salvar($id = null)
@@ -83,6 +109,7 @@ class Equipamentos extends MY_Controller
         }
         $this->data['customers'] = $this->db->select('idClientes, nomeCliente')->order_by('nomeCliente')->limit(50)->get('clientes')->result();
         $this->data['equipment'] = $equipment;
+        $this->data['equipmentEditing'] = (bool) $id;
         $this->data['selectedCustomer'] = $customerId;
         $this->data['view'] = 'equipamentos/formulario';
         $this->layout();
