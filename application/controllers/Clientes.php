@@ -58,9 +58,9 @@ class Clientes extends MY_Controller
         $this->load->library('form_validation');
         $this->data['custom_error'] = '';
 
-        $senhaCliente = $this->input->post('senha') ? $this->input->post('senha') : preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento'));
+        $senhaCliente = $this->input->post('senha') ? $this->input->post('senha') : preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento', '', false));
 
-        $cpf_cnpj = preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento'));
+        $cpf_cnpj = preg_replace('/[^\p{L}\p{N}\s]/', '', set_value('documento', '', false));
 
         if (strlen($cpf_cnpj) == 11) {
             $pessoa_fisica = true;
@@ -71,26 +71,26 @@ class Clientes extends MY_Controller
         if ($this->form_validation->run('clientes') == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-            $email = set_value('email');
+            $email = set_value('email', '', false);
             if ($email && $this->clientes_model->emailExists($email)) {
                 $this->data['custom_error'] = '<div class="form_error"><p>Este e-mail já está sendo utilizado por outro cliente.</p></div>';
             } else {
                 $data = [
-                'nomeCliente' => set_value('nomeCliente'),
-                'contato' => set_value('contato'),
+                'nomeCliente' => set_value('nomeCliente', '', false),
+                'contato' => set_value('contato', '', false),
                 'pessoa_fisica' => $pessoa_fisica,
-                'documento' => set_value('documento'),
-                'telefone' => set_value('telefone'),
-                'celular' => set_value('celular'),
-                'email' => set_value('email'),
+                'documento' => set_value('documento', '', false),
+                'telefone' => set_value('telefone', '', false),
+                'celular' => set_value('celular', '', false),
+                'email' => set_value('email', '', false),
                 'senha' => password_hash($senhaCliente, PASSWORD_DEFAULT),
-                'rua' => set_value('rua'),
-                'numero' => set_value('numero'),
-                'complemento' => set_value('complemento'),
-                'bairro' => set_value('bairro'),
-                'cidade' => set_value('cidade'),
-                'estado' => set_value('estado'),
-                'cep' => set_value('cep'),
+                'rua' => set_value('rua', '', false),
+                'numero' => set_value('numero', '', false),
+                'complemento' => set_value('complemento', '', false),
+                'bairro' => set_value('bairro', '', false),
+                'cidade' => set_value('cidade', '', false),
+                'estado' => set_value('estado', '', false),
+                'cep' => set_value('cep', '', false),
                 'dataCadastro' => date('Y-m-d'),
                 'fornecedor' => $this->input->post('fornecedor') ? 1 : 0,
             ];

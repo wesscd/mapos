@@ -3,7 +3,7 @@ $this->load->helper('form');
 $productEditing = $productEditing ?? false;
 $result = $result ?? null;
 $productValue = function ($field) use ($productEditing, $result) {
-    return set_value($field, $productEditing ? (string) ($result->$field ?? '') : '');
+    return set_value($field, $productEditing ? html_entity_decode((string) ($result->$field ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '');
 };
 ?>
 <section class="ui-page" aria-labelledby="product-title">

@@ -1,5 +1,8 @@
 <?php
 $this->load->helper('form');
+$clientEscape = function ($value) {
+    return html_escape(html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+};
 $clientPermission = $this->session->userdata('permissao');
 ?>
 <section class="ui-page" aria-labelledby="customers-title">
@@ -12,12 +15,12 @@ $clientPermission = $this->session->userdata('permissao');
         <table id="customers-table" class="ui-table"><caption class="ui-sr-only">Clientes e fornecedores<?= $clientSearch !== '' ? ' encontrados na busca' : ' cadastrados' ?></caption><thead><tr><th scope="col">Cliente / fornecedor</th><th scope="col">Contato</th><th scope="col">Telefones</th><th scope="col">E-mail</th><th scope="col">Tipo</th><th scope="col">Ações</th></tr></thead><tbody>
         <?php if (! $results) { ?><tr><td colspan="6" class="ui-empty"><?= $clientSearch !== '' ? 'Nenhum resultado para esta busca. Tente outro nome, documento ou telefone.' : 'Nenhum cliente ou fornecedor cadastrado.' ?></td></tr><?php } ?>
         <?php foreach ($results as $r) { ?>
-        <tr><td><a class="ui-name" href="<?= site_url('clientes/visualizar/' . (int) $r->idClientes) ?>"><?= html_escape($r->nomeCliente) ?></a><small>#<?= (int) $r->idClientes ?><?= $r->documento ? ' · ' . html_escape($r->documento) : '' ?></small></td>
-        <td><?= html_escape($r->contato ?: '—') ?></td><td><span><?= html_escape($r->telefone ?: '—') ?></span><?php if ($r->celular) { ?><small>Celular: <?= html_escape($r->celular) ?></small><?php } ?></td><td><?= html_escape($r->email ?: '—') ?></td><td><span class="ui-badge"><?= (int) $r->fornecedor === 1 ? 'Fornecedor' : 'Cliente' ?></span></td>
+        <tr><td><a class="ui-name" href="<?= site_url('clientes/visualizar/' . (int) $r->idClientes) ?>"><?= $clientEscape($r->nomeCliente) ?></a><small>#<?= (int) $r->idClientes ?><?= $r->documento ? ' · ' . $clientEscape($r->documento) : '' ?></small></td>
+        <td><?= $clientEscape($r->contato ?: '—') ?></td><td><span><?= $clientEscape($r->telefone ?: '—') ?></span><?php if ($r->celular) { ?><small>Celular: <?= $clientEscape($r->celular) ?></small><?php } ?></td><td><?= $clientEscape($r->email ?: '—') ?></td><td><span class="ui-badge"><?= (int) $r->fornecedor === 1 ? 'Fornecedor' : 'Cliente' ?></span></td>
         <td><div class="ui-row-actions">
-        <?php if ($this->permission->checkPermission($clientPermission, 'vCliente')) { ?><a class="ui-button ui-button-small" href="<?= site_url('clientes/visualizar/' . (int) $r->idClientes) ?>" aria-label="Ver cadastro de <?= html_escape($r->nomeCliente) ?>">Ver</a><a class="ui-button ui-button-small" href="<?= html_escape(site_url('mine') . '?e=' . rawurlencode($r->email)) ?>" target="_blank" rel="noopener" aria-label="Abrir portal de <?= html_escape($r->nomeCliente) ?>">Portal</a><?php } ?>
-        <?php if ($this->permission->checkPermission($clientPermission, 'eCliente')) { ?><a class="ui-button ui-button-small" href="<?= site_url('clientes/editar/' . (int) $r->idClientes) ?>" aria-label="Editar cadastro de <?= html_escape($r->nomeCliente) ?>">Editar</a><?php } ?>
-        <?php if ($this->permission->checkPermission($clientPermission, 'dCliente')) { ?><a href="#modal-excluir" role="button" data-toggle="modal" data-customer-id="<?= (int) $r->idClientes ?>" class="ui-button ui-button-small ui-button-danger" aria-label="Excluir cadastro de <?= html_escape($r->nomeCliente) ?>">Excluir</a><?php } ?>
+        <?php if ($this->permission->checkPermission($clientPermission, 'vCliente')) { ?><a class="ui-button ui-button-small" href="<?= site_url('clientes/visualizar/' . (int) $r->idClientes) ?>" aria-label="Ver cadastro de <?= $clientEscape($r->nomeCliente) ?>">Ver</a><a class="ui-button ui-button-small" href="<?= html_escape(site_url('mine') . '?e=' . rawurlencode($r->email)) ?>" target="_blank" rel="noopener" aria-label="Abrir portal de <?= $clientEscape($r->nomeCliente) ?>">Portal</a><?php } ?>
+        <?php if ($this->permission->checkPermission($clientPermission, 'eCliente')) { ?><a class="ui-button ui-button-small" href="<?= site_url('clientes/editar/' . (int) $r->idClientes) ?>" aria-label="Editar cadastro de <?= $clientEscape($r->nomeCliente) ?>">Editar</a><?php } ?>
+        <?php if ($this->permission->checkPermission($clientPermission, 'dCliente')) { ?><a href="#modal-excluir" role="button" data-toggle="modal" data-customer-id="<?= (int) $r->idClientes ?>" class="ui-button ui-button-small ui-button-danger" aria-label="Excluir cadastro de <?= $clientEscape($r->nomeCliente) ?>">Excluir</a><?php } ?>
         </div></td></tr><?php } ?>
         </tbody></table></div>
         <nav class="ui-pagination" aria-label="Páginas de clientes e fornecedores"><?= $this->pagination->create_links() ?></nav>

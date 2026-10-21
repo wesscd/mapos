@@ -3,7 +3,7 @@ $this->load->helper('form');
 $customerEditing = $customerEditing ?? false;
 $result = $result ?? null;
 $customerValue = function ($field) use ($customerEditing, $result) {
-    return set_value($field, $customerEditing ? (string) ($result->$field ?? '') : '');
+    return set_value($field, $customerEditing ? html_entity_decode((string) ($result->$field ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '');
 };
 ?>
 <script src="<?= base_url('assets/js/jquery.mask.min.js') ?>"></script>

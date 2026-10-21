@@ -66,8 +66,8 @@ class Servicos extends MY_Controller
             $preco = str_replace(',', '', $preco);
 
             $data = [
-                'nome' => set_value('nome'),
-                'descricao' => set_value('descricao'),
+                'nome' => set_value('nome', '', false),
+                'descricao' => set_value('descricao', '', false),
                 'preco' => $preco,
             ];
 

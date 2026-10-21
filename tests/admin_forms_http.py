@@ -60,7 +60,7 @@ for count in (9, 10):
     check = sum(numbers[i] * (count + 1 - i) for i in range(count)) * 10 % 11
     numbers.append(0 if check == 10 else check)
 cpf = ''.join(map(str, numbers))
-customer = {'nomeCliente': 'Piloto visual ' + key, 'documento': cpf, 'email': key + '@example.test', 'contato': 'Contato sintético', 'telefone': '1133334444', 'celular': '11999990000', 'rua': 'Rua de teste', 'numero': '10', 'complemento': 'Sala teste', 'bairro': 'Centro', 'cidade': 'Cidade teste', 'estado': 'SP', 'cep': '', 'senha': '', 'fornecedor': '1'}
+customer = {'nomeCliente': 'Piloto visual ' + key + ' \"Cliente\" & teste', 'documento': cpf, 'email': key + '@example.test', 'contato': 'Contato sintético', 'telefone': '1133334444', 'celular': '11999990000', 'rua': 'Rua de teste', 'numero': '10', 'complemento': 'Sala teste', 'bairro': 'Centro', 'cidade': 'Cidade teste', 'estado': 'SP', 'cep': '', 'senha': '', 'fornecedor': '1'}
 body = post('clientes/adicionar', customer)
 assert 'Cliente adicionado com sucesso' in body, 'Synthetic customer creation succeeds'
 listing = get('clientes?pesquisa=' + key)
@@ -81,13 +81,13 @@ fields = Fields(post(path, invalid))
 assert fields.values['nomeCliente'] == '' and fields.values['cidade'] == 'Cidade após erro' and fields.values['estado'] == 'RJ' and 'fornecedor' in fields.checked, 'Invalid customer edits retain entered values instead of restoring database values'
 assert Fields(get(path)).values['cidade'] == 'Cidade teste', 'Invalid edits never change the saved record'
 
-product = {'descricao': 'Produto visual ' + key, 'codDeBarra': key, 'unidade': 'UNID', 'precoCompra': '100.00', 'precoVenda': '137.50', 'estoque': '3', 'estoqueMinimo': '1', 'entrada': '1'}
+product = {'descricao': 'Produto visual ' + key + ' \"Notebook\" & teste', 'codDeBarra': key, 'unidade': 'UNID', 'precoCompra': '100.00', 'precoVenda': '137.50', 'estoque': '3', 'estoqueMinimo': '1', 'entrada': '1'}
 assert 'Produto adicionado com sucesso' in post('produtos/adicionar', product)
 listing = get('produtos?pesquisa=' + key)
 product_id = re.search(r'produtos/editar/(\d+)', listing).group(1)
 path = 'produtos/editar/' + product_id
 fields = Fields(get(path))
-assert fields.values['unidade'] == 'UNID' and float(fields.values['precoVenda']) == 137.5 and 'entrada' in fields.checked and 'saida' not in fields.checked
+assert fields.values['descricao'] == product['descricao'] and fields.values['unidade'] == 'UNID' and float(fields.values['precoVenda']) == 137.5 and 'entrada' in fields.checked and 'saida' not in fields.checked
 product.update(idProdutos=product_id, precoVenda='149.90', saida='1')
 product.pop('entrada')
 assert 'Produto editado com sucesso' in post(path, product)
@@ -100,9 +100,10 @@ assert float(Fields(get(path)).values['precoVenda']) == 149.9
 print('Admin form checks passed: synthetic create/edit, values after validation errors, checkbox states, unit selection, saved prices and blank password fields.')
 print('Synthetic fixture IDs: customer=' + customer_id + ', product=' + product_id)
 
-service = {'nome': 'Serviço visual ' + key, 'preco': '85.50', 'descricao': 'Análise e limpeza de teste'}
+service = {'nome': 'Serviço ' + key + ' \"PC\" & teste', 'preco': '85.50', 'descricao': 'Análise e limpeza de teste'}
 assert 'Serviço adicionado com sucesso' in post('servicos/adicionar', service)
 listing = get('servicos?pesquisa=' + key)
+assert '&amp;quot;' not in listing and '&amp;amp;' not in listing, 'Legacy escaped text is not escaped a second time in catalog lists'
 service_id = re.search(r'servicos/editar/(\d+)', listing).group(1)
 path = 'servicos/editar/' + service_id
 fields = Fields(get(path))
@@ -120,3 +121,15 @@ for route in ['produtos', 'servicos']:
 assert 'R$ 149,90' in get('produtos/visualizar/' + product_id)
 print('Catalog checks passed: service create/edit, retained textarea after validation errors, saved prices, empty search results and formatted product detail.')
 print('Synthetic service fixture ID: ' + service_id)
+
+# Exercise encoded historical data without changing any real record.
+from html import escape
+legacy_product = dict(product, descricao=escape(product['descricao'], quote=True))
+assert 'Produto editado com sucesso' in post('produtos/editar/' + product_id, legacy_product)
+assert Fields(get('produtos/editar/' + product_id)).values['descricao'] == product['descricao'], 'Legacy entities render as plain characters in edit fields'
+assert '&amp;quot;' not in get('produtos/visualizar/' + product_id), 'Legacy entities are not visibly escaped twice in product details'
+assert 'Produto editado com sucesso' in post('produtos/editar/' + product_id, product)
+long_service = dict(service, nome='N' * 46)
+assert 'ui-notice-error' in post('servicos/editar/' + service_id, long_service), 'Names exceeding the actual service storage limit are rejected instead of silently truncated'
+assert Fields(get('servicos/editar/' + service_id)).values['nome'] == service['nome']
+print('Text checks passed: raw special characters, safely displayed legacy entities and explicit storage-length validation.')

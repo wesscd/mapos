@@ -62,12 +62,12 @@ $config = [
         [
             'field' => 'nome',
             'label' => 'Nome',
-            'rules' => 'required|trim',
+            'rules' => 'required|trim|max_length[45]',
         ],
         [
             'field' => 'descricao',
-            'label' => '',
-            'rules' => 'trim',
+            'label' => 'Descrição',
+            'rules' => 'trim|max_length[45]',
         ],
         [
             'field' => 'preco',
