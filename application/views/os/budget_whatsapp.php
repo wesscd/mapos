@@ -7,7 +7,7 @@
     $waStates = ['pendente' => 'Na fila', 'enviando' => 'Envio em andamento', 'enviado' => 'Enviado', 'entregue' => 'Entregue', 'lido' => 'Lido', 'incerto' => 'Confirmação pendente', 'falhou' => 'Falha no envio', 'cancelado' => 'Envio cancelado'];
     ?>
 <section class="os-budget-section" id="os-budget-whatsapp"><h3>WhatsApp do orçamento</h3>
-<p>Confira a mensagem abaixo e clique em “Enviar orçamento por WhatsApp”. O envio usa o WhatsApp conectado ao sistema. O cliente consulta e responde ao orçamento na área do cliente.</p>
+<p><?= $waCanRequest ? 'Confira a prévia e as condições de envio abaixo. Quando o envio estiver liberado, confirme a conferência e clique em “Enviar orçamento por WhatsApp”.' : 'Acompanhe abaixo o envio deste orçamento pelo WhatsApp.' ?> O envio usa o WhatsApp conectado ao sistema. O cliente consulta e responde ao orçamento na área do cliente.</p>
 <?php if ($waBudget['existing']) {
     $waJob = $waBudget['existing']; ?>
 <p role="status"><strong><?= html_escape($waStates[$waJob['status']] ?? 'Confira o acompanhamento') ?></strong> · Mensagem #<?= (int) $waJob['id'] ?> · <?= html_escape(date('d/m/Y H:i', strtotime($waJob['created_at']))) ?></p>
@@ -23,7 +23,7 @@
 <p>O link exige acesso do cliente ao portal. O envio respeita o horário configurado: <?= (int) $waBudget['window'][0] ?>h às <?= (int) $waBudget['window'][1] ?>h. Se o WhatsApp estiver desconectado, a fila aguarda uma nova tentativa dentro das regras existentes.</p>
 </details>
 <?php if ($waBudget['reason']) { ?>
-<div class="alert" id="wa-budget-blocked" role="status"><strong>Envio indisponível.</strong> <?= html_escape($waBudget['reason']) ?>
+<div class="os-feedback is-error" id="wa-budget-blocked" role="status"><strong>Envio indisponível.</strong> <?= html_escape($waBudget['reason']) ?>
 <?php if ($waNeedsConsent) { ?><p><?= $waCanConfigure ? 'Se o cliente já autorizou o contato, registre a autorização no botão abaixo. Depois, volte à OS e atualize esta página para enviar o orçamento.' : 'Solicite a um administrador que registre a autorização informada pelo cliente na Central de Comunicação.' ?></p><?php } ?>
 </div>
 <?php if ($waCanRequest) { ?><p><button type="button" class="btn btn-success" disabled aria-describedby="wa-budget-blocked"><?= $waRetry ? 'Tentar envio novamente por WhatsApp' : 'Enviar orçamento por WhatsApp' ?></button></p><?php } ?>
