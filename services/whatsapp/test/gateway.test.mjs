@@ -65,6 +65,22 @@ test('Recipients missing from WhatsApp fail before sending', async t => {
   assert.equal(store.get(key), undefined); assert.equal(count(), 0);
 });
 
+test('Private recipient diagnostics never prepare or relay a message', async t => {
+  const { gateway, count } = setup(t, { checkRecipient: async number => {
+    assert.equal(number, payload.to);
+    return { registered: true, hasPhoneAddress: true, hasPrivateAddress: true };
+  }, prepare: async () => { throw new Error('Diagnostic must not prepare a message'); } });
+  assert.deepEqual(await gateway.route('POST', '/recipients/check', { to: payload.to }), [200, { registered: true, hasPhoneAddress: true, hasPrivateAddress: true }]);
+  assert.equal(count(), 0);
+  assert.equal((await gateway.route('POST', '/recipients/check', { to: 'group@g.us' }))[0], 422);
+});
+
+test('Unavailable recipient diagnostics are distinct from an unregistered number', async t => {
+  const { gateway } = setup(t, { checkRecipient: async () => { throw new Error('Lookup timeout'); } });
+  assert.equal((await gateway.route('POST', '/recipients/check', { to: payload.to }))[0], 503);
+  assert.equal(gateway.busy, false);
+});
+
 test('Concurrent requests are serialized, including recipient lookup', async t => {
   let release;
   const wait = new Promise(resolve => { release = resolve; });

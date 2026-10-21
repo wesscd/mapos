@@ -29,6 +29,20 @@ export class Gateway {
       const row = this.store.get(path.split('/')[2]);
       return row ? [200, { status: row.status }] : [404, { error: 'Mensagem não localizada.' }];
     }
+    // Private diagnostic: query registration without preparing or relaying a message.
+    if (method === 'POST' && path === '/recipients/check') {
+      if (!/^[1-9][0-9]{7,14}$/.test(data.to || '')) return [422, { error: 'Telefone inválido. Use DDI, DDD e número.' }];
+      if (this.busy) return [429, { error: 'Aguarde o envio em andamento.' }];
+      if (!this.adapter.ready()) return [503, { error: 'WhatsApp desconectado.' }];
+      this.busy = true;
+      try {
+        return [200, await this.adapter.checkRecipient(data.to)];
+      } catch {
+        return [503, { error: 'Consulta ao WhatsApp indisponível. Tente novamente.' }];
+      } finally {
+        this.busy = false;
+      }
+    }
     if (method !== 'POST' || path !== '/messages') return [404, { error: 'Recurso não encontrado.' }];
     if (!/^[a-f0-9]{48}$/.test(data.key || '') || !/^[1-9][0-9]{7,14}$/.test(data.to || '')
       || typeof data.text !== 'string' || !data.text.trim() || data.text.length > 6000) {

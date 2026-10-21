@@ -149,6 +149,11 @@ export class BaileysAdapter {
     const result = await this.socket.onWhatsApp(number + '@s.whatsapp.net');
     return result?.find(value => value.exists)?.jid;
   }
+  async checkRecipient(number) {
+    const result = await this.socket.onWhatsApp(number + '@s.whatsapp.net');
+    const contact = result?.find(value => value.exists);
+    return { registered: !!contact, hasPhoneAddress: !!contact?.jid, hasPrivateAddress: !!contact?.lid };
+  }
   async prepare(jid, text) {
     return generateWAMessage(jid, { text }, { userJid: this.socket.user.id, logger: this.logger, linkPreview: null });
   }
