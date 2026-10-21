@@ -13,10 +13,7 @@ class Produtos_model extends CI_Model
         $this->db->from($table);
         $this->db->order_by('idProdutos', 'desc');
         $this->db->limit($perpage, $start);
-        if ($where) {
-            $this->db->like('codDeBarra', $where);
-            $this->db->or_like('descricao', $where);
-        }
+        $this->filterSearch($where);
 
         $query = $this->db->get();
 
@@ -66,9 +63,17 @@ class Produtos_model extends CI_Model
         return false;
     }
 
-    public function count($table)
+    private function filterSearch($search)
     {
-        return $this->db->count_all($table);
+        if ($search !== '' && $search !== null) {
+            $this->db->group_start()->like('codDeBarra', $search)->or_like('descricao', $search)->group_end();
+        }
+    }
+
+    public function count($table, $search = '')
+    {
+        $this->filterSearch($search);
+        return $this->db->count_all_results($table);
     }
 
     public function updateEstoque($produto, $quantidade, $operacao = '-')

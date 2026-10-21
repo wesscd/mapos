@@ -121,6 +121,12 @@ $assert(count($clientMatches) === 1 && (int) $clientMatches[0]->idClientes === (
 $assert($ci->clientes_model->count('clientes', '11912345678') === 1, 'Customer pagination counts only rows matching the search');
 $assert($ci->clientes_model->count('clientes', 'no-such-ui-customer') === 0 && $ci->clientes_model->get('clientes', '*', 'no-such-ui-customer', 10, 0) === [], 'An empty customer search has no unrelated rows or phantom pages');
 $db->where('idClientes', $customer)->update('clientes', ['celular' => $searchPhone]);
+$ci->load->model(['produtos_model', 'servicos_model']);
+foreach (['produtos' => ['produtos_model', 'TEST'], 'servicos' => ['servicos_model', 'Serviço Teste']] as $catalogTable => [$catalogModel, $catalogTerm]) {
+    $catalogRows = $ci->$catalogModel->get($catalogTable, '*', $catalogTerm, 100, 0);
+    $assert(count($catalogRows) === $ci->$catalogModel->count($catalogTable, $catalogTerm) && count($catalogRows) > 0, 'Catalog search and pagination share the same filter: ' . $catalogTable);
+    $assert($ci->$catalogModel->count($catalogTable, 'catalog-no-match') === 0 && $ci->$catalogModel->get($catalogTable, '*', 'catalog-no-match', 10, 0) === [], 'Empty catalog searches do not expose unrelated rows or pages: ' . $catalogTable);
+}
 require __DIR__ . '/communication.php';
 require __DIR__ . '/equipment.php';
 require __DIR__ . '/inspections.php';

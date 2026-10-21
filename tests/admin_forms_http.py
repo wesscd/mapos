@@ -27,6 +27,8 @@ class Fields(HTMLParser):
         super().__init__()
         self.values = {}
         self.checked = set()
+        self.textarea = None
+        self.textarea_content = []
         self.feed(body)
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -34,8 +36,19 @@ class Fields(HTMLParser):
             self.values[attrs['name']] = attrs.get('value', '')
             if 'checked' in attrs:
                 self.checked.add(attrs['name'])
+        if tag == 'textarea':
+            self.textarea = attrs.get('name')
+            self.textarea_content = []
         if tag == 'select' and attrs.get('name'):
             self.values[attrs['name']] = attrs.get('data-selected', '')
+
+    def handle_data(self, data):
+        if self.textarea:
+            self.textarea_content.append(data)
+    def handle_endtag(self, tag):
+        if tag == 'textarea' and self.textarea:
+            self.values[self.textarea] = ''.join(self.textarea_content)
+            self.textarea = None
 
 get('clientes/adicionar')
 login = post('login/verificarLogin', {'email': credentials['email'], 'senha': credentials['password']})
@@ -86,3 +99,24 @@ assert fields.values['descricao'] == '' and fields.values['precoVenda'] == '151.
 assert float(Fields(get(path)).values['precoVenda']) == 149.9
 print('Admin form checks passed: synthetic create/edit, values after validation errors, checkbox states, unit selection, saved prices and blank password fields.')
 print('Synthetic fixture IDs: customer=' + customer_id + ', product=' + product_id)
+
+service = {'nome': 'Serviço visual ' + key, 'preco': '85.50', 'descricao': 'Análise e limpeza de teste'}
+assert 'Serviço adicionado com sucesso' in post('servicos/adicionar', service)
+listing = get('servicos?pesquisa=' + key)
+service_id = re.search(r'servicos/editar/(\d+)', listing).group(1)
+path = 'servicos/editar/' + service_id
+fields = Fields(get(path))
+assert fields.values['nome'] == service['nome'] and float(fields.values['preco']) == 85.5 and fields.values['descricao'] == service['descricao']
+service.update(idServicos=service_id, preco='99.90', descricao='Descrição atualizada')
+assert 'Serviço editado com sucesso' in post(path, service)
+fields = Fields(get(path))
+assert float(fields.values['preco']) == 99.9 and fields.values['descricao'] == 'Descrição atualizada'
+invalid = dict(service, nome='', preco='101.25', descricao='Descrição após erro')
+fields = Fields(post(path, invalid))
+assert fields.values['nome'] == '' and fields.values['preco'] == '101.25' and fields.values['descricao'] == 'Descrição após erro'
+assert float(Fields(get(path)).values['preco']) == 99.9
+for route in ['produtos', 'servicos']:
+    assert 'Nenhum resultado para esta busca.' in get(route + '?pesquisa=catalog-no-match-' + key)
+assert 'R$ 149,90' in get('produtos/visualizar/' + product_id)
+print('Catalog checks passed: service create/edit, retained textarea after validation errors, saved prices, empty search results and formatted product detail.')
+print('Synthetic service fixture ID: ' + service_id)

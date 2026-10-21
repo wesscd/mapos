@@ -28,14 +28,16 @@ class Servicos extends MY_Controller
         }
 
         $pesquisa = $this->input->get('pesquisa');
+        $pesquisa = is_string($pesquisa) ? mb_substr(trim($pesquisa), 0, 150) : '';
+        $this->data['catalogSearch'] = $pesquisa;
 
         $this->load->library('pagination');
 
         $this->data['configuration']['base_url'] = site_url('servicos/gerenciar/');
-        $this->data['configuration']['total_rows'] = $this->servicos_model->count('servicos');
-        if ($pesquisa) {
-            $this->data['configuration']['suffix'] = "?pesquisa={$pesquisa}";
-            $this->data['configuration']['first_url'] = base_url("index.php/servicos")."\?pesquisa={$pesquisa}";
+        $this->data['configuration']['total_rows'] = $this->servicos_model->count('servicos', $pesquisa);
+        if ($pesquisa !== '') {
+            $this->data['configuration']['suffix'] = '?' . http_build_query(['pesquisa' => $pesquisa]);
+            $this->data['configuration']['first_url'] = site_url('servicos') . $this->data['configuration']['suffix'];
         }
 
         $this->pagination->initialize($this->data['configuration']);

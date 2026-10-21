@@ -13,10 +13,7 @@ class Servicos_model extends CI_Model
         $this->db->from($table);
         $this->db->order_by('idServicos', 'desc');
         $this->db->limit($perpage, $start);
-        if ($where) {
-            $this->db->like('nome', $where);
-            $this->db->or_like('descricao', $where);
-        }
+        $this->filterSearch($where);
 
         $query = $this->db->get();
 
@@ -66,8 +63,16 @@ class Servicos_model extends CI_Model
         return false;
     }
 
-    public function count($table)
+    private function filterSearch($search)
     {
-        return $this->db->count_all($table);
+        if ($search !== '' && $search !== null) {
+            $this->db->group_start()->like('nome', $search)->or_like('descricao', $search)->group_end();
+        }
+    }
+
+    public function count($table, $search = '')
+    {
+        $this->filterSearch($search);
+        return $this->db->count_all_results($table);
     }
 }
