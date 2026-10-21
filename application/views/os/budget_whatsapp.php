@@ -26,7 +26,7 @@
 <button type="submit" class="btn btn-success"><?= $waRetry ? 'Tentar envio novamente por WhatsApp' : 'Enviar orçamento por WhatsApp' ?></button>
 </form>
 <p>Esta ação disponibiliza o orçamento para aprovação, se ainda não estiver disponível, e inclui somente o WhatsApp na fila.</p>
-<?php if (! $waBudget['existing']) { ?><a class="btn" target="_blank" rel="noopener" href="<?= html_escape('https://wa.me/' . $waBudget['destination'] . '?text=' . rawurlencode($waBudget['text'])) ?>">Abrir mensagem manualmente no WhatsApp</a><?php } ?>
+<?php if (! $waBudget['existing'] && $waBudget['approval']) { ?><a class="btn" target="_blank" rel="noopener" href="<?= html_escape('https://wa.me/' . $waBudget['destination'] . '?text=' . rawurlencode($waBudget['text'])) ?>">Abrir mensagem manualmente no WhatsApp</a><?php } ?>
 <?php } ?>
 </details>
 <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'cSistema')) { ?><a class="btn" href="<?= site_url('comunicacao?cliente=' . (int) $result->clientes_id) ?>">Abrir Central de Comunicação deste cliente</a><?php } ?>

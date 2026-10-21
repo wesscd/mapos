@@ -75,7 +75,7 @@ A busca da listagem aceita nome/documento do cliente e número da OS (também co
 
 ### Envio de orçamento pelo WhatsApp
 
-Na aba **Orçamento**, a seção **WhatsApp do orçamento** permite conferir destinatário, total líquido e a mensagem antes de confirmar. O envio usa a fila e o gateway Baileys existentes. Não abre o WhatsApp Web e não envia e-mail junto. O link da mensagem leva à área autenticada do cliente para consultar e aprovar ou recusar. A alternativa manual continua disponível antes de haver uma comunicação registrada.
+Na aba **Orçamento**, a seção **WhatsApp do orçamento** permite conferir destinatário, total líquido e a mensagem antes de confirmar. O envio usa a fila e o gateway Baileys existentes. Não abre o WhatsApp Web e não envia e-mail junto. O link da mensagem leva à área autenticada do cliente para consultar e aprovar ou recusar. O atalho manual desta seção exige uma solicitação de aprovação já publicada e nenhuma comunicação registrada. O atalho anterior permanece no menu de impressão, navegação e comunicação.
 
 A prévia é somente leitura: não publica aprovação nem envia mensagens. A confirmação valida novamente orçamento, diagnóstico, telefone e modelo. Mudanças exigem atualizar a prévia. A primeira confirmação publica a solicitação de aprovação e grava a mensagem na mesma transação. Solicitações pendentes com o mesmo conteúdo são reutilizadas, inclusive ao clicar novamente em solicitar aprovação.
 
