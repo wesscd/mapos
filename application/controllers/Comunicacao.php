@@ -94,10 +94,10 @@ class Comunicacao extends MY_Controller
                 default:
                     throw new DomainException('Ação inválida.');
             }
-            $this->session->set_flashdata('success', 'Solicitação registrada. Consulte a conexão e o histórico abaixo.');
+            $this->session->set_flashdata('success', $this->input->post('acao') === 'preferencia' ? 'Preferência salva. Volte à OS e atualize a página para conferir e enviar o orçamento.' : 'Solicitação registrada. Consulte a conexão e o histórico abaixo.');
         } catch (DomainException $error) {
             $this->session->set_flashdata('error', $error->getMessage());
         }
-        redirect('comunicacao' . ($customer ? '?cliente=' . $customer : ''));
+        redirect('comunicacao' . ($customer ? '?cliente=' . $customer . '#preferencias-cliente' : ''));
     }
 }

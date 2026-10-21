@@ -42,7 +42,8 @@
             </form>
         </section>
     </div>
-    <section class="mapos-card"><h2>Preferências por cliente</h2>
+    <section class="mapos-card" id="preferencias-cliente"><h2>Preferências por cliente</h2>
+        <p>Para liberar o envio por WhatsApp, selecione esse canal, informe como e quando o cliente autorizou o contato e clique em “Salvar preferência”. Salvar a autorização não envia mensagens. Depois, volte à OS e atualize a página para conferir e enviar o orçamento.</p>
         <form method="get" action="<?= site_url('comunicacao') ?>" class="mapos-inline-form"><label for="pref-client">Nome ou código do cliente</label><input id="pref-client" name="busca" maxlength="100" required value="<?= html_escape($search) ?>"><button class="btn">Consultar</button></form>
         <?php if ($search !== '') { ?><ul><?php foreach ($customers as $found) { ?><li><a href="<?= site_url('comunicacao?cliente=' . (int) $found->idClientes) ?>">#<?= (int) $found->idClientes ?> — <?= html_escape($found->nomeCliente) ?></a></li><?php } ?></ul><?php if (! $customers) { ?><p>Nenhum cliente encontrado.</p><?php } ?><?php } ?>
         <?php if ($customer) { ?>
