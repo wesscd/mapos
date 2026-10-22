@@ -28,5 +28,6 @@ chmod 644 .secrets/whatsapp-token
 "${compose[@]}" exec -T nginx nginx -t </dev/null
 "${compose[@]}" exec -T nginx nginx -s reload </dev/null
 rm -- .maintenance
-curl --fail --silent --show-error -o /dev/null https://mapos.ultraitsm.online/index.php/login
+public_url=$("${compose[@]}" exec -T php php -r 'require "application/vendor/autoload.php"; Dotenv\Dotenv::createImmutable(getcwd()."/application")->load(); echo rtrim($_ENV["APP_BASEURL"], "/");' </dev/null)
+curl --fail --silent --show-error -o /dev/null "$public_url/index.php/login"
 echo "Implantação concluída: $target. Backup: $backup"

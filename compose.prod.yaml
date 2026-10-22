@@ -1,4 +1,4 @@
-name: mapos
+name: ${MAPOS_PROJECT_NAME:-mapos}
 services:
   php:
     build: ./docker/runtime
@@ -44,7 +44,7 @@ services:
       default:
       proxy:
         aliases:
-          - mapos-web
+          - ${MAPOS_PROXY_ALIAS:-mapos-web}
     depends_on:
       - php
     restart: unless-stopped
