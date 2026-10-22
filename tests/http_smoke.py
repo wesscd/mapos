@@ -24,6 +24,11 @@ for path in ["operacoes", "kanban", "os", "os/adicionar", "clientes", "produtos"
     body = response.read().decode()
     assert response.status == 200 and all(error not in body for error in ["A PHP Error was encountered", "Database Error", "An uncaught Exception was encountered", "Fatal error:"]), path
     assert "login" not in response.url, path
+    if path == "mapos/configurar":
+        assert 'id="notification-config"' in body and 'id="notification-model-' in body and 'form="notification-model-' in body, "Notification settings must expose independent centralized editors"
+        assert 'name="notifica_whats"' not in body and 'name="email_automatico"' not in body, "Retired legacy notification controls must not compete with centralized templates"
+    if path == "comunicacao":
+        assert 'mapos/configurar#menu3' in body and 'name="texto"' not in body and 'name="limite_lembretes"' not in body, "Communication center must link to the sole notification editor"
     if path == "os/adicionar":
         assert 'id="equipamento_id"' in body and "os-equipment-picker.js" in body, "New OS must expose the equipment picker"
         assert 'name="vistoria_estado"' in body and 'name="vistoria_foto_teclado"' in body and 'enctype="multipart/form-data"' in body, "New OS must expose intake condition and categorized photos"

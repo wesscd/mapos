@@ -18,7 +18,6 @@ class Comunicacao extends MY_Controller
     public function index()
     {
         $this->data['settings'] = $this->comunicacao_service->config();
-        $this->data['models'] = $this->db->order_by('evento, canal')->get('com_modelos')->result();
         $this->data['events'] = Comunicacao_service::EVENTS;
         $this->data['messages'] = $this->db->order_by('id', 'desc')->limit(100)->get('com_fila')->result();
         $this->data['smtpReady'] = $this->comunicacao_service->smtpReady();
@@ -67,6 +66,13 @@ class Comunicacao extends MY_Controller
                 case 'config':
                     $this->comunicacao_service->saveConfig((array) $this->input->post());
                     break;
+                case 'destinatarios':
+                    $recipient = $this->input->post('os_notification');
+                    if (! in_array($recipient, ['todos', 'cliente', 'tecnico', 'emitente', 'nenhum'], true)) {
+                        throw new DomainException('Selecione os destinatários do e-mail manual.');
+                    }
+                    $this->db->where('config', 'os_notification')->update('configuracoes', ['valor' => $recipient]);
+                    break;
                 case 'modelo':
                     $this->comunicacao_service->saveTemplate($this->input->post('id'), $this->input->post('texto'), (bool) $this->input->post('ativo'));
                     break;
@@ -94,9 +100,18 @@ class Comunicacao extends MY_Controller
                 default:
                     throw new DomainException('Ação inválida.');
             }
+            if (in_array($this->input->post('acao'), ['config', 'modelo', 'destinatarios'], true)) {
+                $this->session->set_flashdata('success', 'Configuração de notificações salva com sucesso. Novos envios usarão os dados atualizados; mensagens já na fila mantêm o texto registrado.');
+                redirect('mapos/configurar#menu3');
+                return;
+            }
             $this->session->set_flashdata('success', $this->input->post('acao') === 'preferencia' ? 'Preferência salva. Volte à OS e atualize a página para conferir e enviar o orçamento.' : 'Solicitação registrada. Consulte a conexão e o histórico abaixo.');
         } catch (DomainException $error) {
             $this->session->set_flashdata('error', $error->getMessage());
+        }
+        if (in_array($this->input->post('acao'), ['config', 'modelo', 'destinatarios'], true)) {
+            redirect('mapos/configurar#menu3');
+            return;
         }
         redirect('comunicacao' . ($customer ? '?cliente=' . $customer . '#preferencias-cliente' : ''));
     }

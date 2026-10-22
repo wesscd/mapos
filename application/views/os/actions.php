@@ -5,10 +5,10 @@
 <a class="btn" href="<?= site_url('os/imprimirTermica/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir cupom 80 mm</a>
 <?php if ($result->garantias_id) { ?><a class="btn" href="<?= site_url('garantias/imprimirGarantiaOs/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir termo de garantia</a><?php } ?>
 <?php if ($osPermission) {
-    $phone = preg_replace('/[^0-9]/', '', (string) $result->celular_cliente);
-    $amount = $result->tipo_desconto ? $result->valor_desconto : $totalProdutos + $totalServico;
-    $replacements = [$result->nomeCliente, $result->idOs, $result->status, 'R$ ' . number_format($amount, 2, ',', '.'), strip_tags($result->descricaoProduto), $emitente ? $emitente->nome : '', $emitente ? $emitente->telefone : '', strip_tags($result->observacoes), strip_tags($result->defeito), strip_tags($result->laudoTecnico), date('d/m/Y', strtotime($result->dataFinal)), date('d/m/Y', strtotime($result->dataInicial)), $result->garantia . ' dias'];
-    $message = $this->os_model->criarTextoWhats($texto_de_notificacao, $replacements);
-    if ($phone) { ?><a class="btn" href="<?= html_escape('https://wa.me/send?phone=55' . $phone . '&text=' . $message) ?>" target="_blank" rel="noopener">Abrir mensagem no WhatsApp</a><?php } ?>
+    $this->load->library('comunicacao_service');
+    $customer = (object) ['celular' => $result->celular_cliente, 'telefone' => $result->telefone_cliente ?? ''];
+    $phone = $this->comunicacao_service->destination('whatsapp', $customer);
+    $message = $this->comunicacao_service->orderMessage($result->idOs);
+    if ($phone && $message !== '') { ?><a class="btn" href="<?= html_escape('https://wa.me/' . $phone . '?text=' . rawurlencode($message)) ?>" target="_blank" rel="noopener">Abrir mensagem no WhatsApp</a><?php } ?>
 <a class="btn" href="<?= site_url('os/enviar_email/' . (int) $result->idOs) ?>" data-os-confirm-link="Enviar esta OS por e-mail agora?">Enviar OS por e-mail</a>
 <?php } ?></div></details>

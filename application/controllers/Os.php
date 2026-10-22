@@ -84,7 +84,6 @@ class Os extends MY_Controller
             $this->uri->segment(3)
         );
 
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
         $this->data['emitente'] = $this->mapos_model->getEmitente();
         $this->data['view'] = 'os/os';
 
@@ -198,7 +197,6 @@ class Os extends MY_Controller
 
         $this->load->library('form_validation');
         $this->data['custom_error'] = '';
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
 
         $this->data['editavel'] = $this->os_model->isEditable($this->uri->segment(3));
         if (! $this->data['editavel']) {
@@ -301,7 +299,6 @@ class Os extends MY_Controller
         }
 
         $this->data['custom_error'] = '';
-        $this->data['texto_de_notificacao'] = $this->data['configuration']['notifica_whats'];
 
         $this->load->model('mapos_model');
         $this->data['result'] = $this->os_model->getById($this->uri->segment(3));

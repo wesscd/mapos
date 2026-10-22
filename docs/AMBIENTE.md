@@ -83,3 +83,12 @@ e diretórios de anexos e uploads. Mudanças de schema devem usar migrations.
 ## Identidade visual Barão Tech
 
 Em Configurações > Sistema > Tema do Sistema, selecione **Barão Tech · verde escuro**. O tema usa as cores e o logotipo da landing page e se aplica ao painel administrativo e à área do cliente, incluindo os logins. A seleção pode ser revertida aos temas anteriores sem mudar os dados. A folha de estilo é restrita à tela; as impressões mantêm seu layout documental.
+
+
+### Modelos e regras de comunicação
+
+Em **Configurações → Notificações** (`mapos/configurar#menu3`) ficam os modelos por evento/canal, as automações, os horários e os destinatários do envio manual de cópia completa da OS por e-mail. Cada seção tem salvamento independente. A prévia usa dados fictícios e não dispara mensagens.
+
+A **Central de Comunicação** mantém conexão WhatsApp, SMTP Gmail, testes, preferências dos clientes e histórico. O atalho de WhatsApp da OS e o campo `textoWhatsApp` da API usam o modelo **Mudança de etapa · WhatsApp**. O envio de orçamento por Baileys usa **Orçamento disponível · WhatsApp**. Um modelo desativado não usa o texto legado como alternativa.
+
+Os antigos campos `notifica_whats` e `email_automatico` deixaram de ser editados nesta tela; as chaves históricas permanecem no banco para compatibilidade, sem controlar os novos avisos. A configuração de e-mail geral continua necessária para os fluxos legados, como recuperação de acesso e envio da cópia completa da OS. Mensagens já enfileiradas preservam o texto original.

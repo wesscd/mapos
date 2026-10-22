@@ -687,38 +687,8 @@ class OsController extends REST_Controller
 
     public function criarTextoWhats($os, $totalProdutos, $totalServico)
     {
-        $this->load->model('mapos_model');
-        $emitente = $this->mapos_model->getEmitente();
-
-        $troca = [
-            $os->nomeCliente,
-            $os->idOs,
-            $os->status,
-            'R$ ' . ($os->desconto != 0 && $os->valor_desconto != 0 ? number_format($os->valor_desconto, 2, ',', '.') : number_format($totalProdutos + $totalServico, 2, ',', '.')),
-            strip_tags($os->descricaoProduto),
-            ($emitente ? $emitente->nome : ''),
-            ($emitente ? $emitente->telefone : ''),
-            strip_tags($os->observacoes),
-            strip_tags($os->defeito),
-            strip_tags($os->laudoTecnico),
-            date(
-                'd/m/Y',
-                strtotime($os->dataFinal)
-            ),
-            date(
-                'd/m/Y',
-                strtotime($os->dataInicial)
-            ),
-            $os->garantia . ' dias',
-        ];
-
-        $textoBase = $this->getConfig('notifica_whats');
-
-        $procura = ['{CLIENTE_NOME}', '{NUMERO_OS}', '{STATUS_OS}', '{VALOR_OS}', '{DESCRI_PRODUTOS}', '{EMITENTE}', '{TELEFONE_EMITENTE}', '{OBS_OS}', '{DEFEITO_OS}', '{LAUDO_OS}', '{DATA_FINAL}', '{DATA_INICIAL}', '{DATA_GARANTIA}'];
-        $textoFinal = str_replace($procura, $troca, $textoBase);
-        $textoFinal = strip_tags($textoFinal);
-
-        return $textoFinal;
+        $this->load->library('comunicacao_service');
+        return $this->comunicacao_service->orderMessage($os->idOs);
     }
 
     public function isEditable($id = null)

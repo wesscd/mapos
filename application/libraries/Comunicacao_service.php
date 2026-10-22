@@ -140,6 +140,18 @@ class Comunicacao_service
         }
     }
 
+    /** Shared text for the existing WhatsApp shortcut and API; does not enqueue or send. */
+    public function orderMessage($id, $event = 'status', $channel = 'whatsapp')
+    {
+        if (! isset(self::EVENTS[$event]) || ! in_array($channel, ['whatsapp', 'email'], true)) {
+            return '';
+        }
+        $order = $this->ci->db->get_where('os', ['idOs' => (int) $id])->row();
+        $customer = $order ? $this->ci->db->get_where('clientes', ['idClientes' => $order->clientes_id])->row() : null;
+        $template = $this->ci->db->get_where('com_modelos', ['evento' => $event, 'canal' => $channel, 'ativo' => 1])->row();
+        return $order && $customer && $template ? $this->renderMessage($template->texto, $order, $customer, $event) : '';
+    }
+
     private function renderMessage($template, $order, $customer, $event, array $context = [])
     {
         $value = '';

@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="<?= base_url('assets/css/notificacoes.css') ?>">
 <div class="row-fluid" style="margin-top:0">
     <div class="span12">
         <div class="widget-box">
@@ -279,69 +280,8 @@
                     </div>
                     <!-- Menu Notificações -->
                     <div id="menu3" class="tab-pane fade">
-                        <div class="control-group">
-                            <label for="os_notification" class="control-label">Notificação de OS</label>
-                            <div class="controls">
-                                <select name="os_notification" id="os_notification">
-                                    <option value="todos">Notificar a Todos</option>
-                                    <option value="cliente" <?= $configuration['os_notification'] == 'cliente' ? 'selected' : ''; ?>>Somente o Cliente</option>
-                                    <option value="tecnico" <?= $configuration['os_notification'] == 'tecnico' ? 'selected' : ''; ?>>Somente o Técnico</option>
-                                    <option value="emitente" <?= $configuration['os_notification'] == 'emitente' ? 'selected' : ''; ?>>Somente o Emitente</option>
-                                    <option value="nenhum" <?= $configuration['os_notification'] == 'nenhum' ? 'selected' : ''; ?>>Não Notificar</option>
-                                </select>
-                                <span class="help-inline">Selecione a opção de notificação por e-mail no cadastro de OS.</span>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label for="email_automatico" class="control-label">Enviar Email Automático</label>
-                            <div class="controls">
-                                <select name="email_automatico" id="email_automatico">
-                                    <option value="1">Ativar</option>
-                                    <option value="0" <?= $configuration['email_automatico'] == '0' ? 'selected' : ''; ?>>Desativar</option>
-                                </select>
-                                <span class="help-inline">Ativar ou Desativar a opção de envio de e-mail automático no cadastro de OS.</span>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label for="notifica_whats" class="control-label">Notificação do whatsapp</label>
-                            <div class="controls">
-                                <textarea rows="5" cols="20" name="notifica_whats" id="notifica_whats" placeholder="Use as tags abaixo para criar seu texto!" style="margin: 0px; width: 606px; height: 86px;"><?php echo $configuration['notifica_whats']; ?></textarea>
-                            </div>
-                            <div class="span3">
-                                <label for="notifica_whats_select">Tags de preenchimento<span class="required"></span></label>
-                                <select class="span12" name="notifica_whats_select" id="notifica_whats_select" value="">
-                                    <option value="0">Selecione...</option>
-                                    <option value="{CLIENTE_NOME}">Nome do Cliente</option>
-                                    <option value="{NUMERO_OS}">Número da OS</option>
-                                    <option value="{STATUS_OS}">Status da OS</option>
-                                    <option value="{VALOR_OS}">Valor da OS</option>
-                                    <option value="{DESCRI_PRODUTOS}">Descrição produtos</option>
-                                    <option value="{EMITENTE}">Nome emitente</option>
-                                    <option value="{TELEFONE_EMITENTE}">Telefone emitente</option>
-                                    <option value="{OBS_OS}">Observações</option>
-                                    <option value="{DEFEITO_OS}">Defeitos</option>
-                                    <option value="{LAUDO_OS}">Laudo</option>
-                                    <option value="{DATA_FINAL}">Data Final</option>
-                                    <option value="{DATA_INICIAL}">Data Inicial</option>
-                                    <option value="{DATA_GARANTIA}">Data da Garantia</option>
-                                </select>
-                            </div>
-                            <span6 class="span10">
-                                Para negrito use: *palavra*
-                                Para itálico use: _palavra_
-                                Para riscado use: ~palavra~
-                                </span>
-                        </div>
-                        <div class="form-actions">
-                            <div class="span8">
-                                <div class="span9">
-                                  <button type="submit" class="button btn btn-primary">
-                                  <span class="button__icon"><i class='bx bx-save'></i></span><span class="button__text2">Salvar Alterações</span></button>
-                                </div>
-                            </div>
-                        </div>
+                        <?php $this->load->view('mapos/notificacoes'); ?>
                     </div>
-                    <!-- Menu Atualização -->
                     <div id="menu4" class="tab-pane fade">
                         <div class="form-actions">
                             <div class="span8">
@@ -509,6 +449,7 @@
                     </div>
                 </div>
             </form>
+            <?php $this->load->view('mapos/notificacoes_forms'); ?>
         </div>
     </div>
 </div>
@@ -558,11 +499,6 @@
     $('#update-mapos').click(function() {
         window.location = "<?= site_url('mapos/atualizarMapos') ?>"
     });
-    $(document).ready(function() {
-        $('#notifica_whats_select').change(function() {
-            if ($(this).val() != "0")
-                document.getElementById("notifica_whats").value += $(this).val();
-            $(this).prop('selectedIndex', 0);
-        });
-    });
 </script>
+
+<script src="<?= base_url('assets/js/notificacoes.js') ?>" defer></script>

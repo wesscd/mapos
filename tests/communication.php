@@ -29,6 +29,16 @@ $db->where('idClientes', $customer)->update('clientes', ['celular' => '119999999
 $reject(fn () => $communication->saveConfig(array_merge($settings, ['fim' => 0])), 'Invalid sending windows are rejected');
 $model = $db->get_where('com_modelos', ['canal' => 'whatsapp'])->row();
 $reject(fn () => $communication->saveTemplate($model->id, 'Unknown {password}', true), 'Templates reject unknown substitution fields');
+$sharedModel = $db->get_where('com_modelos', ['canal' => 'whatsapp', 'evento' => 'status'])->row();
+$queuedText = $db->get_where('com_fila', ['id' => $job->id])->row()->texto;
+$queuedCount = $db->count_all('com_fila');
+$communication->saveTemplate($sharedModel->id, 'Atendimento {os}: {cliente}. {valor} {link}', true);
+$sharedText = $communication->orderMessage($id);
+$assert(str_contains($sharedText, 'Atendimento ' . $id . ':') && str_contains($sharedText, 'R$') && ! str_contains($sharedText, '{cliente}'), 'API and WhatsApp shortcut render the current centralized template');
+$assert($db->count_all('com_fila') === $queuedCount && $db->get_where('com_fila', ['id' => $job->id])->row()->texto === $queuedText, 'Editing and previewing a template neither sends nor rewrites queued messages');
+$communication->saveTemplate($sharedModel->id, $sharedModel->texto, false);
+$assert($communication->orderMessage($id) === '', 'Disabled centralized models do not fall back to the legacy WhatsApp text');
+$communication->saveTemplate($sharedModel->id, $sharedModel->texto, (bool) $sharedModel->ativo);
 
 $before = $db->count_all('os');
 $db->query('RENAME TABLE com_fila TO com_fila_failure');

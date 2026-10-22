@@ -1,0 +1,10 @@
+.notification-settings {padding:20px;min-width:0;}
+.notification-settings .mapos-grid {align-items:start;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));}
+.notification-settings label {display:block;margin:12px 0 6px;}
+.notification-settings input[type=number],.notification-settings select {max-width:100%;box-sizing:border-box;}
+.notification-settings .notification-text {display:block;width:100%;max-width:100%;min-height:140px;box-sizing:border-box;resize:vertical;}
+.notification-settings .notification-model {min-width:0;}
+.notification-settings summary {cursor:pointer;font-weight:700;padding:4px 0;}
+.notification-settings .notification-variables {display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;}
+.notification-settings .notification-preview {white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--ui-border,#cbd5e1);border-radius:8px;padding:14px;background:transparent;color:inherit;}
+@media(max-width:600px){.notification-settings{padding:12px;}.notification-settings .mapos-card{padding:14px;}}
