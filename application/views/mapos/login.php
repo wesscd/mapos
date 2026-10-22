@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -10,9 +12,10 @@
   <link rel="stylesheet" href="<?= base_url() ?>assets/css/matrix-login.css" />
   <link href="<?= base_url(); ?>assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
   <link rel="shortcut icon" type="image/png" href="<?= base_url(); ?>assets/img/favicon.png" />
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
-<body>
+<body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
   <div class="main-login">
     <div class="left-login">
       <!-- Saudação -->
@@ -29,13 +32,13 @@
                 return 'Olá! Boa noite' . (empty($nome) ? '' : ', ' . $nome);
             }
         }
-  $login = 'bem-vindo';
-  echo saudacao($login);
-  // Irá retornar conforme o horário:
-  ?>
+$login = 'bem-vindo';
+echo saudacao($login);
+// Irá retornar conforme o horário:
+?>
       </h1>
       <h2 class="h-two"> Ao Sistema de Controle de Ordens de Serviço</h2>
-      <img src="<?php echo base_url() ?>assets/img/dashboard-animate.svg" class="left-login-image" alt="Map-OS - Versão: <?= $this->config->item('app_version'); ?>">
+      <img src="<?php echo base_url() ?>assets/img/<?= $baraotechTheme ? 'baraotech-logo.png' : 'dashboard-animate.svg' ?>" class="left-login-image" alt="<?= $baraotechTheme ? 'Barão Tech — MapOS' : 'MapOS' ?> - Versão: <?= $this->config->item('app_version'); ?>">
     </div>
     <form class="form-vertical" id="formLogin" method="post" action="<?= site_url('login/verificarLogin') ?>">
       <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -53,21 +56,24 @@
             <div class="card">
               <div class="content">
                 <div id="newlog">
+<?php if ($baraotechTheme) {
+    $this->load->view('tema/brand_logo');
+} else { ?>
                   <div class="icon2">
                     <img src="<?php echo base_url() ?>assets/img/logo-two.png">
                   </div>
                   <div class="title01">
                     <?= '<img src="' . base_url() . 'assets/img/logo-mapos-branco.png">'; ?>
-                  </div>
+                  </div><?php } ?>
                 </div>
                 <div id="mcell">Versão: <?= $this->config->item('app_version'); ?></div>
                 <div class="input-field">
-                  <label class="fas fa-user" for="nome"></label>
-                  <input id="email" name="email" type="text" placeholder="Email">
+                  <label class="fas fa-user" for="email"></label>
+                  <input id="email" name="email" type="text" aria-label="E-mail da equipe" placeholder="Email">
                 </div>
                 <div class="input-field">
                   <label class="fas fa-lock" for="senha"></label>
-                  <input name="senha" type="password" placeholder="Senha">
+                  <input id="senha" aria-label="Senha" name="senha" type="password" placeholder="Senha">
                 </div>
                 <div class="center">
                   <button id="btn-acessar">Acessar</button>

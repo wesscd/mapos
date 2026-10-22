@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <nav class="mapos-mobile-nav" aria-label="Navegação rápida">
     <a href="<?= site_url('mapos') ?>">Início</a>
     <?php if ($this->permission->checkPermission($this->session->userdata('permissao'), 'vOs')) { ?>
@@ -8,13 +10,16 @@
 <!--sidebar-menu-->
 <nav id="sidebar">
     <div id="newlog">
+<?php if (! empty($baraotechTheme)) {
+    $this->load->view('tema/brand_logo');
+} else { ?>
         <div class="icon2">
             <img src="<?php echo base_url() ?>assets/img/logo-two.png">
         </div>
         <div class="title1">
             <?= $configuration['app_theme'] == 'white' ||  $configuration['app_theme'] == 'whitegreen' ? '<img src="' . base_url() . 'assets/img/logo-mapos.png">' : '<img src="' . base_url() . 'assets/img/logo-mapos-branco.png">'; ?>
         </div>
-    </div>
+    <?php } ?></div>
     <a href="#" class="visible-phone">
         <div class="mode">
             <div class="moon-menu">

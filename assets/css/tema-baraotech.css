@@ -1,0 +1,126 @@
+/* Barão Tech brand theme. Screen-only so printed orders keep their own document styles. */
+@media screen {
+body.baraotech-theme {
+ --bt-bg:#08110f;--bt-panel:#101e18;--bt-raised:#17291f;--bt-line:#2d4435;
+ --bt-text:#f1f0de;--bt-muted:#a4b8aa;--bt-mint:#a5edb6;--bt-danger:#ffb4a7;
+ --bodycolor:#08110f;--bodycolor-w:#08110f;--content:#08110f;--funSider:#0b1711;
+ --funSider2:#294c35;--subtitle:#b5c6b8;--title:#f1f0de;--widget-box:#101e18;
+ --ui-text:#f1f0de;--ui-muted:#a4b8aa;--ui-border:#2d4435;--ui-primary:#a5edb6;--ui-danger:#ffb4a7;
+ --mapos-ink:#f1f0de;--mapos-muted:#a4b8aa;--mapos-line:#2d4435;
+ background:var(--bt-bg)!important;color:var(--bt-text);font-family:'Segoe UI',Arial,sans-serif;color-scheme:dark;
+}
+body.baraotech-theme h1,body.baraotech-theme h2,body.baraotech-theme h3,body.baraotech-theme h4,body.baraotech-theme h5,body.baraotech-theme legend {color:var(--bt-text)!important;font-family:'Segoe UI',Arial,sans-serif;}
+body.baraotech-theme a {color:var(--bt-mint);}
+body.baraotech-theme a:hover {color:#d0f8d8;}
+body.baraotech-theme :is(input,textarea,select,button,a):focus-visible {outline:2px solid var(--bt-mint)!important;outline-offset:3px;}
+body.baraotech-theme #content,body.baraotech-theme .navebarn,body.baraotech-theme .content-header {background:var(--bt-bg)!important;color:var(--bt-text);}
+body.baraotech-theme #sidebar {background:#0b1711!important;border-right:1px solid var(--bt-line);}
+body.baraotech-theme #sidebar :is(.title,.iconX,.iconX1,.title-tooltip) {color:var(--bt-muted)!important;}
+body.baraotech-theme #sidebar li.active,body.baraotech-theme #sidebar li.active>a,body.baraotech-theme #sidebar li>a:hover {background:#1d3928!important;border-color:#315b3d!important;}
+body.baraotech-theme #sidebar li.active :is(.title,.iconX),body.baraotech-theme #sidebar li>a:hover :is(.title,.iconX) {color:var(--bt-mint)!important;}
+body.baraotech-theme #sidebar .search-box,body.baraotech-theme #sidebar .mode {background:#17291f!important;}
+body.baraotech-theme #sidebar #newlog {padding:0 16px;justify-content:flex-start;}
+.bt-brand {display:flex;align-items:center;gap:11px;min-width:0;}
+.bt-mark {width:40px;height:40px;max-width:none!important;border-radius:50%;object-fit:cover;flex:0 0 auto;}
+.bt-wordmark {font:800 19px/1.1 'Segoe UI',Arial,sans-serif;color:#f1f0de;white-space:nowrap;letter-spacing:-.5px;}
+.bt-wordmark>span {font-weight:300;color:#a5edb6;margin-left:3px;}
+.bt-wordmark small {display:block;font:6px/1.6 Consolas,monospace;letter-spacing:1.2px;color:#a4b8aa;margin-top:5px;}
+body.baraotech-theme #sidebar {container-type:inline-size;}
+@container (max-width:140px) {.bt-wordmark {display:none;}}
+body.baraotech-theme #sidebar.open #newlog {padding-left:19px;}
+body.baraotech-theme #user-nav .nav>li>a,body.baraotech-theme .iconN,body.baraotech-theme .iconN1,body.baraotech-theme .userr {color:var(--bt-muted)!important;}
+body.baraotech-theme #breadcrumb {border-color:var(--bt-line);background:transparent!important;}
+body.baraotech-theme #breadcrumb a {color:var(--bt-muted)!important;background:#101e18!important;border:1px solid var(--bt-line)!important;text-shadow:none!important;}
+body.baraotech-theme #breadcrumb a.current {color:var(--bt-mint)!important;border-color:#5a8d64!important;}
+body.baraotech-theme :is(.widget-box,.widget-box0,.widget-box1,.widget-box2,.widget-box-new,.widget-box-statist,.cardBox .card,.widget-content,.widget-title,.ui-card,.os-summary,.os-pane,.mapos-card,.mapos-operations,.mapos-workflow,.well,.modal,.modal-header,.modal-body,.modal-footer,.dropdown-menu,.ui-modal,.swal2-popup,.sweet-alert) {background:var(--bt-panel)!important;color:var(--bt-text)!important;border-color:var(--bt-line)!important;box-shadow:none;}
+body.baraotech-theme .widget-title {border-bottom:1px solid var(--bt-line);}
+body.baraotech-theme .widget-title>span,body.baraotech-theme .widget-title>h5 {color:var(--bt-text)!important;}
+body.baraotech-theme .dropdown-menu>li>a {color:var(--bt-text)!important;text-shadow:none;}
+body.baraotech-theme .dropdown-menu>li>a:hover {background:#213d2b!important;color:var(--bt-mint)!important;}
+body.baraotech-theme .dropdown-menu .divider {background:var(--bt-line);}
+body.baraotech-theme .ui-page,body.baraotech-theme .ui-page h1,body.baraotech-theme .ui-page .ui-button {font-family:'Segoe UI',Arial,sans-serif;}
+body.baraotech-theme :is(.ui-page-header p,.ui-hint,.os-help,.mapos-muted,.os-summary p,.os-summary-grid dt,.ui-detail-grid dt,.os-tab-state,.mapos-history time,.mapos-metrics small,.mapos-ranking,.help-block,.control-label) {color:var(--bt-muted)!important;}
+body.baraotech-theme :is(.ui-eyebrow,.mapos-eyebrow,.os-workspace-v2 .mapos-eyebrow) {color:var(--bt-mint)!important;font-family:Consolas,monospace;letter-spacing:1.6px;}
+body.baraotech-theme :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) {background:#0a1710!important;color:var(--bt-text)!important;border:1px solid #4b6853!important;box-shadow:none!important;text-shadow:none;}
+body.baraotech-theme input::placeholder,body.baraotech-theme textarea::placeholder {color:#94aa9b!important;opacity:1;}
+body.baraotech-theme :is(input,select,textarea):disabled,body.baraotech-theme input[readonly] {background:#19291e!important;color:#9db09f!important;opacity:1;}
+body.baraotech-theme input[type=checkbox],body.baraotech-theme input[type=radio] {accent-color:var(--bt-mint);}
+body.baraotech-theme :is(input,select,textarea,button) {font-family:'Segoe UI',Arial,sans-serif;}
+body.baraotech-theme option {background:#101e18;color:var(--bt-text);}
+body.baraotech-theme :is(.btn,.ui-button,.ui-page.os-workspace-v2 .btn,.ui-page .ui-button,.ui-modal .ui-button) {background:#15291c!important;color:var(--bt-text)!important;border:1px solid #4b6853!important;text-shadow:none!important;box-shadow:none!important;border-radius:5px;}
+body.baraotech-theme :is(.btn,.ui-button):hover {background:#223f2b!important;border-color:#83b88c!important;}
+body.baraotech-theme :is(.btn-primary,.btn-success,.btn-info,.ui-button-primary,.os-next-action,.ui-page.os-workspace-v2 .btn-primary,.ui-page .ui-button-primary,.swal2-confirm) {background:var(--bt-mint)!important;color:#102a18!important;border-color:var(--bt-mint)!important;text-shadow:none!important;}
+body.baraotech-theme :is(.btn-primary,.btn-success,.btn-info,.ui-button-primary,.os-next-action):hover {background:#c4f5ce!important;color:#102a18!important;}
+body.baraotech-theme :is(.btn-danger,.ui-button-danger,.ui-page.os-workspace-v2 .btn-danger) {background:#381c1c!important;border-color:#9a544c!important;color:#ffc3b9!important;}
+body.baraotech-theme .btn-warning {background:#392e17!important;color:#f6d18f!important;border-color:#8b7043!important;}
+body.baraotech-theme :is(.btn,.ui-button):disabled {opacity:.55;cursor:not-allowed;}
+body.baraotech-theme :is(.table,.ui-table) {background:var(--bt-panel)!important;color:var(--bt-text)!important;border-color:var(--bt-line)!important;}
+body.baraotech-theme :is(.table,.ui-table) :is(td,th) {background:transparent!important;color:var(--bt-text)!important;border-color:var(--bt-line)!important;text-shadow:none!important;}
+body.baraotech-theme :is(.table,.ui-table) th {background:#1b3022!important;color:#c2d8c7!important;}
+body.baraotech-theme :is(.table,.ui-table) tbody tr:hover>td {background:#1b3022!important;}
+body.baraotech-theme :is(.ui-table-scroll,.ui-fieldset,.os-form-actions,.ui-form-actions,.os-summary-facts,.os-budget-section,.os-note,.mapos-check form,.mapos-history li,.os-attachments li) {border-color:var(--bt-line)!important;}
+body.baraotech-theme .mapos-table-wrap {max-width:100%;overflow-x:auto;}
+body.baraotech-theme .ui-table small {color:var(--bt-muted);}
+body.baraotech-theme :is(.ui-badge,.mapos-pill,.badge,.label) {background:#284732!important;color:#cef2d5!important;border-color:#52795c!important;text-shadow:none;}
+body.baraotech-theme .os-required {background:#483a1c;color:#ffe2a6;}
+body.baraotech-theme .os-tab-state.is-pending {color:#f5d291!important;}
+body.baraotech-theme .os-main-tabs {background:var(--bt-bg)!important;}
+body.baraotech-theme .os-main-tabs>a {background:#13241a!important;color:var(--bt-text)!important;border-color:var(--bt-line);}
+body.baraotech-theme .os-main-tabs>a[aria-selected=true] {background:#213e2b!important;border-color:#83bb8d!important;box-shadow:inset 0 -3px #a5edb6;color:var(--bt-mint)!important;}
+body.baraotech-theme :is(.os-inline-action,.os-totals>div,.os-prose,.os-message-preview,.os-feedback,.ui-notice) {background:#142b1c!important;color:var(--bt-text)!important;border-color:#3c6346!important;}
+body.baraotech-theme .os-totals dt {color:var(--bt-muted);}
+body.baraotech-theme :is(.alert,.os-draft-bar) {background:#3a311b!important;color:#f5dcac!important;border-color:#8b7243!important;text-shadow:none;}
+body.baraotech-theme :is(.alert-success,.ui-notice-success) {background:#193b24!important;color:#c5efce!important;border-color:#52795c!important;}
+body.baraotech-theme :is(.alert-error,.alert-danger,.ui-notice-error,.os-feedback.is-error) {background:#3c2020!important;color:#ffcbc2!important;border-color:#9c625a!important;}
+body.baraotech-theme .ui-field-error,body.baraotech-theme .help-inline {color:var(--bt-danger)!important;}
+body.baraotech-theme .mapos-kanban-board {background:#0b1810!important;border-color:var(--bt-line)!important;}
+body.baraotech-theme :is(.mapos-kanban-column,.mapos-kanban-column h2) {background:#172c1e!important;color:var(--bt-text)!important;border-color:#35543c!important;}
+body.baraotech-theme .mapos-kanban-card {background:#0d1e14!important;border-color:#42654a!important;}
+body.baraotech-theme .mapos-kanban-card p {color:var(--bt-muted)!important;}
+body.baraotech-theme :is(.trumbowyg-box,.trumbowyg-editor,.trumbowyg-button-pane) {background:#0d1b13!important;color:var(--bt-text)!important;border-color:var(--bt-line)!important;}
+body.baraotech-theme .trumbowyg-button-pane button {background:transparent!important;color:var(--bt-text)!important;}
+body.baraotech-theme .trumbowyg-button-pane svg {fill:var(--bt-text);}
+body.baraotech-theme .ui-autocomplete,body.baraotech-theme .ui-datepicker,body.baraotech-theme .ui-datepicker-header,body.baraotech-theme .ui-datepicker .ui-state-default {background:#16291c!important;color:var(--bt-text)!important;border-color:#55725a!important;}
+body.baraotech-theme .ui-autocomplete .ui-state-focus {background:#315c3b!important;color:var(--bt-text)!important;}
+body.baraotech-theme .pagination ul>li>a {background:#16291c!important;color:var(--bt-text)!important;border-color:#4b6853!important;}
+body.baraotech-theme .pagination ul>li.active>a,body.baraotech-theme .pagination ul>li>a:has(b) {background:var(--bt-mint)!important;color:#102a18!important;}
+body.baraotech-theme .nav-tabs {border-color:var(--bt-line);}
+body.baraotech-theme .nav-tabs>.active>a,body.baraotech-theme .nav-tabs>li>a:hover {background:#213d2b!important;color:var(--bt-mint)!important;border-color:var(--bt-line)!important;}
+body.baraotech-theme :is(.mapos-mobile-nav,.c-menu-toggle) {background:#0e2015!important;border-color:#42654a!important;}
+body.baraotech-theme .mapos-mobile-nav a {color:var(--bt-mint);}
+body.baraotech-theme .fc-today {background:#29452d!important;}
+body.baraotech-theme .fc-header-title h2 {color:var(--bt-text)!important;}
+body.baraotech-theme .close {color:var(--bt-text);text-shadow:none;opacity:1;}
+body.baraotech-theme :is(.os-actions-menu summary,.os-inline-action summary,.ui-disclosure summary,.mapos-history summary,.os-attachment-preview summary) {color:#c0dcc7!important;}
+/* Existing login forms retain their authentication behavior and CSRF fields. */
+body.baraotech-theme .main-login {background:radial-gradient(ellipse at 15% 30%,#21452a55,transparent 55%),#08110f!important;min-height:100vh;height:auto;}
+body.baraotech-theme .left-login {background:transparent!important;}
+body.baraotech-theme .left-login .h-one {font-size:36px;line-height:1.2;color:var(--bt-mint)!important;letter-spacing:-1px;}
+body.baraotech-theme .left-login .h-two {font-size:18px;font-weight:400;color:var(--bt-muted)!important;}
+body.baraotech-theme .left-login-image,body.baraotech-theme .left-login-imagec {max-width:245px;width:65%;border-radius:16px;border:1px solid #6b8a6e;box-shadow:0 20px 70px #0005;}
+body.baraotech-theme .right-login,body.baraotech-theme .right-login .container {background:transparent!important;}
+body.baraotech-theme .right-login .card,body.baraotech-theme #loginbox {background:#101e18!important;border:1px solid #37543e!important;border-radius:12px;box-shadow:0 25px 90px #0005!important;}
+body.baraotech-theme .right-login .content {background:transparent!important;}
+body.baraotech-theme .right-login #newlog {padding:0;justify-content:center;min-height:58px;}
+body.baraotech-theme .right-login .bt-mark {width:45px;height:45px;}
+body.baraotech-theme .right-login .bt-wordmark {font-size:24px;}
+body.baraotech-theme #mcell,body.baraotech-theme .links-uteis {color:var(--bt-muted)!important;}
+body.baraotech-theme .input-field label,body.baraotech-theme .add-on {color:var(--bt-mint)!important;background:transparent!important;}
+body.baraotech-theme :is(.bg_lg,.bg_ly) {background:#274a31!important;}
+body.baraotech-theme #btn-acessar {background:var(--bt-mint)!important;color:#102a18!important;border-color:var(--bt-mint)!important;}
+@media(max-width:767px){body.baraotech-theme .left-login .h-one{font-size:28px;}body.baraotech-theme .left-login-image,body.baraotech-theme .left-login-imagec{max-width:150px;}body.baraotech-theme .right-login .bt-wordmark{font-size:21px;}}
+/* Replace the legacy viewport-sized login columns with a bounded responsive grid. */
+body.baraotech-theme .main-login {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:48px;padding:48px;width:100%;height:auto;}
+body.baraotech-theme .main-login>.left-login {width:100%;height:auto;min-width:0;}
+body.baraotech-theme .main-login>form,body.baraotech-theme .main-login>#loginbox {width:100%;max-width:440px;height:auto;margin:0;justify-self:center;background:transparent!important;border:0!important;box-shadow:none!important;}
+body.baraotech-theme .main-login .right-login {width:100%;height:auto;min-width:0;}
+body.baraotech-theme .main-login .right-login .container {width:100%;max-width:100%;margin:0;padding:0;display:block;}
+body.baraotech-theme .main-login .card {width:100%;max-width:440px;height:auto;min-width:0;}
+body.baraotech-theme .main-login .card .content {padding:36px 30px;}
+@media(max-width:800px){
+ body.baraotech-theme .main-login {grid-template-columns:minmax(0,1fr);gap:0;padding:24px 16px;min-height:100vh;}
+ body.baraotech-theme .main-login>.left-login {display:none;}
+ body.baraotech-theme .main-login .card .content {padding:30px 22px;}
+}
+
+}

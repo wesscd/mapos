@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -75,9 +77,10 @@
 <link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=7">
 <link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=5">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
-<body class="mapos-admin">
+<body class="mapos-admin<?= $baraotechTheme ? ' baraotech-theme' : '' ?>">
   <!--top-Header-menu-->
   <div class="navebarn">
     <div id="user-nav" class="navbar navbar-inverse">
@@ -136,9 +139,9 @@
             }
         }
 
-  $login = '';
-  echo saudacao($login); // Irá retornar conforme o horário
-  ?>
+$login = '';
+echo saudacao($login); // Irá retornar conforme o horário
+?>
       </div>
       <div class="userT"><?= $this->session->userdata('nome_admin') ?></div>
 

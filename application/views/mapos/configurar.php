@@ -33,6 +33,7 @@
                             <label for="app_theme" class="control-label">Tema do Sistema</label>
                             <div class="controls">
                                 <select name="app_theme" id="app_theme">
+<option value="baraotech" <?= $configuration['app_theme'] == 'baraotech' ? 'selected' : ''; ?>>Barão Tech · verde escuro</option>
                                     <option value="default">Escuro</option>
                                     <option value="white" <?= $configuration['app_theme'] == 'white' ? 'selected' : ''; ?>>Claro</option>
                                     <option value="puredark" <?= $configuration['app_theme'] == 'puredark' ? 'selected' : ''; ?>>Pure dark</option>

@@ -1,0 +1,1 @@
+<div class="bt-brand"><img class="bt-mark" src="<?= base_url('assets/img/baraotech-logo.png') ?>" alt="Barão Tech" width="42" height="42"><span class="bt-wordmark">BARÃO<span>TECH</span><small>TECNOLOGIA EM MOVIMENTO</small></span></div>

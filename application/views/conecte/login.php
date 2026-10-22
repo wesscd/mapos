@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -33,18 +35,19 @@
     </script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
 <?php
 $parse_email = $this->input->get('e');
-    $parse_cpfcnpj = $this->input->get('c');
-    ?>
+$parse_cpfcnpj = $this->input->get('c');
+?>
 
-<body>
+<body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
     <div class="main-login">
         <div class="left-login">
             <h1 class="h-one">Área do Cliente</h1>
-            <img src="<?php echo base_url() ?>assets/img/forms-animate.svg" class="left-login-imagec" alt="Map-OS 5.0">
+            <img src="<?php echo base_url() ?>assets/img/<?= $baraotechTheme ? 'baraotech-logo.png' : 'forms-animate.svg' ?>" class="left-login-imagec" alt="<?= $baraotechTheme ? 'Barão Tech — Área do cliente' : 'MapOS — Área do cliente' ?>">
         </div>
 
         <div id="loginbox">
@@ -56,19 +59,22 @@ $parse_email = $this->input->get('e');
                             <div class="card card-cad">
                                 <div class="content">
                                     <div id="newlog">
+<?php if ($baraotechTheme) {
+    $this->load->view('tema/brand_logo');
+} else { ?>
                                         <div class="icon2">
                                             <img src="<?php echo base_url() ?>assets/img/logo-two.png">
                                         </div>
                                         <div class="title01">
                                             <img src="<?php echo base_url() ?>assets/img/logo-mapos-branco.png">
-                                        </div>
+                                        </div><?php } ?>
                                     </div>
                                     <div id="mcell">Versão: <?= $this->config->item('app_version'); ?></div>
                                     <div class="control-group">
                                         <div class="controls">
                                             <div class="main_input_box">
                                                 <span class="add-on bg_lg"><i class='bx bx-user-plus iconU'></i></span>
-                                                <input id="email" name="email" type="text" placeholder="Email" value="<?php echo trim($parse_email); ?>" />
+                                                <input id="email" name="email" type="text" aria-label="E-mail do cliente" placeholder="Email" value="<?php echo trim($parse_email); ?>" />
                                             </div>
                                         </div>
                                     </div>
@@ -77,7 +83,7 @@ $parse_email = $this->input->get('e');
                                         <div class="controls">
                                             <div class="main_input_box">
                                                 <span class="add-on bg_ly"><i class='bx bx-id-card iconU'></i></span>
-                                                <input class="" maxlength="18" size="18" name="senha" type="password" placeholder="Senha" value="" />
+                                                <input class="" maxlength="18" size="18" name="senha" type="password" aria-label="Senha" placeholder="Senha" value="" />
                                             </div>
                                         </div>
                                     </div>

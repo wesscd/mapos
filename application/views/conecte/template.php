@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -24,9 +26,10 @@
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
 <link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=1">
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
-<body>
+<body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
     <!-- Botão hamburger para mobile -->
     <button class="c-menu-toggle" id="c-menu-toggle" aria-label="Abrir menu">
         <i class='bx bx-menu'></i>
@@ -58,12 +61,15 @@
 
     <nav id="sidebar">
         <div id="newlog">
+<?php if ($baraotechTheme) {
+    $this->load->view('tema/brand_logo');
+} else { ?>
             <div class="icon2">
                 <img src="<?php echo base_url() ?>assets/img/logo-two.png">
             </div>
             <div class="title1">
                 <img src="<?= base_url() ?>assets/img/logo-mapos-branco.png">
-            </div>
+            </div><?php } ?>
         </div>
         <a href="#" class="visible-phone">
             <div class="mode">

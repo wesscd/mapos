@@ -79,3 +79,7 @@ O acesso administrativo inicial de produção está em `/opt/mapos-baraotech-pri
 
 Antes de publicar melhorias, valide localmente e faça backup do banco, `application/.env`
 e diretórios de anexos e uploads. Mudanças de schema devem usar migrations.
+
+## Identidade visual Barão Tech
+
+Em Configurações > Sistema > Tema do Sistema, selecione **Barão Tech · verde escuro**. O tema usa as cores e o logotipo da landing page e se aplica ao painel administrativo e à área do cliente, incluindo os logins. A seleção pode ser revertida aos temas anteriores sem mudar os dados. A folha de estilo é restrita à tela; as impressões mantêm seu layout documental.
