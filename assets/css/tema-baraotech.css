@@ -9,6 +9,7 @@ body.baraotech-theme {
  --mapos-ink:#f1f0de;--mapos-muted:#a4b8aa;--mapos-line:#2d4435;
  background:var(--bt-bg)!important;color:var(--bt-text);font-family:'Segoe UI',Arial,sans-serif;color-scheme:dark;
 }
+body.baraotech-theme .mapos-inspection {color:var(--bt-text);}
 body.baraotech-theme h1,body.baraotech-theme h2,body.baraotech-theme h3,body.baraotech-theme h4,body.baraotech-theme h5,body.baraotech-theme legend {color:var(--bt-text)!important;font-family:'Segoe UI',Arial,sans-serif;}
 body.baraotech-theme a {color:var(--bt-mint);}
 body.baraotech-theme a:hover {color:#d0f8d8;}

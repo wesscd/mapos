@@ -77,7 +77,7 @@ $baraotechTheme = mapos_baraotech_theme(); ?>
 <link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=7">
 <link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=5">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
-<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=2"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
 <body class="mapos-admin<?= $baraotechTheme ? ' baraotech-theme' : '' ?>">

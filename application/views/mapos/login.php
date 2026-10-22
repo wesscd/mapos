@@ -12,7 +12,7 @@ $baraotechTheme = mapos_baraotech_theme(); ?>
   <link rel="stylesheet" href="<?= base_url() ?>assets/css/matrix-login.css" />
   <link href="<?= base_url(); ?>assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
   <link rel="shortcut icon" type="image/png" href="<?= base_url(); ?>assets/img/favicon.png" />
-<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=2"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
 <body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">

@@ -20,7 +20,7 @@ $baraotechTheme = mapos_baraotech_theme(); ?>
     <link rel="stylesheet" href="<?= base_url() ?>assets/css/fullcalendar.css" />
     <link rel="stylesheet" href="<?= base_url() ?>assets/css/bootstrap-responsive.min.css">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css">
-<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=2"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
 <body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">

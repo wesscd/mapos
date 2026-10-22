@@ -22,7 +22,7 @@ $baraotechTheme = mapos_baraotech_theme(); ?>
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
-<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=2"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
 <body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
