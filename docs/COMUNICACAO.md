@@ -1,4 +1,4 @@
-# Comunicação automática — primeira etapa do plano
+# Comunicação com o cliente
 
 ## Ativação
 
@@ -13,7 +13,7 @@ Não há importação nem disparo retroativo dos eventos anteriores à instalaç
    a senha normal da conta. Contas administradas podem restringir senhas de app.
 3. Envie um teste para um contato sob seu controle. Testes explícitos ignoram a
    suspensão das automações e o horário, mas passam pela mesma fila de envio.
-4. Confira o histórico, habilite os canais e ajuste horários, modelos e lembretes.
+4. Confira o histórico. Em **Configurações → Sistema → Notificações**, habilite os canais automáticos e ajuste horários, modelos e lembretes. O atalho na Central abre essa aba diretamente.
 5. Consulte o nome ou código do cliente na central e registre os canais e a autorização.
    O próprio cliente também pode escolher ou suspender os canais pelo menu
    **Comunicação** de sua área. O telefone e o e-mail são os do cadastro.
@@ -24,6 +24,16 @@ canal implicitamente: o cliente pode autorizar WhatsApp, e-mail, ambos ou nenhum
 Desativar globalmente pausa a fila; retirar a autorização cancela os avisos ainda
 pendentes quando o worker os processa. Alterar o contato também invalida o destino
 anterior. O horário usa America/Sao_Paulo e aceita intervalos dentro do mesmo dia.
+
+## Onde editar cada configuração
+
+- **Configurações → Sistema → Notificações:** modelos por evento e canal, variáveis, prévia ilustrativa, automações, horários, lembretes e destinatários da cópia manual da OS por e-mail. Cada seção salva independentemente.
+- **Central de Comunicação:** pareamento WhatsApp, configuração Gmail, envio de teste, preferências dos clientes, fila e histórico.
+- **Configurações → Sistema → E-mail:** configuração geral usada por fluxos legados, como recuperação de acesso e cópia completa da OS por e-mail.
+
+O orçamento enviado por Baileys usa **Orçamento disponível · WhatsApp**. O atalho externo “Abrir mensagem no WhatsApp” e o campo `textoWhatsApp` da API usam **Mudança de etapa · WhatsApp**. Ambos consultam os modelos centralizados; o antigo editor `notifica_whats` foi retirado. A cópia completa da OS por e-mail continua usando o layout documental da OS, com destinatários configurados separadamente.
+
+A prévia usa dados fictícios e não envia mensagens. Editar um modelo afeta novos envios; mensagens já na fila e no histórico mantêm o texto registrado. Um modelo desativado não usa o texto antigo como alternativa.
 
 ## Eventos e lembretes
 

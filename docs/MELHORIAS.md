@@ -1,5 +1,24 @@
 # Melhorias do fork
 
+Revisão documental: **22/10/2026**. Consulte a [galeria de telas](GALERIA.md) e a [apresentação do fork](../README.md).
+
+## Interface e identidade visual
+
+O tema selecionável Barão Tech aplica a identidade da marca ao administrativo, aos logins e à área do cliente. Foram padronizados componentes de OS, Kanban, cadastros, equipamentos, produtos e serviços. A impressão mantém seu layout próprio. A edição e a consulta de OS usam seis abas; os detalhes das validações, vistorias e entregas estão em [EQUIPAMENTOS.md](EQUIPAMENTOS.md).
+
+## Notificações centralizadas
+
+Modelos de WhatsApp e e-mail, variáveis, prévias e regras automáticas ficam em **Configurações → Notificações**. A Central de Comunicação mantém a operação dos canais e o histórico. Os antigos editores concorrentes foram retirados. O envio manual pelo serviço Baileys exige conferência do texto e destinatário e usa a mesma fila com controle de duplicação. As regras completas estão em [COMUNICACAO.md](COMUNICACAO.md).
+
+## Equipamentos e entrega
+
+Cadastro vinculado ao cliente, recebimento físico explícito e vistorias de entrada e saída preservam condições, acessórios e evidências. Fotos são categorizadas por perspectiva e acessadas por rotas autenticadas. A retirada registra quem recebeu, aceite e comprovante, sem transformar faturamento em confirmação de entrega.
+
+## Kanban
+
+O quadro organiza as OS por andamento e oferece filtros e movimentação por arraste ou seletor. Aprovação pendente e retirada têm regras próprias; mover o cartão não registra aceite do cliente. Consulte [KANBAN.md](KANBAN.md).
+
+
 Para conexão WhatsApp/Baileys, Gmail e notificações automáticas, consulte
 [COMUNICACAO.md](COMUNICACAO.md).
 

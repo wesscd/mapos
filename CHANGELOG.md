@@ -4,6 +4,28 @@ Todas as alterações serão documentadas neste arquivo
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Fork Barão Tech — revisão de 2026-10-22
+
+Esta seção documenta o fork; as versões numéricas abaixo pertencem ao projeto original. Não foi criada uma nova versão ou release do Map-OS.
+
+### Adicionado e aprimorado
+
+- Tema Barão Tech selecionável no administrativo, logins, área do cliente e recuperação de acesso.
+- Organização das OS em seis abas, com controle de alterações não salvas, diagnóstico, checklist, orçamento e histórico.
+- Equipamentos vinculados ao cliente, recebimento físico explícito, fotos categorizadas, vistorias de entrada e saída e comprovante de retirada com aceite.
+- Kanban com filtros, movimentação de etapa e distinção entre aprovação, conclusão, faturamento e entrega.
+- Orçamentos versionados, resposta do cliente e envio confirmado por WhatsApp/Baileys com controle de duplicação.
+- Central de Comunicação com conexão de canais, Gmail, preferências por cliente, fila, tentativas, histórico e lembretes limitados.
+- Modelos e regras em Configurações → Notificações, com variáveis, prévia ilustrativa e salvamento independente; remoção dos controles antigos concorrentes.
+- Padronização de telas administrativas e cadastros; integridade de estoque, valores e faturamento no fluxo compartilhado com a API.
+- Testes de integração e HTTP, ambiente Docker e implantação com backups e verificação por restauração isolada.
+- Apresentação própria do fork, galeria de capturas reais e preservação da documentação e dos créditos originais.
+
+### Corrigido na revisão documental
+
+- Carregamento do serviço de comunicação antes da renderização da OS, evitando falha na tela ao preparar o atalho de WhatsApp.
+- Contraste do texto de vistorias no tema Barão Tech.
+
 ## [4.55.4] - 2026-10-19
 
 ### Fixed

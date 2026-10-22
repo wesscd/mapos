@@ -1,165 +1,76 @@
+# Map-OS · Barão Tech
 
-![MapOS](https://raw.githubusercontent.com/RamonSilva20/mapos/master/assets/img/logo.png)
+<img src="assets/img/baraotech-logo.png" alt="Barão Tech" width="88">
 
-![version](https://img.shields.io/badge/version-4.55.4-blue.svg?longCache=true&style=flat-square)
-![license](https://img.shields.io/badge/license-Apache-green.svg?longCache=true&style=flat-square)
-![theme](https://img.shields.io/badge/theme-Matrix--Admin-lightgrey.svg?longCache=true&style=flat-square)
-![issues](https://img.shields.io/github/issues/RamonSilva20/mapos.svg?longCache=true&style=flat-square)
-![contributors](https://img.shields.io/github/contributors/RamonSilva20/mapos.svg?longCache=true&style=flat-square)
+**Gestão de assistência técnica: da abertura da ordem de serviço à entrega documentada do equipamento.**
 
-### Contato: contato@mapos.com.br
-### [Feedback](https://github.com/RamonSilva20/mapos/discussions) - Vote ou sugira melhorias
+Fork do [Map-OS, de Ramon Silva e colaboradores](https://github.com/RamonSilva20/mapos), com identidade visual Barão Tech, fluxo de OS por etapas, vistorias, Kanban e comunicação com o cliente por WhatsApp/Baileys e e-mail.
 
-![Map-OS](https://raw.githubusercontent.com/RamonSilva20/mapos/master/docs/dashboard.png)
+[![Validação do fork](https://github.com/wesscd/mapos/actions/workflows/quality.yml/badge.svg?branch=codex%2Fdeployment-development)](https://github.com/wesscd/mapos/actions/workflows/quality.yml)
+[![PHP 8.4+](https://img.shields.io/badge/PHP-8.4%2B-777BB4)](composer.json)
+[![Licença Apache 2.0](https://img.shields.io/badge/licença-Apache_2.0-green)](LICENSE.txt)
 
-### Apoie o Projeto Map-OS - Doações
+[Melhorias do fork](docs/MELHORIAS.md) · [Galeria de telas](docs/GALERIA.md) · [Instalação e ambiente](docs/AMBIENTE.md) · [Histórico de alterações](CHANGELOG.md)
 
-O **Map-OS** é um projeto open source mantido com muito esforço, dedicação e tempo.
-Se ele te ajuda no dia a dia, considere apoiar o desenvolvimento para que o sistema continue evoluindo, recebendo melhorias, correções e novos recursos.
+![Painel de operações com dados de demonstração](docs/screenshots/operacoes.png)
 
-Você pode contribuir de forma simples e segura pelo link abaixo:
+## O que este fork acrescenta
 
-**Faça uma doação:** https://donate.mapos.com.br
+| Área | Melhorias implementadas |
+|---|---|
+| **Ordens de serviço** | Seis etapas: Resumo, Equipamento e vistoria, Análise técnica, Orçamento, Entrega e Histórico e anexos. Aviso de alterações não salvas e formulários de ação independentes. |
+| **Equipamentos e vistorias** | Vínculo com o cliente e a OS, recebimento físico explícito, estado e acessórios, fotos de Frente, Verso, Aberto, Fechado e Teclado, vistoria de saída e comprovantes. |
+| **Orçamentos** | Produtos, serviços e descontos com cálculo no servidor; registro da versão apresentada e aprovação ou recusa pelo cliente. Alterações exigem nova conferência. |
+| **Kanban** | Quadro por etapa, filtros e movimentação por arraste ou seletor. Aguardando aprovação e aguardando retirada refletem o andamento da OS. |
+| **Comunicação** | WhatsApp/Baileys, configuração Gmail, preferências por cliente, fila com tentativas e histórico, lembretes limitados e envio de orçamento com prévia e confirmação. |
+| **Notificações** | Modelos por evento e canal em Configurações → Notificações, variáveis, prévia ilustrativa, regras de envio e salvamento independente por seção. |
+| **Identidade visual** | Tema Barão Tech selecionável, aplicado ao administrativo, logins e área do cliente; ajustes de layout em OS, cadastros, catálogos e Kanban. |
+| **Operação e integridade** | Indicadores operacionais, custo das peças, transações compartilhadas entre navegador e API, controles contra duplicação de estoque e faturamento, backups verificados e testes automatizados. |
 
-Toda contribuição, independente do valor, faz a diferença.
-Obrigado por apoiar o Map-OS!
+O registro de uma OS pelo portal **não confirma a chegada física do equipamento**. Finalização, faturamento e entrega são registros distintos. Este fork não inclui integração funcional com o UltraITSM nem gestão de SLA.
 
-### Comunidade no WhatsApp
+## Conheça as telas
 
-Participe da comunidade oficial do **Map-OS** no WhatsApp para tirar dúvidas, trocar experiências e acompanhar novidades do projeto:
+Capturas reais da interface. As telas locais usam cadastros e valores de demonstração; a captura de Notificações usa apenas modelos e dados fictícios da prévia. Os números exibidos não representam resultados comerciais.
 
-**Entre na comunidade:**
-https://chat.whatsapp.com/GVSg8tPQzXy0grfYpRfQps
+| Ordem de serviço por etapas | Kanban de atendimentos |
+|---|---|
+| [![Ordem de serviço](docs/screenshots/ordem-servico.png)](docs/GALERIA.md#ordem-de-serviço) | [![Kanban](docs/screenshots/kanban.png)](docs/GALERIA.md#kanban) |
 
-### Manutenção do Projeto
+| Equipamento e vistoria | Modelos centralizados |
+|---|---|
+| [![Vistoria de equipamento](docs/screenshots/equipamento-vistoria.png)](docs/GALERIA.md#equipamento-e-vistoria) | [![Notificações](docs/screenshots/notificacoes.png)](docs/GALERIA.md#notificações) |
 
-O **Map-OS** é um projeto de código aberto **mantido e desenvolvido pela empresa [MountBit](https://mountbit.com.br)**, responsável pela sua evolução contínua, correções e apoio à comunidade.
+## Um sistema, dois acessos
 
-### Contribuindo
+| Caminho após o domínio | Acesso |
+|---|---|
+| `/index.php/login` | Administrador e equipe: operar o sistema, cadastrar e acompanhar atendimentos. |
+| `/index.php/mine` | Cliente: consultar suas OS, responder ao orçamento e gerenciar preferências de comunicação. |
 
-Quer ajudar a melhorar o Map-OS? Leia o **[Guia de Contribuição](CONTRIBUTING.md)** para saber como preparar o ambiente de desenvolvimento, o padrão de código adotado e como abrir um Pull Request.
+São áreas da **mesma instalação e do mesmo banco**, com autenticação e permissões próprias. Uma conta administrativa não é uma conta de cliente.
 
-### SYSGO - Hospedagem Parceira
-Acesse seu MAP-OS de qualquer lugar com a SYSGO, a solução de hospedagem pensada para quem busca praticidade, segurança e estabilidade.
+## Começar e manter
 
-Com instalação automatizada, ambiente dedicado ao MAP-OS Oficial, suporte na configuração e utilização, backups e alta disponibilidade, a SYSGO ajuda você a manter seu sistema sempre em funcionamento com confiança.
+O ambiente do fork usa **PHP 8.4+, CodeIgniter 3, Composer 2, MySQL 8.4 e Nginx**, com composições Docker para desenvolvimento e produção. O serviço WhatsApp usa **Node.js, Baileys e SQLite** em rede interna. A base frontend mantém Bootstrap, jQuery e Matrix Admin, com os componentes e o tema do fork.
 
-Solicite seu acesso agora: [Fale com um Especialista!](https://wa.me/sysgo)
+1. Siga o [guia de ambiente](docs/AMBIENTE.md) para configurar as variáveis privadas, as dependências e a instalação CLI.
+2. Consulte os guias de [equipamentos e fluxo de OS](docs/EQUIPAMENTOS.md), [Kanban](docs/KANBAN.md) e [comunicação](docs/COMUNICACAO.md).
+3. Valide as mudanças localmente antes de publicar. Os testes de integração reinicializam somente o banco descartável `mapos_fork_test`; os testes HTTP que criam registros recusam URLs de produção.
+4. Atualize pelo Git e pelo [fluxo de implantação com backup e verificação](docs/MELHORIAS.md#publicação-e-recuperação). O atualizador web do projeto original fica desativado neste fork para preservar as personalizações.
 
-<p><img src="docs/sysgo.png" alt="SysGO - Soluções que Simplificam"></p>
+Não publique arquivos `.env`, credenciais, sessões WhatsApp, dumps ou anexos reais. Os canais começam desativados; o envio automático depende de configuração, modelo ativo e autorização registrada do cliente. As prévias não enviam mensagens. Configurar o código não significa que um número WhatsApp já esteja pareado ou que o SMTP esteja pronto.
 
-### [Instalação](Instalacao_xampp_windows.md)
+## Qualidade e contribuições
 
-1. Faça o download dos arquivos.
-2. Extraia o pacote e copie para seu webserver.
-3. Rode o comando `composer install --no-dev` a partir da raiz do projeto.
-4. Acesse sua URL e inicie a instalação, é bem simples, basta preencher as informações no assistente de instalação **MAPOS**.
-5. Configure o email de envio em Configurações > Sistema > E-mail .
-6. Configurar cron jobs para envio de e-mail:
-    ##### Enviar emails pendentes a cada 2 minutos.
-    - */2 * * * * php /var/www/index.php email/process
-    ##### Enviar emails com falha a cada 5 minutos.
-    - */5 * * * * php /var/www/index.php email/retry
+O workflow [Validate fork](.github/workflows/quality.yml) verifica sintaxe, dependências, migrações, regras de negócio, rotas HTTP, vistorias, entrega e o gateway WhatsApp com transporte simulado. O teste de integração registra **228 verificações na revisão de 22/10/2026**; esse número é uma referência, não um contador atualizado automaticamente.
 
-    ##### Obs: O path até o index.php (/var/www/) deve ser configurado conforme o seu ambiente
+Siga o [guia de contribuição](CONTRIBUTING.md) e as [instruções do repositório](AGENTS.md). Mudanças no banco devem usar migrations. Para problemas de segurança, siga [SECURITY.md](SECURITY.md).
 
+## Origem e licença
 
-### Instalação (Docker)
+Este repositório é uma personalização independente do **Map-OS**. A base incorporada nesta revisão é a **4.55.4**; as mudanças do fork são descritas separadamente no [changelog](CHANGELOG.md).
 
-1. Faça o download dos arquivos.
-2. Instale o [Docker](https://docs.docker.com/install/) e o [Docker Compose](https://docs.docker.com/compose/install/).
-3. Entre na pasta `docker` no seu terminal e rode o comando `docker-compose up --force-recreate`.
-4. Acesse a URL `http://localhost:8000/` no navegador e inicie a instalação.
-5. Na etapa de configuração use as seguintes configurações:
-```
-1. Por favor, insira as informações da sua conexão de banco de dados.
-Host: mysql
-Usuário: mapos
-Senha: mapos
-Banco de Dados: mapos
+Os créditos do sistema original pertencem a **Ramon Silva, MountBit e demais colaboradores do Map-OS**. A identidade visual e as adaptações deste fork são da Barão Tech. A [licença Apache 2.0](LICENSE.txt) foi preservada.
 
-2. Por favor, insira as informações para sua conta de administrador.
-Configure do jeito que quiser.
-
-3. Por favor, insira a URL.
-URL: http://localhost:8000/
-```
-6. Configure o email de envio em Configurações > Sistema > E-mail .
-
-    ##### Obs: Cuide da pasta `docker/data`, onde é pasta que o mysql do docker salva os arquivos. Se for deletada você perderá seu banco de dados.
-    ##### Obs2: O PhpMyAdmin também e instalado e pode ser acessado em `http://localhost:8080/`.
-
-### Instalação Automatizada
-Tutorial Instalação: [https://youtu.be/NgXzzBB_2bM?si=FS_R2xq_W0Jnfn33](https://www.youtube.com/watch?v=aZE-LW_YOE4)
-#### Windows 10/11
-1. Execute o Prompt de Comando ou PowerShell como Administrador;
-2. Execute o comando: `PowerShell -command "& { iwr https://raw.githubusercontent.com/RamonSilva20/mapos/master/install.bat -OutFile MapOS_Install.bat }; .\MapOS_Install.bat"`
-3. Siga as instrunções na tela.
-
-#### Linux (Ubuntu/Debian)
-1. Abra o Terminal ou acesse seu servidor via SSH;
-2. Eleve o privilégio aplicando `sudo su` (Recomendado);
-3. Execute o comando: `curl -o MapOS_Install.sh -L https://raw.githubusercontent.com/RamonSilva20/mapos/master/install.sh && chmod +x MapOS_Install.sh && ./MapOS_Install.sh`
-4. Siga as instruções na tela.
-
-### Atualização
-
-1. Faça o backup dos arquivos e do banco de dados:
-2. Logado como administrador vá em `configurações > backup`.
-3. Dentro da pasta `Assets` copie as pastas `anexos`, `arquivos`, `uploads`, `userimage` e qualquer personalização feita dentro da pasta `img`.
-4. Dentro da pasta `application` copie o arquivo `.env`.;
-5. Substitua os arquivos pelos da nova versão.
-6. Rode o comando `composer install --no-dev` a partir da raiz do projeto.
-7. Restaure os backups para seus locais devidos.
-8. Logue no sistema como administrador e navegue até Configurações -> Sistema e clique no botão `Atualizar Banco de Dados` para atualizar seu banco de dados.
-    Obs.: Também é possível atualizar o banco de dados via terminal rodando o comando `php index.php tools migrate` a partir da raiz do projeto;
-9. Pronto, sua atualização está concluída;
-
-### Atualização (Docker)
-
-1. Pare o docker de rodar;
-2. Faça o backup dos arquivos e do banco de dados:
-3. Logado como administrador vá em `configurações > backup`.
-4. Dentro da pasta `Assets` copie as pastas `anexos`, `arquivos`, `uploads`, `userimage` e qualquer personalização feita dentro da pasta `img`.
-5. Dentro da pasta `application` copie o arquivo `.env`.
-6. Substitua os arquivos pelos da nova versão;
-7. Entre na pasta `docker` no seu terminal e rode o comando `docker-compose up --force-recreate`;
-8. Logue no sistema como administrador e navegue até Configurações -> Sistema e clique no botão `Atualizar Banco de Dados` para atualizar seu banco de dados.
-    Obs.: Também é possível atualizar o banco de dados via terminal rodando o comando `php index.php tools migrate` a partir da raiz do projeto;
-9. Restaure os backups para seus locais devidos;
-10. Pronto, sua atualização está concluída;
-
-### Atualização via sistema
-
-1. Primeiro é necessário atualizar manualmente o sistema para a versão v4.4.0;
-2. Quando estiver nessa versão é possível atualizar o sistema clicando no botão "Atualizar Mapos" em Sistema >> Configurações;
-3. Serão baixados e atualizados todos os arquivos exceto: `config.php`, `database.php` e `email.php`;
-
-### Comandos de terminal
-
-Para listar todos os comandos de terminal disponíveis, basta executar o comando `php index.php tools` a partir da raiz do projeto, após feita todo o processo de instalação.
-
-### Frameworks/Bibliotecas
-* [bcit-ci/CodeIgniter](https://github.com/bcit-ci/CodeIgniter)
-* [twbs/bootstrap](https://github.com/twbs/bootstrap)
-* [jquery/jquery](https://github.com/jquery/jquery)
-* [jquery/jquery-ui](https://github.com/jquery/jquery-ui)
-* [mpdf/mpdf](https://github.com/mpdf/mpdf)
-* [Matrix Admin](http://wrappixel.com/demos/free-admin-templates/matrix-admin/index.html)
-* [filp/whoops](https://github.com/filp/whoops)
-* [ezyang/htmlpurifier](https://github.com/ezyang/htmlpurifier)
-
-### Requerimentos
-* PHP >= 8.4
-* MySQL >= 5.7 ou >= 8.0
-* Composer >= 2
-
-### Estrelas
-[![Estrelas](https://star-history.dera.page/svg?repos=RamonSilva20/mapos&type=Date)](https://star-history.dera.page/#RamonSilva20/mapos&Date)
-
-### Contribuidores
-[![Contribuidores](https://contrib.rocks/image?repo=RamonSilva20/mapos)](https://github.com/RamonSilva20/mapos/graphs/contributors)
-
-## Autor
-| [<img src="https://avatars.githubusercontent.com/RamonSilva20?s=115"><br><sub>Ramon Silva</sub>](https://github.com/RamonSilva20) |
-| :---: |
+Consulte também a [documentação original preservada](docs/README-UPSTREAM.md), o [repositório original](https://github.com/RamonSilva20/mapos) e a página para [apoiar o Map-OS](https://donate.mapos.com.br).
