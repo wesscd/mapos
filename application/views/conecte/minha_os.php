@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -20,16 +22,17 @@
     <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
-<body>
+<body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
     <div class="container-fluid">
         <div class="row-fluid">
             <div class="span12">
                 <?php
                     $totalServico = 0;
-    $totalProdutos = 0;
-    ?>
+$totalProdutos = 0;
+?>
                 <div class="row-fluid" style="margin-top: 0">
                     <div class="span12">
                         <div class="widget-box">
@@ -161,19 +164,19 @@
                                                 <tbody>
                                                     <?php
 
-                                        foreach ($produtos as $p) {
-                                            $totalProdutos = $totalProdutos + $p->subTotal;
-                                            echo '<tr>';
-                                            echo '<td style="text-align: center">' . $p->descricao . '</td>';
-                                            echo '<td style="text-align: center">' . $p->quantidade . '</td>';
+                                    foreach ($produtos as $p) {
+                                        $totalProdutos = $totalProdutos + $p->subTotal;
+                                        echo '<tr>';
+                                        echo '<td style="text-align: center">' . $p->descricao . '</td>';
+                                        echo '<td style="text-align: center">' . $p->quantidade . '</td>';
 
-                                            echo '<td style="text-align: center">R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
-                                            echo '</tr>';
-                                        } ?>
+                                        echo '<td style="text-align: center">R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
+                                        echo '</tr>';
+                                    } ?>
 
 
                                                     <?php
-                                        setlocale(LC_MONETARY, 'en_US');
+                                    setlocale(LC_MONETARY, 'en_US');
                                             foreach ($servicos as $s) {
                                                 $preco = $s->preco;
                                                 $totalServico = $totalServico + $preco;

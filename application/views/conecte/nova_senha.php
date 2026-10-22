@@ -1,3 +1,5 @@
+<?php $this->load->helper('brand');
+$baraotechTheme = mapos_baraotech_theme(); ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -24,9 +26,10 @@
     <script src="<?php echo base_url() ?>assets/js/funcoes.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/funcoesGlobal.js"></script>
     <script type="text/javascript" src="<?= base_url(); ?>assets/js/csrf.js"></script>
+<?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=1"><link rel="icon" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>
 </head>
 
-<body>
+<body class="<?= $baraotechTheme ? 'baraotech-theme' : '' ?>">
     <div class="row-fluid nova-senha-wrapper" style="width: 100%;min-height: 100vh;display: flex;align-items: center;justify-content: center;box-sizing: border-box">
         <div class="widget-box" style="align-items: center;padding: 0 15px">
             <div class="widget-title">
