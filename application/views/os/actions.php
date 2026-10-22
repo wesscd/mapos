@@ -5,7 +5,6 @@
 <a class="btn" href="<?= site_url('os/imprimirTermica/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir cupom 80 mm</a>
 <?php if ($result->garantias_id) { ?><a class="btn" href="<?= site_url('garantias/imprimirGarantiaOs/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir termo de garantia</a><?php } ?>
 <?php if ($osPermission) {
-    $this->load->library('comunicacao_service');
     $customer = (object) ['celular' => $result->celular_cliente, 'telefone' => $result->telefone_cliente ?? ''];
     $phone = $this->comunicacao_service->destination('whatsapp', $customer);
     $message = $this->comunicacao_service->orderMessage($result->idOs);

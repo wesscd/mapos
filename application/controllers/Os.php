@@ -12,7 +12,7 @@ class Os extends MY_Controller
         $this->load->helper('form');
         $this->load->model('os_model');
         $this->load->library('os_workflow');
-        $this->load->library('vistoria_service');
+        $this->load->library(['vistoria_service', 'comunicacao_service']);
         $this->data['menuOs'] = 'OS';
     }
 
