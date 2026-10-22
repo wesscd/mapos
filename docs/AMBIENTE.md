@@ -49,8 +49,8 @@ O assistente web `/install/` permanece bloqueado no Nginx.
 
 ## Servidor
 
-Código: `/opt/mapos`. Composição: `compose.prod.yaml`, projeto Docker `mapos`.
-URL: https://mapos.ultraitsm.online/.
+Código: `/opt/mapos-baraotech`, também acessível pelo link `/opt/mapos`. Composição: `compose.prod.yaml`, projeto Docker `mapos-baraotech`.
+URL: https://os.baraotech.online/.
 
 ```bash
 cd /opt/mapos
@@ -60,9 +60,9 @@ docker compose --env-file .env.local -f compose.prod.yaml exec -T php composer c
 ```
 
 O MySQL e o PHP usam rede própria. Apenas o Nginx do MapOS participa também da rede
-externa `ultra-itsm-itsm_ultra_public`, com alias `mapos-web`.
+externa `ultra-itsm-itsm_ultra_public`, com alias `barao-os-web`.
 O proxy existente atende o domínio por um virtual host separado, sem publicar portas adicionais.
-As credenciais de produção ficam apenas no servidor, fora dos arquivos versionados.
+As credenciais ficam fora do Git, na pasta privada de implantação. O projeto e o alias são definidos por `MAPOS_PROJECT_NAME` e `MAPOS_PROXY_ALIAS` em `.env.local`.
 
 O proxy do UltraITSM inclui `/etc/nginx/certs/mapos.conf` a partir da montagem TLS existente.
 Esse include foi acrescentado à configuração e à imagem do proxy da release instalada.
@@ -70,12 +70,12 @@ Ao implantar uma nova release do UltraITSM, preserve esse include no template Ng
 O backup anterior do template fica em `/root/mapos-proxy-backup/`.
 
 O certificado do MapOS é independente do certificado do UltraITSM. O Certbot usa
-`/opt/mapos-private/acme`, com validação HTTP pelo webroot `/opt/mapos`.
+`/opt/mapos-private/acme`, com validação HTTP pelo webroot `/opt/mapos-baraotech`.
 O arquivo `/etc/cron.d/mapos` agenda a renovação e o processamento da fila de e-mails.
 O hook `/usr/local/sbin/mapos-renew-certificate` copia o certificado renovado para
 a montagem TLS do proxy e recarrega o Nginx após validar sua configuração.
 Configure o SMTP em Configurações > Sistema > E-mail antes de usar notificações.
-O acesso administrativo inicial de produção também está em `/root/mapos-admin.json`.
+O acesso administrativo inicial de produção está em `/opt/mapos-baraotech-private/admin.json`. A instalação de 22/10/2026 usa uma base nova, sem importar cadastros, OS, anexos, credenciais SMTP ou sessão do WhatsApp da instalação anterior.
 
 Antes de publicar melhorias, valide localmente e faça backup do banco, `application/.env`
 e diretórios de anexos e uploads. Mudanças de schema devem usar migrations.
