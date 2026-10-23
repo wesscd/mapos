@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/custom.css" />
 <?php $this->load->helper('brand');
 if (mapos_baraotech_theme()) { ?>
-<link rel="stylesheet" href="<?= base_url('assets/css/dashboard-baraotech.css') ?>?v=2">
+<link rel="stylesheet" href="<?= base_url('assets/css/dashboard-baraotech.css') ?>?v=3">
 <?php } ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">

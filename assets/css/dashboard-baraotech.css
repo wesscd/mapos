@@ -14,8 +14,9 @@
     body.baraotech-theme #content .widget-content {min-width:0;box-sizing:border-box;}
     body.baraotech-theme #content .span12A {grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
     body.baraotech-theme #content .span12A .widget-content {overflow-x:auto;}
-    body.baraotech-theme #content .span12A .table {min-width:560px;width:100%;table-layout:auto;margin-bottom:0;}
+    body.baraotech-theme #content .span12A .table {min-width:400px;width:100%;table-layout:auto;margin-bottom:0;}
     body.baraotech-theme #content .span12A :is(th,td) {height:auto;line-height:1.5;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;}
+    body.baraotech-theme #content .span12A th {overflow-wrap:normal;}
     body.baraotech-theme #content .cardBox {gap:16px;list-style:none;grid-template-columns:repeat(6,minmax(0,1fr));}
     body.baraotech-theme #content .cardBox .cardLink {gap:12px;padding:18px 16px;min-height:94px;box-sizing:border-box;}
     body.baraotech-theme #content .cardBox .grid-blak {min-width:0;flex:1;}
