@@ -9,6 +9,10 @@
 <link href='<?= base_url(); ?>assets/css/fullcalendar.min.css' rel='stylesheet' />
 <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>assets/js/dist/jquery.jqplot.min.css" />
 <link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/custom.css" />
+<?php $this->load->helper('brand');
+if (mapos_baraotech_theme()) { ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/dashboard-baraotech.css') ?>?v=2">
+<?php } ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,10 +122,9 @@
                 <h5 class="cardHeader">Agenda</h5>
             </div>
             <div class="widget-content">
-                <table>
                     <div id='source-calendar'>
                         <form method="post">
-                            <select style="padding-left: 30px" class="span12" name="statusOsGet" id="statusOsGet" value="">
+                            <select aria-label="Filtrar agenda por etapa da OS" style="padding-left: 30px" class="span12" name="statusOsGet" id="statusOsGet" value="">
                                 <option value="">Todos os Status</option>
                                 <option value="Aberto">Aberto</option>
                                 <option value="Faturado">Faturado</option>
@@ -133,10 +136,9 @@
                                 <option value="Aguardando Peças">Aguardando Peças</option>
                                 <option value="Aprovado">Aprovado</option>
                             </select>
-                            <button type="button" class="btn-xs" id="btn-calendar"><i class="bx bx-search iconX2"></i></button>
+                            <button type="button" class="btn-xs" id="btn-calendar" aria-label="Aplicar filtro da agenda"><i class="bx bx-search iconX2"></i></button>
                         </form>
                     </div>
-                </table>
             </div>
         </div>
 
@@ -275,6 +277,14 @@
     if (window.outerWidth < 480) {
         Chart.defaults.font.size = 8.5;
     };
+
+    if (document.body.classList.contains('baraotech-theme')) {
+        Chart.defaults.color = '#c2d8c7';
+        Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.scale.grid.color = 'rgba(165, 237, 182, 0.16)';
+        Chart.defaults.scale.ticks.backdropColor = '#101e18';
+    }
 
     var ctx = document.getElementById('myChart').getContext('2d');
     var StatusOS = document.getElementById('statusOS').getContext('2d');

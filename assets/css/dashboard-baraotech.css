@@ -1,0 +1,54 @@
+/* Dashboard-only adjustments. Legacy negative margins let opaque panels cover headings. */
+@media screen {
+    body.baraotech-theme #content .cardHeader {
+        height:auto;
+        min-height:0;
+        margin:0;
+        padding:18px 20px 12px;
+        line-height:1.5;
+        font-size:16px;
+        white-space:normal;
+        overflow-wrap:anywhere;
+    }
+    body.baraotech-theme #content :is(.widget-box0,.widget-box2,.widget-box-new,.widget-box-statist) {min-width:0;}
+    body.baraotech-theme #content .widget-content {min-width:0;box-sizing:border-box;}
+    body.baraotech-theme #content .span12A {grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+    body.baraotech-theme #content .span12A .widget-content {overflow-x:auto;}
+    body.baraotech-theme #content .span12A .table {min-width:560px;width:100%;table-layout:auto;margin-bottom:0;}
+    body.baraotech-theme #content .span12A :is(th,td) {height:auto;line-height:1.5;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;}
+    body.baraotech-theme #content .cardBox {gap:16px;list-style:none;grid-template-columns:repeat(6,minmax(0,1fr));}
+    body.baraotech-theme #content .cardBox .cardLink {gap:12px;padding:18px 16px;min-height:94px;box-sizing:border-box;}
+    body.baraotech-theme #content .cardBox .grid-blak {min-width:0;flex:1;}
+    body.baraotech-theme #content .cardBox .numbers {width:auto;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.5;font-size:14px;overflow-wrap:anywhere;}
+    body.baraotech-theme #content .cardBox .cardName {line-height:1.5;margin-top:8px;}
+    body.baraotech-theme #content .Sspan12 {grid-template-columns:minmax(0,3fr) minmax(240px,1fr)!important;align-items:stretch;}
+    body.baraotech-theme #content .new-statisc {min-width:0;}
+    body.baraotech-theme #content .new-bottons {height:auto;flex:1;min-height:0;box-sizing:border-box;margin-top:0;padding:12px;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));}
+    body.baraotech-theme #content .new-bottons .card {min-width:0;min-height:96px;box-sizing:border-box;}
+    body.baraotech-theme #content .new-bottons .cardName {line-height:1.5;white-space:normal;overflow-wrap:anywhere;}
+    body.baraotech-theme #content .new-balance {grid-template-columns:repeat(2,minmax(0,1fr));}
+    body.baraotech-theme #content .new-balance :is(.widget-box0,.widget-box-statist) {grid-row-start:auto;}
+    body.baraotech-theme #content .new-balance .widget-content {margin-top:0!important;}
+    body.baraotech-theme #content .new-balance .widget-content>.row-fluid {margin-top:0!important;}
+    body.baraotech-theme #source-calendar .fc-toolbar {gap:12px;flex-wrap:wrap;}
+    body.baraotech-theme #source-calendar .fc-toolbar-title {font-size:20px;line-height:1.5;color:var(--bt-text);}
+    body.baraotech-theme #source-calendar .fc-button {background:var(--bt-raised)!important;color:var(--bt-text)!important;border-color:var(--bt-line)!important;text-shadow:none;line-height:1.5;}
+    body.baraotech-theme #source-calendar .fc-button:disabled {color:var(--bt-muted)!important;opacity:.7;}
+    body.baraotech-theme #source-calendar .fc-day-other {background:#14251a;}
+    body.baraotech-theme #source-calendar .fc-non-business {background:rgba(165,237,182,.06);}
+    body.baraotech-theme #source-calendar :is(.fc-scrollgrid,td,th) {border-color:var(--bt-line);}
+    @media(max-width:1250px) {
+        body.baraotech-theme #content .cardBox {grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+    @media(max-width:1000px) {
+        body.baraotech-theme #content .Sspan12,body.baraotech-theme #content .new-balance,body.baraotech-theme #content .span12A {grid-template-columns:minmax(0,1fr)!important;}
+        body.baraotech-theme #content .new-bottons {grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+    @media(max-width:600px) {
+        body.baraotech-theme #content .cardBox,body.baraotech-theme #content .new-bottons {grid-template-columns:repeat(2,minmax(0,1fr));}
+        body.baraotech-theme #content .cardBox .cardLink {padding:14px 10px;gap:8px;}
+        body.baraotech-theme #content .cardHeader {padding:16px 14px 10px;}
+        body.baraotech-theme #content .widget-content {padding:14px;}
+        body.baraotech-theme #source-calendar .fc-toolbar-title {font-size:18px;}
+    }
+}

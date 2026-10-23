@@ -4,6 +4,15 @@ Todas as alterações serão documentadas neste arquivo
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Fork Barão Tech — revisão de 2026-10-23
+
+### Corrigido
+
+- Títulos da home que eram encobertos pelo conteúdo devido às margens negativas do layout legado.
+- Atalhos truncados, organização dos quadros e rolagem das tabelas em telas menores no tema Barão Tech.
+- Contraste e tamanho das legendas dos gráficos e controles da agenda no tema verde escuro.
+- Estrutura do filtro da agenda, removendo uma tabela sem células que envolvia o calendário.
+
 ## Fork Barão Tech — revisão de 2026-10-22
 
 Esta seção documenta o fork; as versões numéricas abaixo pertencem ao projeto original. Não foi criada uma nova versão ou release do Map-OS.
