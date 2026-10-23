@@ -20,9 +20,11 @@ class Os_workflow
 
     public function details($id)
     {
+        $this->ci->load->library('checklist_service');
         return [
+            'checklist_grupos' => $this->ci->checklist_service->details($id),
             'equipamentos_disponiveis' => $this->ci->db->select('equipamentos.idEquipamentos, equipamento, num_serie')->from('equipamentos')->join('os', 'os.clientes_id = equipamentos.clientes_id')->where('os.idOs', (int) $id)->order_by('idEquipamentos', 'desc')->limit(200)->get()->result(),
-            'equipamentos' => $this->ci->db->select('equipamentos_os.idEquipamentos_os, equipamentos.idEquipamentos, equipamentos.equipamento, equipamentos.num_serie, equipamentos.modelo')->from('equipamentos_os')->join('equipamentos', 'equipamentos.idEquipamentos = equipamentos_os.equipamentos_id')->where('os_id', (int) $id)->get()->result(),
+            'equipamentos' => $this->ci->db->select('equipamentos_os.idEquipamentos_os, equipamentos.idEquipamentos, equipamentos.equipamento, equipamentos.num_serie, equipamentos.modelo, equipamentos.checklist_tipo')->from('equipamentos_os')->join('equipamentos', 'equipamentos.idEquipamentos = equipamentos_os.equipamentos_id')->where('os_id', (int) $id)->get()->result(),
             'recibos' => $this->ci->db->select('equipamento_recibos.id, vinculo_id, tipo, equipamento_recibos.created_at')->from('equipamento_recibos')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = equipamento_recibos.vinculo_id')->where('os_id', (int) $id)->get()->result(),
             'checklist' => $this->ci->db->order_by('id')->get_where('os_checklist', ['os_id' => $id])->result(),
             'eventos' => $this->ci->db->order_by('id', 'desc')->limit(100)->get_where('os_eventos', ['os_id' => $id])->result(),
@@ -510,6 +512,9 @@ class Os_workflow
             $order = $this->lockOrder($id);
             if ($order->entregue_em) {
                 throw new DomainException('A entrega já foi registrada. Preserve o histórico desta OS.');
+            }
+            if ($this->ci->db->where('os_id', (int) $id)->count_all_results('os_check_grupos')) {
+                throw new DomainException('Esta OS possui checklist técnico e deve ser preservada no histórico.');
             }
             if ($this->ci->db->from('os_vistorias')->join('equipamentos_os', 'equipamentos_os.idEquipamentos_os = os_vistorias.vinculo_id')->where('os_id', $id)->count_all_results()) {
                 throw new DomainException('Esta OS possui vistoria de entrada e deve ser preservada no histórico.');

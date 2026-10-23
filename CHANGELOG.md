@@ -6,6 +6,13 @@ e [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Fork Barão Tech — revisão de 2026-10-23
 
+### Adicionado
+
+- Modelos de checklist por tipo de equipamento, separados em análise técnica e execução/conferência final.
+- Cópias independentes por OS e equipamento, preenchimento automático em novos vínculos tipados e preservação dos checklists antigos.
+- Resultados, observações, fotos privadas, referência do escopo autorizado, histórico por item, proteção contra edição simultânea e resumo imprimível dos procedimentos realizados.
+- Ponto de restauração anterior à implantação dos checklists, com tag `restore/pre-checklists-20261023` e backup privado verificado.
+
 ### Corrigido
 
 - Títulos da home que eram encobertos pelo conteúdo devido às margens negativas do layout legado.

@@ -41,6 +41,7 @@ jobs:
           docker compose --env-file .env.local -f compose.dev.yaml exec -T php php tests/http_fixture.php --local-fixture > /tmp/mapos-http-fixture.json
           python3 tests/inspection_http.py http://localhost:8000 /tmp/mapos-ci-admin.json /tmp/mapos-http-fixture.json
           python3 tests/equipment_forms_http.py http://localhost:8000 /tmp/mapos-ci-admin.json
+          python3 tests/checklists_http.py http://localhost:8000 /tmp/mapos-ci-admin.json /tmp/mapos-http-fixture.json
           node --test tests/inspection_photo_validation.test.cjs
       - name: Test WhatsApp gateway with a simulated transport
         run: |

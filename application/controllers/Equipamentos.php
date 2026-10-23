@@ -7,7 +7,7 @@ class Equipamentos extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->library('equipamento_service');
+        $this->load->library(['equipamento_service', 'checklist_service']);
         $this->load->helper('form');
         $this->data['menuEquipamentos'] = true;
     }

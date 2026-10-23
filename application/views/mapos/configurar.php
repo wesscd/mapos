@@ -13,6 +13,7 @@
                 <li><a data-toggle="tab" href="#menu1">Financeiro</a></li>
                 <li><a data-toggle="tab" href="#menu2">Produtos</a></li>
                 <li><a data-toggle="tab" href="#menu3">Notificações</a></li>
+                <li><a href="<?= html_escape(site_url('checklists')) ?>">Checklists técnicos</a></li>
                 <li><a data-toggle="tab" href="#menu4">Atualizações</a></li>
                 <li><a data-toggle="tab" href="#menu5">OS</a></li>
                 <li><a data-toggle="tab" href="#menu6">API</a></li>

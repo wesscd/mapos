@@ -19,7 +19,7 @@ data = urllib.parse.urlencode({"email": credentials["email"], "senha": credentia
 response = client.open(base + "/index.php/login/verificarLogin", data, timeout=30)
 assert json.loads(response.read()).get("result") is True, "Admin login failed"
 assert response.headers.get("X-CSRF-Token"), "Responses must expose the refreshed CSRF token"
-for path in ["mapos", "operacoes", "kanban", "os", "os/adicionar", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0", "equipamentos", "equipamentos/salvar"]:
+for path in ["mapos", "operacoes", "kanban", "os", "os/adicionar", "clientes", "produtos", "servicos", "mapos/configurar", "comunicacao", "comunicacao/tentativas/0", "equipamentos", "equipamentos/salvar", "checklists"]:
     response = client.open(base + "/index.php/" + path, timeout=30)
     body = response.read().decode()
     assert response.status == 200 and all(error not in body for error in ["A PHP Error was encountered", "Database Error", "An uncaught Exception was encountered", "Fatal error:"]), path
@@ -29,6 +29,10 @@ for path in ["mapos", "operacoes", "kanban", "os", "os/adicionar", "clientes", "
     if path == "mapos/configurar":
         assert 'id="notification-config"' in body and 'id="notification-model-' in body and 'form="notification-model-' in body, "Notification settings must expose independent centralized editors"
         assert 'name="notifica_whats"' not in body and 'name="email_automatico"' not in body, "Retired legacy notification controls must not compete with centralized templates"
+    if path == "checklists":
+        assert 'Modelos de checklist técnico' in body and 'name="novos_analise"' in body and 'name="novos_execucao"' in body, "Checklist configuration must expose both editable phases"
+    if path == "equipamentos/salvar":
+        assert 'name="checklist_tipo"' in body, "Equipment type must support automatic checklist selection"
     if path == "comunicacao":
         assert 'mapos/configurar#menu3' in body and 'name="texto"' not in body and 'name="limite_lembretes"' not in body, "Communication center must link to the sole notification editor"
     if path == "os/adicionar":
@@ -51,4 +55,4 @@ try:
     raise AssertionError("POST without CSRF token was accepted")
 except urllib.error.HTTPError as error:
     assert error.code == 403
-print("HTTP checks passed: authentication, refreshed CSRF, thirteen application pages, inspection form, equipment picker endpoint and protected paths.")
+print("HTTP checks passed: authentication, refreshed CSRF, fourteen application pages, inspection form, equipment picker endpoint and protected paths.")

@@ -65,6 +65,12 @@ class Equipamento_service
                 }
             }
             $data = ['clientes_id' => $customer, 'equipamento' => $this->text($input['equipamento'] ?? '', 150, true)];
+            if (array_key_exists('checklist_tipo', $input)) {
+                if (! is_string($input['checklist_tipo']) || ! in_array($input['checklist_tipo'], ['', 'notebook', 'desktop', 'outros'], true)) {
+                    throw new DomainException('Selecione um tipo válido para o checklist.');
+                }
+                $data['checklist_tipo'] = $input['checklist_tipo'] ?: null;
+            }
             foreach (['num_serie' => 80, 'modelo' => 80, 'cor' => 45, 'descricao' => 150] as $field => $limit) {
                 $data[$field] = $this->text($input[$field] ?? '', $limit);
             }
@@ -105,6 +111,13 @@ class Equipamento_service
             $this->ci->db->insert('equipamentos_os', ['os_id' => $orderId, 'equipamentos_id' => $equipmentId]);
             $id = $this->ci->db->insert_id();
             $this->ci->os_workflow->event($orderId, 'equipamento', 'Equipamento #' . (int) $equipmentId . ' vinculado. Recebimento físico ainda não confirmado.');
+            if ($equipment->checklist_tipo) {
+                $this->ci->load->library('checklist_service');
+                $model = $this->ci->db->get_where('check_modelos', ['tipo' => $equipment->checklist_tipo, 'ativo' => 1])->row();
+                if ($model) {
+                    $this->ci->checklist_service->apply($orderId, $equipment->checklist_tipo, $equipmentId);
+                }
+            }
             return (int) $id;
         });
     }
