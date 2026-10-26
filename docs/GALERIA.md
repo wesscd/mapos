@@ -2,7 +2,7 @@
 
 [Voltar à apresentação](../README.md)
 
-Capturas feitas em **22/10/2026**, com o tema Barão Tech. Operações, OS, Kanban e vistoria foram capturados no ambiente local com registros de demonstração. Notificações foi capturado na instalação publicada, exibindo um modelo e uma prévia com dados fictícios. Nenhum print inclui credenciais ou contatos reais de clientes.
+Capturas iniciais feitas em **22/10/2026**, com o tema Barão Tech. Operações, OS, Kanban e vistoria foram capturados no ambiente local com registros de demonstração. Notificações foi capturado na instalação publicada, exibindo um modelo e uma prévia com dados fictícios. Nenhum print inclui credenciais ou contatos reais de clientes.
 
 As imagens retratam a interface da revisão documentada. Cores, contagens, permissões e opções podem variar conforme a configuração. Elas não indicam que o WhatsApp ou o e-mail estejam habilitados na sua instalação.
 
@@ -12,11 +12,23 @@ Visão de atendimentos ativos e concluídos, distribuição por responsável e a
 
 ![Painel de operações de demonstração](screenshots/operacoes.png)
 
-## Ordem de serviço
+## Ordem de serviço · captura de 22/10
 
-Cabeçalho com etapa e valor, próxima ação e navegação por seis abas. O vínculo do equipamento, o recebimento físico e a entrega têm registros próprios.
+Cabeçalho com etapa e valor e próxima ação. Esta captura anterior mostra seis abas; a revisão de 26/10 acrescenta Execução e testes, como nas imagens abaixo. O vínculo do equipamento, o recebimento físico e a entrega têm registros próprios.
 
 ![OS de demonstração com as seis etapas](screenshots/ordem-servico.png)
+
+## Execução e testes · revisão de 26/10/2026
+
+A análise permanece separada dos procedimentos e testes finais. O indicador conta os itens pendentes e cada formulário salva um item. Captura local com dados de demonstração; os resultados não representam serviços reais.
+
+![Execução e testes na OS de demonstração](screenshots/execucao-testes.png)
+
+## Conferência antes da entrega · revisão de 26/10/2026
+
+Resumo orientativo de pendências, ressalvas e acessórios. A ausência de recebimento físico é explícita. O painel não cria bloqueio adicional para a retirada.
+
+![Conferência de entrega no ambiente local](screenshots/conferencia-entrega.png)
 
 ## Kanban
 

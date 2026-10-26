@@ -79,13 +79,13 @@ class WorkspaceParser(HTMLParser):
 def check_workspace(body, editing=False):
     page = WorkspaceParser()
     page.feed(body)
-    expected = ['resumo', 'equipamento', 'analise', 'orcamento', 'entrega', 'historico']
-    assert page.tabs == expected and page.panels == expected, 'Both OS views expose the six stage tabs exactly once'
+    expected = ['resumo', 'equipamento', 'analise', 'orcamento', 'execucao', 'entrega', 'historico']
+    assert page.tabs == expected and page.panels == expected, 'Both OS views expose the seven stage tabs exactly once'
     assert 'id="os-budget-whatsapp"' in body, 'Both OS views expose the budget communication panel'
     assert not page.duplicate_ids, 'OS form controls must have unique IDs: ' + str(page.duplicate_ids)
     assert not page.nested_form and page.form_depth == 0, 'Independent action forms must not be nested'
     if editing:
-        assert page.analysis_fields == {'laudoTecnico', 'observacoes'}, 'Analysis fields retain their owning OS form across tabs'
+        assert page.analysis_fields == {'laudoTecnico', 'observacoes'}, 'Analysis and execution fields retain their owning OS form across tabs'
 
 
 get('login').read()

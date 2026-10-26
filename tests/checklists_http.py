@@ -57,6 +57,13 @@ response = post('os/adicionar', {'cliente': 'Demonstracao HTTP - vistoria', 'cli
 order = re.search(r'os/editar/(\d+)', response.url).group(1)
 body = response.read().decode()
 assert 'Execução e conferência final' in body and 'Inspecionar ventoinhas' in body, 'Typed equipment must populate both checklist phases'
+analysis_panel = body.split('id="os-pane-analise"', 1)[1].split('id="os-pane-orcamento"', 1)[0]
+execution_panel = body.split('id="os-pane-execucao"', 1)[1].split('id="os-pane-entrega"', 1)[0]
+assert 'name="laudoTecnico"' in analysis_panel and 'name="observacoes" form="formOs"' not in analysis_panel
+assert 'id="observacoes" name="observacoes"' in execution_panel and 'Inspecionar ventoinhas' not in execution_panel
+assert 'Limpeza interna' in execution_panel and 'Limpeza interna' not in analysis_panel, 'Each tab renders only its checklist phase'
+assert all(fields['aba'] == 'analise' for fields, _ in item_forms(analysis_panel)) and all(fields['aba'] == 'execucao' for fields, _ in item_forms(execution_panel))
+assert 'Conferência antes da entrega' in body and 'Recebimento físico não registrado.' in body, 'Handover review must not imply intake'
 forms = item_forms(body)
 assert len(forms) >= 10, 'OS must expose independent item forms'
 item = forms[0][0]
@@ -80,7 +87,10 @@ assert 'login' in anonymous.url, 'Checklist evidence must require authentication
 intervention = next(fields for fields, form in item_forms(body) if 'name="autorizacao"' in form)
 blocked = post(action, dict(intervention, resultado='realizado', autorizacao='')).read().decode()
 assert 'Rascunho preservado para correção' in blocked, 'Execution interventions require an authorization reference'
-body = post(action, dict(intervention, resultado='realizado', autorizacao='Escopo aprovado de demonstracao', observacoes='Nota interna de demonstracao')).read().decode()
+response = post(action, dict(intervention, resultado='realizado', autorizacao='Escopo aprovado de demonstracao', observacoes='Nota interna de demonstracao'))
+assert response.url.endswith('#os-pane-execucao'), 'Execution save must return to the execution tab'
+body = response.read().decode()
+assert 'Conferência antes da entrega' in body and 'Consultar itens pendentes e ressalvas' in body
 summary = get('checklists/resumo/' + order).read().decode()
 assert 'Limpeza interna' in summary and 'Nota interna de demonstracao' not in summary and 'Escopo aprovado de demonstracao' not in summary, 'Procedure printout must separate completed work from private notes'
 history = get('checklists/historico/' + intervention['item_id']).read().decode()

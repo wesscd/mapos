@@ -8,12 +8,13 @@ No **cadastro do equipamento**, escolha o campo **Tipo para checklist técnico**
 
 ## Como utilizar na OS
 
-1. Abra a aba **Análise técnica**. Ela contém as seções **Análise técnica** e **Execução e conferência final** dos checklists.
-2. Se a OS é anterior à melhoria, use **Aplicar modelo por tipo de equipamento**, escolhendo um equipamento vinculado ou um checklist geral do atendimento.
+1. Use **Análise técnica** para o diagnóstico e as verificações iniciais. Use **Execução e testes** para as observações da execução, os procedimentos e a conferência final.
+2. Se a OS é anterior à melhoria, use **Aplicar modelo por tipo de equipamento** na aba Análise técnica, escolhendo um equipamento vinculado ou um checklist geral do atendimento.
 3. Abra o item, selecione o resultado e salve. Análise aceita Pendente, Conforme, Atenção e Não se aplica. Execução aceita Pendente, Realizado, Não realizado e Não se aplica.
 4. Atenção e Não realizado exigem observação ou justificativa. Itens classificados como **Exige autorização** precisam de referência do escopo aprovado para serem marcados como Realizado. Esse registro não aprova o orçamento em nome do cliente.
 5. Acrescente itens específicos da OS quando necessário. Essas inclusões não alteram os modelos reutilizáveis.
-6. Consulte o histórico de cada item e o **Resumo dos procedimentos realizados**, que pode ser impresso e entregue ao cliente.
+6. Consulte o histórico de cada item. Na aba Execução e testes, abra o **Resumo dos procedimentos realizados**, que pode ser impresso e entregue ao cliente.
+7. Na aba **Entrega**, confira o resumo de pendências de análise e execução, os resultados Atenção/Não realizado, os acessórios registrados no comprovante de entrada e a existência da vistoria de saída. O painel é orientativo: não bloqueia a retirada nem substitui a conferência presencial. Ausência de checklist não aparece como teste concluído; Não se aplica não é pendência.
 
 Verificações, cuidados complementares e intervenções autorizadas são classificações operacionais. O checklist não adiciona serviços, peças, descontos ou cobranças. Cuidados adicionais devem respeitar o escopo combinado. Itens não aplicáveis podem ser marcados explicitamente, sem inventar resultados.
 

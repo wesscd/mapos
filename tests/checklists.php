@@ -4,10 +4,23 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 $ci->load->library('checklist_service');
 $checks = $ci->checklist_service;
+$mixedProgress = $checks->progress([(object) ['equipamento_nome' => 'Teste', 'itens' => [
+    (object) ['fase' => 'analise', 'resultado' => 'atencao', 'descricao' => 'Disco com alerta'],
+    (object) ['fase' => 'execucao', 'resultado' => 'pendente', 'descricao' => 'Teste pendente'],
+    (object) ['fase' => 'execucao', 'resultado' => 'nao_realizado', 'descricao' => 'Procedimento não realizado'],
+    (object) ['fase' => 'execucao', 'resultado' => 'nao_aplica', 'descricao' => 'Não aplicável'],
+]]]);
+$assert($mixedProgress['analise']['atencao'] === 1 && $mixedProgress['analise']['pendente'] === 0, 'Delivery review keeps analysis alerts separate from unanswered items');
+$assert($mixedProgress['execucao']['total'] === 3 && $mixedProgress['execucao']['pendente'] === 1 && $mixedProgress['execucao']['atencao'] === 1 && count($mixedProgress['execucao']['itens']) === 2, 'Execution review distinguishes pending, not performed and not applicable results');
+$assert($checks->progress([])['execucao']['total'] === 0, 'An absent checklist is not represented as completed tests');
+$receiptReview = $workflow->deliveryReview($workflow->details($inspectionOrder));
+$assert($receiptReview['equipamentos'][0]['recebido'] && $receiptReview['equipamentos'][0]['acessorios'] === 'Carregador' && $receiptReview['equipamentos'][0]['saida'] && $receiptReview['equipamentos'][0]['conferencia'] === $exitData['vistoria_conferencia'], 'Delivery review reads accessories from the intake receipt and the matching exit conference');
 $ci->session->set_userdata('id_admin', 1);
 $checkOrder = $create();
 $checkEquipment = $equipmentService->save(array_merge($equipmentData, ['equipamento' => 'Notebook checklist teste', 'checklist_tipo' => 'notebook']));
 $equipmentService->link($checkOrder, $checkEquipment);
+$initialReview = $workflow->deliveryReview($workflow->details($checkOrder));
+$assert(count($initialReview['equipamentos']) === 1 && ! $initialReview['equipamentos'][0]['recebido'] && ! $initialReview['equipamentos'][0]['saida'] && $initialReview['equipamentos'][0]['acessorios'] === null, 'Delivery review never invents physical receipt, accessories or an exit inspection');
 $groups = $checks->details($checkOrder);
 $assert(count($groups) === 1 && $groups[0]->tipo === 'notebook', 'Linking typed equipment automatically copies the active checklist into its OS');
 $group = $groups[0];
@@ -71,6 +84,14 @@ try {
 } catch (RuntimeException $expected) {
     $assert($db->count_all('os_check_grupos') > 0, 'Migration rollback refuses to discard OS checklist snapshots');
 }
+$advisoryOrder = $create();
+$checks->apply($advisoryOrder, 'desktop');
+$workflow->updateOrder($advisoryOrder, ['laudoTecnico' => 'Diagnóstico', 'status' => 'Em Andamento'], false);
+$advisoryState = $workflow->workspaceState($db->get_where('os', ['idOs' => $advisoryOrder])->row(), $workflow->details($advisoryOrder));
+$assert($advisoryState['nextTab'] === 'execucao' && str_contains($advisoryState['execution'], 'pendente'), 'Approved work directs to the execution tab with its pending count');
+$workflow->updateOrder($advisoryOrder, ['status' => 'Finalizado'], false);
+$workflow->deliver($advisoryOrder);
+$assert($db->get_where('os', ['idOs' => $advisoryOrder])->row()->entregue_em && $workflow->deliveryReview($workflow->details($advisoryOrder))['fases']['execucao']['pendente'] > 0, 'Advisory checklist review does not introduce a delivery completion gate');
 // Remove only the synthetic checklist fixtures to permit this suite's migration rollback audit.
 $db->empty_table('os_check_fotos');
 $db->empty_table('os_check_registros');

@@ -1,8 +1,8 @@
 <?php
 $osWorkspace = $this->os_workflow->workspaceState($result, $workflow);
 $osCanEquipment = $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente');
-$osTabs = ['resumo' => 'Resumo', 'equipamento' => 'Equipamento e vistoria', 'analise' => 'Análise técnica', 'orcamento' => 'Orçamento', 'entrega' => 'Entrega', 'historico' => 'Histórico e anexos'];
-$osBadges = ['equipamento' => $osCanEquipment ? $osWorkspace['equipment'] : 'Permissão necessária', 'analise' => $osWorkspace['analysis'], 'orcamento' => $osWorkspace['budget'], 'entrega' => $osWorkspace['delivery']];
+$osTabs = ['resumo' => 'Resumo', 'equipamento' => 'Equipamento e vistoria', 'analise' => 'Análise técnica', 'orcamento' => 'Orçamento', 'execucao' => 'Execução e testes', 'entrega' => 'Entrega', 'historico' => 'Histórico e anexos'];
+$osBadges = ['equipamento' => $osCanEquipment ? $osWorkspace['equipment'] : 'Permissão necessária', 'analise' => $osWorkspace['analysis'], 'orcamento' => $osWorkspace['budget'], 'execucao' => $osWorkspace['execution'], 'entrega' => $osWorkspace['delivery']];
 ?>
 <header class="os-summary" id="acompanhamento" data-os-workspace="<?= (int) $result->idOs ?>">
     <div class="os-summary-top"><div><span class="mapos-eyebrow">ORDEM DE SERVIÇO</span><h1>OS #<?= (int) $result->idOs ?> <span class="mapos-pill"><?= html_escape($result->status) ?></span></h1><p><?= html_escape($result->nomeCliente) ?> <span class="os-summary-separator">·</span> Responsável: <?= html_escape($result->nome) ?></p></div>

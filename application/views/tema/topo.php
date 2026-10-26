@@ -74,7 +74,7 @@ $baraotechTheme = mapos_baraotech_theme(); ?>
     shortcut.add("F12", function() {});
     window.BaseUrl = "<?= base_url() ?>";
   </script>
-<link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=7">
+<link rel="stylesheet" href="<?= base_url('assets/css/fork.css') ?>?v=8">
 <link rel="stylesheet" href="<?= base_url('assets/css/admin-ui.css') ?>?v=5">
 <script src="<?= base_url('assets/js/inspection-photos.js') ?>?v=2" defer></script>
 <?php if ($baraotechTheme) { ?><link rel="stylesheet" href="<?= base_url('assets/css/tema-baraotech.css') ?>?v=2"><link rel="icon" type="image/png" href="<?= base_url('assets/img/baraotech-logo.png') ?>"><?php } ?>

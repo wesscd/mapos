@@ -1,3 +1,4 @@
+<?php $this->load->view('os/delivery_review'); ?>
 <section class="mapos-card"><h3>Retirada e comprovantes</h3>
     <?php if (! empty($result->entregue_em)) { ?><p>Entrega registrada em <?= html_escape(date('d/m/Y H:i', strtotime($result->entregue_em))) ?>.</p>
     <?php } elseif ((in_array($result->status, ['Finalizado', 'Faturado'], true) || ($result->status === 'Cancelado' && ! empty($workflow['recibos']))) && $this->permission->checkPermission($this->session->userdata('permissao'), 'eOs') && (empty($workflow['equipamentos']) || $this->permission->checkPermission($this->session->userdata('permissao'), 'vCliente'))) { ?>

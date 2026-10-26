@@ -4,7 +4,7 @@ Revisão documental: **22/10/2026**. Consulte a [galeria de telas](GALERIA.md) e
 
 ## Interface e identidade visual
 
-O tema selecionável Barão Tech aplica a identidade da marca ao administrativo, aos logins e à área do cliente. Foram padronizados componentes de OS, Kanban, cadastros, equipamentos, produtos e serviços. A impressão mantém seu layout próprio. A edição e a consulta de OS usam seis abas; os detalhes das validações, vistorias e entregas estão em [EQUIPAMENTOS.md](EQUIPAMENTOS.md).
+O tema selecionável Barão Tech aplica a identidade da marca ao administrativo, aos logins e à área do cliente. Foram padronizados componentes de OS, Kanban, cadastros, equipamentos, produtos e serviços. A impressão mantém seu layout próprio. A edição e a consulta de OS usam sete abas, incluindo Execução e testes; os detalhes das validações, vistorias e entregas estão em [EQUIPAMENTOS.md](EQUIPAMENTOS.md).
 
 ## Notificações centralizadas
 

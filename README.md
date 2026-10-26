@@ -18,9 +18,9 @@ Fork do [Map-OS, de Ramon Silva e colaboradores](https://github.com/RamonSilva20
 
 | Área | Melhorias implementadas |
 |---|---|
-| **Ordens de serviço** | Seis etapas: Resumo, Equipamento e vistoria, Análise técnica, Orçamento, Entrega e Histórico e anexos. Aviso de alterações não salvas e formulários de ação independentes. |
+| **Ordens de serviço** | Sete etapas: Resumo, Equipamento e vistoria, Análise técnica, Orçamento, Execução e testes, Entrega e Histórico e anexos. Aviso de alterações não salvas e formulários de ação independentes. |
 | **Equipamentos e vistorias** | Vínculo com o cliente e a OS, recebimento físico explícito, estado e acessórios, fotos de Frente, Verso, Aberto, Fechado e Teclado, vistoria de saída e comprovantes. |
-| **Checklists técnicos** | Modelos editáveis por notebook, desktop e outros equipamentos, com análise e execução, resultados, fotos privadas, referência de autorização e histórico por item. |
+| **Checklists técnicos** | Modelos editáveis por notebook, desktop e outros equipamentos, com análise e execução em abas próprias, resultados, fotos privadas, referência de autorização e histórico por item. Revisão orientativa antes da entrega. |
 | **Orçamentos** | Produtos, serviços e descontos com cálculo no servidor; registro da versão apresentada e aprovação ou recusa pelo cliente. Alterações exigem nova conferência. |
 | **Kanban** | Quadro por etapa, filtros e movimentação por arraste ou seletor. Aguardando aprovação e aguardando retirada refletem o andamento da OS. |
 | **Comunicação** | WhatsApp/Baileys, configuração Gmail, preferências por cliente, fila com tentativas e histórico, lembretes limitados e envio de orçamento com prévia e confirmação. |
@@ -64,7 +64,7 @@ Não publique arquivos `.env`, credenciais, sessões WhatsApp, dumps ou anexos r
 
 ## Qualidade e contribuições
 
-O workflow [Validate fork](.github/workflows/quality.yml) verifica sintaxe, dependências, migrações, regras de negócio, rotas HTTP, vistorias, entrega e o gateway WhatsApp com transporte simulado. O teste de integração registra **257 verificações na revisão de 23/10/2026**; esse número é uma referência, não um contador atualizado automaticamente.
+O workflow [Validate fork](.github/workflows/quality.yml) verifica sintaxe, dependências, migrações, regras de negócio, rotas HTTP, vistorias, entrega e o gateway WhatsApp com transporte simulado. O teste de integração registra **264 verificações na revisão de 26/10/2026**; esse número é uma referência, não um contador atualizado automaticamente.
 
 Siga o [guia de contribuição](CONTRIBUTING.md) e as [instruções do repositório](AGENTS.md). Mudanças no banco devem usar migrations. Para problemas de segurança, siga [SECURITY.md](SECURITY.md).
 

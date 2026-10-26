@@ -41,6 +41,8 @@ class Os_workflow
         $exit = count(array_filter($inspections, fn ($inspection) => $inspection->tipo === 'saida'));
         $equipmentLabel = ! $links ? 'Sem vínculo' : (count($received) < count($links) ? 'Recebimento pendente' : ($entry < count($links) ? 'Entrada registrada' : 'Conferido'));
         $analysisReady = trim(strip_tags((string) $order->laudoTecnico)) !== '';
+        $progress = $this->ci->checklist_service->progress($details['checklist_grupos'] ?? []);
+        $execution = $progress['execucao'];
         $latest = $details['aprovacoes'][0]->status ?? null;
         $budgetLabels = ['pendente' => 'Aguardando cliente', 'aprovado' => 'Aprovado pelo cliente', 'rejeitado' => 'Recusado', 'substituido' => 'Revisar orçamento'];
         // Older intake receipts already preserve conditions and accessories, even without categorized photos.
@@ -60,17 +62,42 @@ class Os_workflow
         } elseif (in_array($latest, ['rejeitado', 'substituido'], true)) {
             $next = ['orcamento', 'Revisar orçamento'];
         } else {
-            $next = $latest ? ['analise', 'Acompanhar execução'] : ['orcamento', 'Preparar orçamento'];
+            $next = $latest || in_array($order->status, ['Aprovado', 'Aguardando Peças', 'Em Andamento'], true) ? ['execucao', 'Acompanhar execução e testes'] : ['orcamento', 'Preparar orçamento'];
         }
         return [
             'received' => count($received), 'equipmentCount' => count($links), 'entryInspections' => $entry, 'exitInspections' => $exit,
             'equipment' => $order->entregue_em ? 'Histórico preservado' : $equipmentLabel,
             'equipmentPending' => ! $order->entregue_em && $equipmentPending,
             'analysis' => $analysisReady ? 'Registrada' : ($order->entregue_em ? 'Não registrado' : 'Diagnóstico pendente'),
+            'execution' => ! $execution['total'] ? 'Sem checklist aplicado' : ($execution['pendente'] ? $execution['pendente'] . ' pendente(s)' : ($execution['atencao'] ? $execution['atencao'] . ' para revisar' : 'Itens respondidos')),
             'budget' => $order->faturado ? 'Faturado' : ($budgetLabels[$latest] ?? 'Preparar'),
             'delivery' => $order->entregue_em ? 'Entregue' : ($exit < count($links) ? 'Vistoria de saída pendente' : 'Conferir retirada'),
             'nextTab' => $next[0], 'nextLabel' => $next[1],
         ];
+    }
+
+    public function deliveryReview(array $details)
+    {
+        $this->ci->load->library('checklist_service');
+        $progress = $this->ci->checklist_service->progress($details['checklist_grupos'] ?? []);
+        $links = $details['equipamentos'];
+        $ids = array_map(fn ($equipment) => (int) $equipment->idEquipamentos_os, $links);
+        $entries = $ids ? $this->ci->db->select('vinculo_id, dados')->where_in('vinculo_id', $ids)->where('tipo', 'entrada')->get('equipamento_recibos')->result() : [];
+        $exits = $ids ? $this->ci->db->select('vinculo_id, conferencia')->where_in('vinculo_id', $ids)->where('tipo', 'saida')->get('os_vistorias')->result() : [];
+        $entryByLink = [];
+        foreach ($entries as $entry) {
+            $entryByLink[$entry->vinculo_id] = json_decode($entry->dados, true) ?: [];
+        }
+        $exitByLink = [];
+        foreach ($exits as $exit) {
+            $exitByLink[$exit->vinculo_id] = $exit->conferencia;
+        }
+        $equipment = [];
+        foreach ($links as $link) {
+            $id = $link->idEquipamentos_os;
+            $equipment[] = ['nome' => $link->equipamento, 'recebido' => isset($entryByLink[$id]), 'acessorios' => $entryByLink[$id]['acessorios'] ?? null, 'saida' => array_key_exists($id, $exitByLink), 'conferencia' => $exitByLink[$id] ?? null];
+        }
+        return ['fases' => $progress, 'equipamentos' => $equipment];
     }
 
     private function transaction(callable $work)

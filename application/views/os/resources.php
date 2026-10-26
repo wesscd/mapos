@@ -3,4 +3,4 @@
 <link rel="stylesheet" href="<?= base_url('assets/trumbowyg/ui/trumbowyg.css') ?>">
 <script src="<?= base_url('assets/trumbowyg/trumbowyg.js') ?>"></script>
 <script src="<?= base_url('assets/trumbowyg/langs/pt_br.js') ?>"></script>
-<script src="<?= base_url('assets/js/os-workspace.js') ?>?v=3" defer></script>
+<script src="<?= base_url('assets/js/os-workspace.js') ?>?v=4" defer></script>

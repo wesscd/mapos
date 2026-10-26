@@ -41,7 +41,7 @@
             const hash = location.hash.slice(1);
             open(document.querySelector('[data-os-form-errors]') ? 'resumo' : (hash.startsWith('os-pane-') ? hash.slice(8) : aliases[hash]) || stored(storageKey) || 'resumo', false, false);
         }
-        if (tabs.length === 6 && panels.length === 6) {
+        if (tabs.length > 0 && tabs.length === panels.length && tabs.every(tab => panels.some(panel => panel.dataset.osPanel === tab.dataset.osTab))) {
             document.body.classList.add('os-workspace-ready');
             fromHash();
             window.addEventListener('hashchange', fromHash);
@@ -52,7 +52,7 @@
                 open(target.dataset.osTab || target.dataset.osOpen, false, true);
             });
             tabs.forEach((tab, index) => tab.addEventListener('keydown', event => {
-                const offsets = {ArrowRight:(index+1)%6,ArrowLeft:(index+5)%6,Home:0,End:5};
+                const offsets = {ArrowRight:(index+1)%tabs.length,ArrowLeft:(index+tabs.length-1)%tabs.length,Home:0,End:tabs.length-1};
                 if (!(event.key in offsets)) return;
                 event.preventDefault();
                 open(tabs[offsets[event.key]].dataset.osTab, true, true);
@@ -150,7 +150,7 @@
             updateDraft();
             if (mainDirty && form !== main) {
                 event.preventDefault(); event.stopImmediatePropagation();
-                notify('Há alterações não salvas no resumo ou na análise. Use “Salvar alterações da OS” antes desta ação.', true);
+                notify('Há alterações não salvas no resumo, na análise ou na execução. Use “Salvar alterações da OS” antes desta ação.', true);
                 return;
             }
             if (form.dataset.osConfirm && !window.confirm(form.dataset.osConfirm)) { event.preventDefault(); return; }

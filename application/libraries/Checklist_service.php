@@ -168,6 +168,29 @@ class Checklist_service
         return $groups;
     }
 
+    public function progress(array $groups)
+    {
+        $phases = [];
+        foreach (self::RESULTS as $phase => $states) {
+            $phases[$phase] = ['total' => 0, 'pendente' => 0, 'atencao' => 0, 'itens' => []];
+        }
+        foreach ($groups as $group) {
+            foreach ($group->itens as $item) {
+                $phase = &$phases[$item->fase];
+                $phase['total']++;
+                if ($item->resultado === 'pendente') {
+                    $phase['pendente']++;
+                } elseif (in_array($item->resultado, ['atencao', 'nao_realizado'], true)) {
+                    $phase['atencao']++;
+                } else {
+                    continue;
+                }
+                $phase['itens'][] = ['equipamento' => $group->equipamento_nome, 'descricao' => $item->descricao, 'resultado' => self::RESULTS[$item->fase][$item->resultado]];
+            }
+        }
+        return $phases;
+    }
+
     public function add($orderId, $groupId, array $input)
     {
         return $this->transaction(function () use ($orderId, $groupId, $input) {

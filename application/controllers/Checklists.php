@@ -73,7 +73,8 @@ class Checklists extends MY_Controller
             $this->session->set_flashdata('error', $error->getMessage());
             $this->session->set_flashdata('checklist_draft', ['os' => (int) $id, 'dados' => (array) $this->input->post()]);
         }
-        redirect(($this->input->post('retorno') === 'editar' ? 'os/editar/' : 'os/visualizar/') . (int) $id . '#os-pane-analise');
+        $pane = $this->input->post('aba') === 'execucao' ? 'execucao' : 'analise';
+        redirect(($this->input->post('retorno') === 'editar' ? 'os/editar/' : 'os/visualizar/') . (int) $id . '#os-pane-' . $pane);
     }
 
     public function foto($id = null)

@@ -4,6 +4,15 @@ Todas as alterações serão documentadas neste arquivo
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Fork Barão Tech — revisão de 2026-10-26
+
+### Adicionado
+
+- Aba Execução e testes separada do diagnóstico, mantendo os campos existentes e os checklists de cada fase em seu próprio painel.
+- Conferência orientativa antes da entrega: itens pendentes, resultados com ressalvas, acessórios do recebimento e situação da vistoria de saída, sem novo bloqueio de retirada.
+- Indicador de execução, retorno à fase correta após salvar e navegação por teclado adaptada às sete abas.
+- Ponto de restauração `restore/pre-execution-review-20261026`, com backup privado verificado antes da alteração.
+
 ## Fork Barão Tech — revisão de 2026-10-23
 
 ### Adicionado
