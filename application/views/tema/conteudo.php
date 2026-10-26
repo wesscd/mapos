@@ -7,7 +7,7 @@
         <?php
         $breadcrumbModule = $this->uri->segment(1);
         $breadcrumbAction = $this->uri->segment(2);
-        $breadcrumbLabels = ['operacoes' => 'Operações', 'comunicacao' => 'Comunicação', 'os' => 'Ordens de serviço', 'permissoes' => 'Permissões', 'usuarios' => 'Usuários', 'servicos' => 'Serviços', 'relatorios' => 'Relatórios', 'adicionar' => 'Cadastrar', 'editar' => 'Editar', 'visualizar' => 'Visualizar', 'gerenciar' => 'Listagem', 'configurar' => 'Configurações', 'lancamentos' => 'Lançamentos'];
+        $breadcrumbLabels = ['operacoes' => 'Operações', 'comunicacao' => 'Comunicação', 'os' => 'Ordens de serviço', 'permissoes' => 'Permissões', 'usuarios' => 'Usuários', 'servicos' => 'Serviços', 'relatorios' => 'Relatórios', 'relatoriotecnico' => 'Relatório técnico', 'adicionar' => 'Cadastrar', 'editar' => 'Editar', 'visualizar' => 'Visualizar', 'gerenciar' => 'Listagem', 'configurar' => 'Configurações', 'lancamentos' => 'Lançamentos'];
         if ($breadcrumbModule) { ?>
             <a href="<?= html_escape(site_url($breadcrumbModule)) ?>" <?= ! $breadcrumbAction ? 'aria-current="page"' : '' ?>><?= html_escape($breadcrumbLabels[$breadcrumbModule] ?? ucfirst($breadcrumbModule)) ?></a>
         <?php }
