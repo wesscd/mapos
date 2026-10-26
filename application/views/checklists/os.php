@@ -8,7 +8,7 @@ $photoPermission = $this->permission->checkPermission($this->session->userdata('
 $actionUrl = 'checklists/salvar/' . (int) $result->idOs;
 $returnTo = ! empty($osEditing) ? 'editar' : 'visualizar'; ?>
 <section class="mapos-card service-checklists">
-<div class="checklist-progress"><h3><?= $checklistPhase === 'execucao' ? 'Checklist de execução e testes' : 'Checklist de análise técnica' ?></h3><?php if ($checklistPhase === 'execucao') { ?><a class="btn" target="_blank" rel="noopener" href="<?= html_escape(site_url('checklists/resumo/' . (int) $result->idOs)) ?>">Resumo dos procedimentos realizados</a><?php } ?></div>
+<div class="checklist-progress"><h3><?= $checklistPhase === 'execucao' ? 'Checklist de execução e testes' : 'Checklist de análise técnica' ?></h3><?php if ($checklistPhase === 'execucao') { ?><div><?php if ($photoPermission) { ?><a class="btn btn-primary" href="<?= site_url('relatoriotecnico/preparar/' . (int) $result->idOs) ?>">Preparar relatório técnico</a><?php } ?> <a class="btn" target="_blank" rel="noopener" href="<?= html_escape(site_url('checklists/resumo/' . (int) $result->idOs)) ?>">Resumo dos procedimentos realizados</a></div><?php } ?></div>
 <p>Registre verificações e procedimentos por equipamento. O checklist não acrescenta serviços, produtos ou valores ao orçamento. Não informe senhas ou dados pessoais nas observações e fotos.</p>
 <?php if ($draftInput) { ?><p role="alert" class="alert">Rascunho preservado para correção. Selecione novamente a foto antes de salvar.</p><?php } ?>
 <?php if ($canWorkflow && $checklistPhase === 'analise') { ?>

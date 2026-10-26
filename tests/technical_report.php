@@ -1,0 +1,42 @@
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+
+$ci->load->library('relatorio_tecnico_service');
+$reports = $ci->relatorio_tecnico_service;
+$db->where('idOs', $checkOrder)->update('os', ['observacoes' => 'PRIVATE_OS_NOTE_REPORT', 'laudoTecnico' => '<p>Diagnóstico &amp; cuidados</p><p>Revisar ventilação.</p>']);
+$db->where('id', $analysis->id)->update('os_check_itens', ['observacoes' => 'PRIVATE_ITEM_NOTE_REPORT', 'autorizacao' => 'PRIVATE_AUTH_REPORT']);
+$source = $reports->source($checkOrder);
+$serialized = json_encode($source);
+$assert($source['diagnostico'] === "Diagnóstico & cuidados\nRevisar ventilação.", 'Rich-text diagnosis becomes readable paragraphs and decoded characters for client review');
+$assert(! str_contains($serialized, 'PRIVATE_') && count($source['fotos']) === 3, 'Report source excludes OS notes, item notes and authorization references while listing scoped photo metadata');
+$assert(! array_filter($source['resultados'], fn ($row) => $row['resultado'] === 'Pendente'), 'Pending checklist items never become completed work in the report');
+$draft = ['fonte' => $source['hash'], 'problema' => 'Problema relatado', 'diagnostico' => 'Diagnóstico <script>alert(1)</script>', 'recomendacoes' => 'Manter ventilação livre', 'resultados' => [(string) $analysis->id], 'fotos' => []];
+$report = $reports->prepare($checkOrder, $draft);
+$assert(! $report['fotos'], 'Report photo inclusion requires explicit selection');
+$reject(fn () => $reports->prepare($checkOrder, array_merge($draft, ['fonte' => 'stale'])), 'A stale report form requires a refreshed source');
+$reject(fn () => $reports->prepare($checkOrder, array_merge($draft, ['diagnostico' => ['invalid']])), 'Report text fields reject malformed arrays');
+$reject(fn () => $reports->prepare($checkOrder, array_merge($draft, ['fotos' => ['c999999999']])), 'Report cannot select a photo outside its OS');
+$reject(fn () => $reports->prepare($checkOrder, array_merge($draft, ['resultados' => ['999999999']])), 'Report cannot select an unrelated checklist result');
+$reject(fn () => $reports->prepare($checkOrder, array_merge($draft, ['fotos' => array_fill(0, 7, array_key_first($source['fotos']))])), 'Report limits photo selection before loading image bytes');
+$reject(fn () => $reports->photo($nextCheckOrder, array_key_first($source['fotos'])), 'Report photo bytes remain scoped even after a forged cross-order request');
+$report = $reports->prepare($checkOrder, array_merge($draft, ['fotos' => [array_key_first($source['fotos'])]]));
+$html = $ci->load->view('relatorios/documento', ['report' => $report, 'images' => []], true);
+$assert(str_contains($html, '&lt;script&gt;') && ! str_contains($html, '<script>') && ! str_contains($html, 'PRIVATE_'), 'Report document escapes reviewed text and never renders private observations');
+$beforeReport = [$db->count_all('os_eventos'), $db->count_all('com_fila'), $db->count_all('servicos_os')];
+$pdfBytes = $reports->pdf($report);
+$assert(str_starts_with($pdfBytes, '%PDF-') && strlen($pdfBytes) > 1000, 'Report PDF renders the shared document with a selected private JPEG');
+$assert($beforeReport === [$db->count_all('os_eventos'), $db->count_all('com_fila'), $db->count_all('servicos_os')], 'Generating a report does not send messages or change OS history and billed services');
+$db->where('id', $analysis->id)->update('os_check_itens', ['versao' => 99]);
+$assert(! hash_equals($source['hash'], $reports->source($checkOrder)['hash']), 'Checklist corrections invalidate the previously reviewed report source');
+$approvedReportOrder = $create();
+$workflow->service($approvedReportOrder, ['servicos_id' => $service, 'quantidade' => 1, 'preco' => 50]);
+$workflow->requestApproval($approvedReportOrder);
+$reportApproval = $db->where('os_id', $approvedReportOrder)->order_by('id', 'desc')->get('os_aprovacoes')->row();
+$workflow->answerApproval($approvedReportOrder, $reportApproval->id, $customer, 'aprovado');
+$assert($reports->source($approvedReportOrder)['aprovacao']['id'] === (int) $reportApproval->id, 'Report approved scope comes from a current customer-approved budget snapshot');
+$db->where('idOs', $approvedReportOrder)->update('os', ['laudoTecnico' => 'Diagnóstico alterado depois da aprovação']);
+$assert($reports->source($approvedReportOrder)['aprovacao'] === null, 'A changed diagnosis cannot be represented as the currently approved budget');
+$db->where('idOs', $approvedReportOrder)->update('os', ['laudoTecnico' => null]);
+$db->where('id', $reportApproval->id)->update('os_aprovacoes', ['cliente_id' => null]);
+$assert($workflow->approvedBudget($approvedReportOrder) === null, 'Approval identity must match the current OS customer');

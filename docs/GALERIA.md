@@ -30,6 +30,12 @@ Resumo orientativo de pendências, ressalvas e acessórios. A ausência de receb
 
 ![Conferência de entrega no ambiente local](screenshots/conferencia-entrega.png)
 
+## Relatório técnico · revisão de 26/10/2026
+
+Preparação do documento para o cliente com textos revisados, seleção de resultados e fotos e download em PDF. Captura local com dados fictícios. O quadro colorido das imagens de teste representa uma evidência sintética; nenhum contato real de cliente é exibido.
+
+![Prévia do relatório técnico de demonstração](screenshots/relatorio-tecnico.png)
+
 ## Kanban
 
 Etapas com cartões de atendimento, filtros e movimentação por arraste ou seletor. A captura filtra os cadastros de demonstração. O quadro permite rolagem horizontal para consultar as outras etapas.

@@ -30,6 +30,7 @@ uploads
 application/.env
 assets/userImage
 /application/cache/htmlpurifier/
+/application/cache/relatorios-pdf/
 /.maintenance
 /.secrets/
 /services/whatsapp/node_modules/

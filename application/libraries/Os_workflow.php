@@ -609,6 +609,20 @@ class Os_workflow
         return json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 
+    public function approvedBudget($id)
+    {
+        $approval = $this->ci->db->where('os_id', (int) $id)->order_by('id', 'desc')->get('os_aprovacoes')->row();
+        $order = $this->ci->db->select('clientes_id')->get_where('os', ['idOs' => (int) $id])->row();
+        if (! $order || ! $approval || $approval->status !== 'aprovado' || (int) $approval->cliente_id !== (int) $order->clientes_id) {
+            return null;
+        }
+        $snapshot = json_decode($approval->snapshot, true);
+        if (! is_array($snapshot) || ! hash_equals($approval->fingerprint, hash('sha256', $this->budget($id, isset($snapshot['analise']))))) {
+            return null;
+        }
+        return ['id' => (int) $approval->id, 'data' => $approval->respondido_em, 'servicos' => $snapshot['servicos'], 'produtos' => $snapshot['produtos']];
+    }
+
     private function publishBudget($id, $snapshot, $notify = true)
     {
         $value = json_decode($snapshot, true)['valor'];

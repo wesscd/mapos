@@ -92,6 +92,7 @@ $assert($advisoryState['nextTab'] === 'execucao' && str_contains($advisoryState[
 $workflow->updateOrder($advisoryOrder, ['status' => 'Finalizado'], false);
 $workflow->deliver($advisoryOrder);
 $assert($db->get_where('os', ['idOs' => $advisoryOrder])->row()->entregue_em && $workflow->deliveryReview($workflow->details($advisoryOrder))['fases']['execucao']['pendente'] > 0, 'Advisory checklist review does not introduce a delivery completion gate');
+require __DIR__ . '/technical_report.php';
 // Remove only the synthetic checklist fixtures to permit this suite's migration rollback audit.
 $db->empty_table('os_check_fotos');
 $db->empty_table('os_check_registros');

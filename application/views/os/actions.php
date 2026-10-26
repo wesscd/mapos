@@ -3,6 +3,7 @@
 <?php if ($osEditing || ($editavel && $osPermission)) { ?><a class="btn" href="<?= site_url('os/' . ($osEditing ? 'visualizar/' : 'editar/') . (int) $result->idOs) ?>"><?= $osEditing ? 'Consultar OS' : 'Editar OS' ?></a><?php } ?>
 <a class="btn" href="<?= site_url('os/imprimir/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir A4</a>
 <a class="btn" href="<?= site_url('os/imprimirTermica/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir cupom 80 mm</a>
+<?php if ($osCanEquipment) { ?><a class="btn" href="<?= site_url('relatoriotecnico/preparar/' . (int) $result->idOs) ?>">Preparar relatório técnico</a><?php } ?>
 <?php if ($result->garantias_id) { ?><a class="btn" href="<?= site_url('garantias/imprimirGarantiaOs/' . (int) $result->idOs) ?>" target="_blank" rel="noopener">Imprimir termo de garantia</a><?php } ?>
 <?php if ($osPermission) {
     $customer = (object) ['celular' => $result->celular_cliente, 'telefone' => $result->telefone_cliente ?? ''];

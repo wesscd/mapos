@@ -9,6 +9,7 @@ import struct
 import sys
 import urllib.parse
 import urllib.request
+import urllib.error
 import uuid
 import zlib
 from pathlib import Path
@@ -76,7 +77,7 @@ def chunk(kind, data):
     return struct.pack('!I', len(data)) + kind + data + struct.pack('!I', binascii.crc32(kind + data) & 0xffffffff)
 
 
-png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!2I5B', 12, 8, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress((b'\0' + b'\x80\xa0\xc0' * 12) * 8)) + chunk(b'IEND', b'')
+png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!2I5B', 1600, 900, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress((b'\0' + b'\x80\xa0\xc0' * 1600) * 900)) + chunk(b'IEND', b'')
 body = post(action, dict(item, resultado='conforme', observacoes='Teste de ventoinha concluido'), png).read().decode()
 assert 'checklists/foto/' in body, 'Successful multipart upload must expose a private evidence link'
 photo = re.search(r'checklists/foto/(\d+)', body).group(1)
@@ -97,4 +98,36 @@ history = get('checklists/historico/' + intervention['item_id']).read().decode()
 assert 'Nota interna de demonstracao' in history and 'Antes' in history and 'Depois' in history, 'Technical audit must retain both states'
 models = get('checklists').read().decode()
 assert 'Modelos de checklist técnico' in models and 'novos_execucao' in models, 'System configuration must expose editable models'
-print(json.dumps({'result': 'Checklist HTTP snapshots, forms, authorization, private photo and summary verified', 'order': order, 'equipment': equipment}))
+editor = get('relatoriotecnico/preparar/' + order).read().decode()
+assert 'Preparar relatório técnico' in editor and 'name="fotos[]"' in editor
+source_hash = re.search(r'name="fonte" value="([^"]+)"', editor).group(1)
+report_fields = {'fonte': source_hash, 'problema': 'Instabilidade durante o uso', 'diagnostico': 'Ventilação revisada e funcionamento conferido.', 'recomendacoes': 'Manter as saídas de ar livres.', 'resultados[]': item['item_id'], 'fotos[]': 'c' + photo}
+preview = post('relatoriotecnico/preparar/' + order, report_fields).read().decode()
+assert 'Prévia do relatório técnico' in preview and 'Nota interna de demonstracao' not in preview and 'Escopo aprovado de demonstracao' not in preview
+preview_key = re.search(r'name="previa" value="([^"]+)"', preview).group(1)
+try:
+    post('relatoriotecnico/pdf/' + order, {'previa': preview_key})
+    raise AssertionError('Unreviewed report download was accepted')
+except urllib.error.HTTPError as error:
+    assert error.code == 422
+pdf = post('relatoriotecnico/pdf/' + order, {'previa': preview_key, 'conferido': '1'})
+pdf_bytes = pdf.read()
+assert pdf.headers.get_content_type() == 'application/pdf', ('PDF content type', pdf.headers.get_content_type(), pdf_bytes[:100])
+assert pdf_bytes.startswith(b'%PDF-'), ('PDF prefix', pdf_bytes[:100])
+assert 'attachment' in pdf.headers['Content-Disposition'], 'PDF must download as attachment'
+assert 'no-store' in pdf.headers['Cache-Control'], ('PDF cache policy', pdf.headers.get('Cache-Control'))
+assert pdf.headers.get('X-CSRF-Token'), 'PDF download must expose the renewed CSRF token'
+adjusted = post('relatoriotecnico/preparar/' + order, dict(report_fields, acao='editar')).read().decode()
+assert 'Preparar relatório técnico' in adjusted and report_fields['diagnostico'] in adjusted, 'Adjusting after download preserves client-facing text'
+if len(sys.argv) > 4:
+    Path(sys.argv[4]).write_bytes(pdf_bytes)
+anonymous = urllib.request.urlopen(base + 'relatoriotecnico/preparar/' + order, timeout=30)
+assert 'login' in anonymous.url
+current = next(fields for fields, form in item_forms(get('os/visualizar/' + order).read().decode()) if fields['item_id'] == item['item_id'])
+post(action, dict(current, resultado='atencao', observacoes='Revisão posterior ao relatório')).read()
+try:
+    post('relatoriotecnico/pdf/' + order, {'previa': preview_key, 'conferido': '1'})
+    raise AssertionError('Stale report download was accepted')
+except urllib.error.HTTPError as error:
+    assert error.code == 409
+print(json.dumps({'result': 'Checklist and technical-report HTTP flow, private photos, PDF download and stale preview verified', 'order': order, 'equipment': equipment}))

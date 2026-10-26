@@ -8,6 +8,9 @@ e [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Adicionado
 
+- Relatório técnico com diagnóstico para o cliente, escopo aprovado vigente, procedimentos e testes selecionados, recomendações, até seis fotos, prévia e PDF A4. Sem cópia automática de observações internas e sem envio de mensagens.
+- Ponto de restauração `restore/pre-technical-report-20261026` e validação de prévia expirada ou alterada antes do download.
+
 - Aba Execução e testes separada do diagnóstico, mantendo os campos existentes e os checklists de cada fase em seu próprio painel.
 - Conferência orientativa antes da entrega: itens pendentes, resultados com ressalvas, acessórios do recebimento e situação da vistoria de saída, sem novo bloqueio de retirada.
 - Indicador de execução, retorno à fase correta após salvar e navegação por teclado adaptada às sete abas.
